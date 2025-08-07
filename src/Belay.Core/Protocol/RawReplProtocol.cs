@@ -449,23 +449,36 @@ public class RawReplProtocol : IDisposable
     {
         byte[] buffer = new byte[1024];
         var totalRead = new System.Text.StringBuilder();
+        int drainAttempts = 0;
+        const int maxDrainAttempts = 10; // Prevent infinite loops
 
-        while (true)
+        while (drainAttempts < maxDrainAttempts)
         {
+            drainAttempts++;
             int bytesRead = await this.ReadAvailableAsync(buffer, cancellationToken);
             if (bytesRead == 0)
             {
+                // No data available - wait a bit and try once more to be sure
+                if (drainAttempts == 1)
+                {
+                    await Task.Delay(50, cancellationToken);
+                    continue;
+                }
                 break; // No more data available
             }
 
             string text = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
             totalRead.Append(text);
-            this.logger.LogDebug("Drained output: {Output}", text.Replace("\r", "\\r").Replace("\n", "\\n"));
+            this.logger.LogDebug("Drained output (attempt {Attempt}): {Output}", drainAttempts, text.Replace("\r", "\\r").Replace("\n", "\\n"));
         }
 
         if (totalRead.Length > 0)
         {
-            this.logger.LogDebug("Total drained output length: {Length}", totalRead.Length);
+            this.logger.LogDebug("Total drained output: '{Output}' (length: {Length})", totalRead.ToString().Replace("\r", "\\r").Replace("\n", "\\n"), totalRead.Length);
+        }
+        else
+        {
+            this.logger.LogDebug("No output to drain after {Attempts} attempts", drainAttempts);
         }
     }
 
