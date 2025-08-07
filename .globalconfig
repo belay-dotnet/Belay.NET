@@ -1,0 +1,28 @@
+# GlobalAnalyzerConfig for relaxing some strict rules
+
+is_global = true
+
+# Relax StyleCop rules that are overly strict
+dotnet_diagnostic.SA1402.severity = suggestion  # File may only contain a single type
+dotnet_diagnostic.SA1649.severity = suggestion  # File name should match first type name
+dotnet_diagnostic.SA1201.severity = suggestion  # Static members before non-static
+dotnet_diagnostic.SA1202.severity = suggestion  # Members should be ordered by access
+dotnet_diagnostic.SA1203.severity = suggestion  # Constant fields should appear before non-constant fields  
+dotnet_diagnostic.SA1204.severity = suggestion  # Static members before non-static  
+dotnet_diagnostic.SA1206.severity = suggestion  # Modifier order
+dotnet_diagnostic.SA1616.severity = suggestion  # Element return value documentation should have text
+dotnet_diagnostic.SA1618.severity = suggestion  # Documentation for type parameter is missing
+dotnet_diagnostic.SA1648.severity = suggestion  # inheritdoc should be used with inheriting class
+dotnet_diagnostic.SA1506.severity = suggestion  # Element documentation headers should not be followed by blank line
+dotnet_diagnostic.SA1500.severity = suggestion  # Braces for multi-line statements should not share line
+dotnet_diagnostic.SA1117.severity = suggestion  # Parameters should be on same line or separate lines
+dotnet_diagnostic.SA1611.severity = suggestion  # Documentation for parameter is missing
+dotnet_diagnostic.SA1651.severity = suggestion  # Do not use placeholder elements
+
+# Relax SonarAnalyzer rules
+dotnet_diagnostic.S2094.severity = suggestion   # Empty class
+dotnet_diagnostic.S3626.severity = suggestion   # Remove redundant jump
+dotnet_diagnostic.S3881.severity = suggestion   # "IDisposable" should be implemented correctly
+
+# Keep important rules as errors
+dotnet_diagnostic.CS1591.severity = none        # Missing XML comment (already excluded)

@@ -1,0 +1,13 @@
+<Project>
+  <!-- Test project specific settings -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <!-- Relax some rules for test projects -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CS1591;SA1600;SA1601</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <!-- Mark test projects -->
+  <PropertyGroup Condition="$(MSBuildProjectName.Contains('.Tests'))">
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+</Project>
