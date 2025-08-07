@@ -50,10 +50,10 @@ jobs:
         MICROPYTHON_EXECUTABLE: ${{ github.workspace }}/micropython/ports/unix/build-standard/micropython
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore Belay.NET.sln
 
     - name: Build solution
-      run: dotnet build --no-restore --configuration Release
+      run: dotnet build Belay.NET.sln --no-restore --configuration Release
 
     - name: Run unit tests
       run: |
@@ -108,7 +108,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore Belay.NET.sln
 
     - name: Check for vulnerable packages
       run: |
@@ -134,7 +134,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore Belay.NET.sln
 
     - name: Check code formatting
       run: |
@@ -142,7 +142,7 @@ jobs:
 
     - name: Run static analysis
       run: |
-        dotnet build --configuration Release --verbosity normal
+        dotnet build Belay.NET.sln --configuration Release --verbosity normal
 
   performance-benchmark:
     name: Performance Benchmark

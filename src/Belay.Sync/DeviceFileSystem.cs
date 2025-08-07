@@ -59,7 +59,7 @@ namespace Belay.Sync {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
             this.logger.LogDebug("Getting file info for: {Path}", normalizedPath);
 
-            var code = $"""
+            var code = $$"""
                 import os
                 try:
                     stat = os.stat('{normalizedPath.Replace("'", "\\'")}')
@@ -70,7 +70,7 @@ namespace Belay.Sync {
                         mtime = stat[8] if len(stat) > 8 else None
                     except:
                         mtime = None
-                    print(f"{{\\"path\\": \\"{normalizedPath.Replace("'", "\\'")}\\"", \\"is_directory\\": {is_dir}, \\"size\\": {size}, \\"modified\\": {mtime}}}")
+                    print($"{{\"path\": \"{normalizedPath.Replace("'", "\\'")}\", \"is_directory\": {is_dir}, \"size\": {size}, \"modified\": {mtime}}}")
                 except OSError:
                     print("null")
                 """;
@@ -344,7 +344,7 @@ namespace Belay.Sync {
                             is_dir = (stat[0] & 0x4000) != 0
                             size = None if is_dir else stat[6]
                             mtime = stat[8] if len(stat) > 8 else None
-                            entries.append({{"path": entry_path, "is_directory": is_dir, "size": size, "modified": mtime}})
+                            entries.append({"path": entry_path, "is_directory": is_dir, "size": size, "modified": mtime})
                         except OSError:
                             pass
                     print(json.dumps(entries))
@@ -368,7 +368,7 @@ namespace Belay.Sync {
                                 is_dir = (stat[0] & 0x4000) != 0
                                 size = None if is_dir else stat[6]
                                 mtime = stat[8] if len(stat) > 8 else None
-                                entries.append({{"path": entry_path, "is_directory": is_dir, "size": size, "modified": mtime}})
+                                entries.append({"path": entry_path, "is_directory": is_dir, "size": size, "modified": mtime})
                                 if is_dir:
                                     entries.extend(list_recursive(base_path, current_path + ('/' if current_path else '') + name))
                             except OSError:

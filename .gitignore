@@ -234,3 +234,10 @@ docker-compose*
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Node.js dependencies
+node_modules/
+docs/node_modules/
+
+# Debug test projects
+DebugTest.csproj

@@ -154,13 +154,34 @@ namespace Belay.Tests.Unit.Execution {
             // Simulate existing threads
             var threads = new[]
             {
-                new RunningThread { ThreadId = "id1", MethodName = threadName1, IsRunning = true },
-                new RunningThread { ThreadId = "id2", MethodName = threadName2, IsRunning = true },
-                new RunningThread { ThreadId = "id3", MethodName = threadName3, IsRunning = true }
+                new RunningThread { 
+                    ThreadId = "id1", 
+                    MethodName = threadName1, 
+                    StartedAt = DateTime.UtcNow, 
+                    AutoRestart = false, 
+                    Priority = Belay.Attributes.ThreadPriority.Normal,
+                    MaxRuntimeMs = null
+                },
+                new RunningThread { 
+                    ThreadId = "id2", 
+                    MethodName = threadName2, 
+                    StartedAt = DateTime.UtcNow,
+                    AutoRestart = false, 
+                    Priority = Belay.Attributes.ThreadPriority.Normal,
+                    MaxRuntimeMs = null
+                },
+                new RunningThread { 
+                    ThreadId = "id3", 
+                    MethodName = threadName3, 
+                    StartedAt = DateTime.UtcNow,
+                    AutoRestart = false, 
+                    Priority = Belay.Attributes.ThreadPriority.Normal,
+                    MaxRuntimeMs = null
+                }
             };
 
             var privateField = typeof(ThreadExecutor).GetField("runningThreads", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            privateField?.SetValue(_executor, new ConcurrentDictionary<string, RunningThread>(
+            privateField?.SetValue(_executor, new System.Collections.Concurrent.ConcurrentDictionary<string, RunningThread>(
                 threads.ToDictionary(t => t.MethodName, t => t)));
 
             // All stop operations are successful
