@@ -412,7 +412,7 @@ public class SubprocessDeviceCommunication : IDeviceCommunication
         // Give MicroPython additional time to complete initialization
         await Task.Delay(2000, cancellationToken);
 
-        // Simple test to ensure the subprocess is responding
+        // Simple test to ensure the subprocess can enter Raw REPL
         try
         {
             if (this.replProtocol == null)
@@ -420,19 +420,15 @@ public class SubprocessDeviceCommunication : IDeviceCommunication
                 throw new InvalidOperationException("Protocol not initialized");
             }
 
-            this.logger.LogDebug("Testing subprocess with simple calculation");
-            RawReplResponse response = await this.replProtocol.ExecuteCodeAsync("1+1", useRawPasteMode: false, cancellationToken);
-            if (response.IsSuccess && response.Result.Contains('2'))
-            {
-                this.logger.LogDebug("MicroPython subprocess is ready and responding");
-                return;
-            }
-
-            this.logger.LogWarning("Readiness test did not return expected result. Response: {Response}", response.Result);
+            this.logger.LogDebug("Testing subprocess Raw REPL entry");
+            await this.replProtocol.EnterRawModeAsync(cancellationToken);
+            await this.replProtocol.ExitRawModeAsync(cancellationToken);
+            this.logger.LogDebug("MicroPython subprocess Raw REPL test successful");
+            return;
         }
         catch (Exception ex)
         {
-            this.logger.LogWarning(ex, "Initial subprocess readiness test failed - this may be normal during startup");
+            this.logger.LogWarning(ex, "Raw REPL test failed - this may be normal during startup");
         }
 
         this.logger.LogDebug("MicroPython subprocess startup sequence completed");

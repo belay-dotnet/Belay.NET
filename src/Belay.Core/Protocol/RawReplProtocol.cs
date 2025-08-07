@@ -3,6 +3,7 @@
 
 namespace Belay.Core.Protocol;
 
+using System.Linq;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -184,19 +185,23 @@ public class RawReplProtocol : IDisposable
 
         this.logger.LogDebug("Entering raw REPL mode");
 
-        // Send \r\x01 (carriage return + Ctrl-A) to enter raw mode - matches pyboard.py
-        await this.stream.WriteAsync(new byte[] { 0x0D, CTRLA }, cancellationToken);
+        // Send Ctrl-A to enter raw mode
+        await this.stream.WriteAsync(new byte[] { CTRLA }, cancellationToken);
         await this.stream.FlushAsync(cancellationToken);
 
-        // Wait for complete raw REPL prompt: "raw REPL; CTRL-B to exit\r\n>"
-        string response = await this.ReadUntilAsync("raw REPL; CTRL-B to exit\r\n>", cancellationToken);
+        // Read response - MicroPython unix port sends "raw REPL" first, then rest of message
+        string response = await this.ReadWithTimeoutAsync(1000, cancellationToken);
+        this.logger.LogDebug($"Raw REPL response: {response}");
 
-        if (!response.EndsWith("raw REPL; CTRL-B to exit\r\n>"))
+        if (!response.Contains("raw REPL"))
         {
             throw new RawReplProtocolException(
-                "Failed to enter raw REPL mode - did not receive expected prompt",
+                $"Failed to enter raw REPL mode - response: {response}",
                 RawReplState.Raw, this.CurrentState);
         }
+
+        // Read any remaining output ("; CTRL-B to exit\r\n>")
+        await this.DrainAvailableOutputAsync(cancellationToken);
 
         this.CurrentState = RawReplState.Raw;
         this.logger.LogDebug("Successfully entered raw REPL mode");
@@ -248,21 +253,20 @@ public class RawReplProtocol : IDisposable
             // Send Ctrl-D to execute
             await this.WriteByteAsync(CTRLD, cancellationToken);
 
-            // Wait for "OK" response (2 bytes)
-            byte[] okResponse = await this.ReadExactBytesAsync(2, cancellationToken);
-            string okString = System.Text.Encoding.UTF8.GetString(okResponse);
-
-            if (okString != "OK")
+            // Wait for "OK" response with timeout
+            string response = await this.ReadWithTimeoutAsync(500, cancellationToken);
+            
+            if (!response.Contains("OK"))
             {
                 throw new RawReplProtocolException(
-                    $"Expected 'OK' response, got: {okString}",
+                    $"Expected 'OK' response, got: {response}",
                     RawReplState.Raw, this.CurrentState);
             }
 
             this.logger.LogDebug("Received OK confirmation from MicroPython");
 
             // Read execution output until we get back to raw REPL prompt
-            string output = await this.ReadUntilAsync(">", cancellationToken);
+            string output = await this.ReadWithTimeoutAsync(2000, cancellationToken);
 
             return ParseResponse(output);
         }
@@ -450,6 +454,47 @@ public class RawReplProtocol : IDisposable
         {
             this.logger.LogDebug("Total drained output length: {Length}", totalRead.Length);
         }
+    }
+
+    private async Task<string> ReadWithTimeoutAsync(int timeoutMs, CancellationToken cancellationToken)
+    {
+        var buffer = new List<byte>();
+        byte[] readBuffer = new byte[256];
+        
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromMilliseconds(timeoutMs));
+        
+        try
+        {
+            while (!cts.Token.IsCancellationRequested)
+            {
+                int bytesRead = await this.stream.ReadAsync(readBuffer, cts.Token);
+                if (bytesRead > 0)
+                {
+                    buffer.AddRange(readBuffer.Take(bytesRead));
+                    
+                    // Check if we have enough data
+                    string partial = System.Text.Encoding.UTF8.GetString(buffer.ToArray());
+                    if (partial.Contains("raw REPL") || partial.Contains(">"))
+                    {
+                        // Continue reading a bit more to get complete message
+                        await Task.Delay(50, cancellationToken);
+                        bytesRead = await this.ReadAvailableAsync(readBuffer, cancellationToken);
+                        if (bytesRead > 0)
+                        {
+                            buffer.AddRange(readBuffer.Take(bytesRead));
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            // Timeout - return what we have
+        }
+        
+        return System.Text.Encoding.UTF8.GetString(buffer.ToArray());
     }
 
     private async Task<byte[]> ReadExactBytesAsync(int count, CancellationToken cancellationToken)
