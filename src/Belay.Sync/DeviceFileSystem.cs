@@ -1,68 +1,53 @@
-// Copyright 2025 Belay.NET Contributors
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using Belay.Core;
-using Microsoft.Extensions.Logging;
+namespace Belay.Sync {
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Security.Cryptography;
+    using System.Text;
+    using System.Text.Json;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Belay.Core;
+    using Belay.Core.Communication;
+    using Microsoft.Extensions.Logging;
 
-namespace Belay.Sync
-{
     /// <summary>
     /// Implements file system operations for MicroPython/CircuitPython devices.
     /// </summary>
-    public sealed class DeviceFileSystem : IDeviceFileSystem
-    {
-        private readonly Device _device;
-        private readonly ILogger<DeviceFileSystem> _logger;
+    public sealed class DeviceFileSystem : IDeviceFileSystem {
+        private readonly Device device;
+        private readonly ILogger<DeviceFileSystem> logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeviceFileSystem"/> class.
         /// </summary>
         /// <param name="device">The device to perform file system operations on.</param>
         /// <param name="logger">Optional logger for diagnostic information.</param>
-        public DeviceFileSystem(Device device, ILogger<DeviceFileSystem>? logger = null)
-        {
-            _device = device ?? throw new ArgumentNullException(nameof(device));
-            _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceFileSystem>.Instance;
+        public DeviceFileSystem(Device device, ILogger<DeviceFileSystem>? logger = null) {
+            this.device = device ?? throw new ArgumentNullException(nameof(device));
+            this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceFileSystem>.Instance;
         }
 
         /// <inheritdoc />
         public async Task<IReadOnlyList<DeviceFileInfo>> ListAsync(
             string path = "/",
             bool recursive = false,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            _logger.LogDebug("Listing directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
+            this.logger.LogDebug("Listing directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
 
-            var code = recursive 
+            var code = recursive
                 ? GenerateRecursiveListCode(normalizedPath)
                 : GenerateListCode(normalizedPath);
 
-            try
-            {
-                var result = await _device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+            try {
+                var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 return ParseListResult(result);
             }
-            catch (DeviceExecutionException ex) when (ex.Message.Contains("OSError") || ex.Message.Contains("ENOENT"))
-            {
+            catch (DeviceExecutionException ex) when (ex.Message.Contains("OSError") || ex.Message.Contains("ENOENT")) {
                 throw new DirectoryNotFoundException($"Directory not found: {normalizedPath}", ex);
             }
         }
@@ -70,10 +55,9 @@ namespace Belay.Sync
         /// <inheritdoc />
         public async Task<DeviceFileInfo?> GetFileInfoAsync(
             string path,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            _logger.LogDebug("Getting file info for: {Path}", normalizedPath);
+            this.logger.LogDebug("Getting file info for: {Path}", normalizedPath);
 
             var code = $"""
                 import os
@@ -91,18 +75,17 @@ namespace Belay.Sync
                     print("null")
                 """;
 
-            try
-            {
-                var result = await _device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
-                
-                if (result.Trim() == "null")
+            try {
+                var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+
+                if (result.Trim() == "null") {
                     return null;
+                }
 
                 return ParseFileInfo(result);
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error getting file info for {Path}", normalizedPath);
+            catch (Exception ex) {
+                this.logger.LogWarning(ex, "Error getting file info for {Path}", normalizedPath);
                 return null;
             }
         }
@@ -110,39 +93,38 @@ namespace Belay.Sync
         /// <inheritdoc />
         public async Task<byte[]> ReadFileAsync(
             string path,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            _logger.LogDebug("Reading file: {Path}", normalizedPath);
+            this.logger.LogDebug("Reading file: {Path}", normalizedPath);
 
             // For large files, we'll need chunked reading to avoid memory issues
             // First, get the file size
-            var fileInfo = await GetFileInfoAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
-            if (fileInfo == null)
+            var fileInfo = await this.GetFileInfoAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
+            if (fileInfo == null) {
                 throw new FileNotFoundException($"File not found: {normalizedPath}");
+            }
 
-            if (fileInfo.IsDirectory)
+            if (fileInfo.IsDirectory) {
                 throw new UnauthorizedAccessException($"Path is a directory: {normalizedPath}");
+            }
 
             var fileSize = fileInfo.Size ?? 0;
-            
+
             // For small files, read directly
             if (fileSize <= 8192) // 8KB threshold
             {
-                return await ReadFileDirectAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
+                return await this.ReadFileDirectAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
             }
-            else
-            {
-                return await ReadFileChunkedAsync(normalizedPath, fileSize, cancellationToken).ConfigureAwait(false);
+            else {
+                return await this.ReadFileChunkedAsync(normalizedPath, fileSize, cancellationToken).ConfigureAwait(false);
             }
         }
 
         /// <inheritdoc />
         public async Task<string> ReadTextFileAsync(
             string path,
-            CancellationToken cancellationToken = default)
-        {
-            var bytes = await ReadFileAsync(path, cancellationToken).ConfigureAwait(false);
+            CancellationToken cancellationToken = default) {
+            var bytes = await this.ReadFileAsync(path, cancellationToken).ConfigureAwait(false);
             return Encoding.UTF8.GetString(bytes);
         }
 
@@ -150,18 +132,16 @@ namespace Belay.Sync
         public async Task WriteFileAsync(
             string path,
             byte[] content,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            _logger.LogDebug("Writing file: {Path} ({Size} bytes)", normalizedPath, content.Length);
+            this.logger.LogDebug("Writing file: {Path} ({Size} bytes)", normalizedPath, content.Length);
 
             if (content.Length <= 4096) // 4KB threshold for direct write
             {
-                await WriteFileDirectAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
+                await this.WriteFileDirectAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
             }
-            else
-            {
-                await WriteFileChunkedAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
+            else {
+                await this.WriteFileChunkedAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -169,19 +149,17 @@ namespace Belay.Sync
         public async Task WriteTextFileAsync(
             string path,
             string content,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             var bytes = Encoding.UTF8.GetBytes(content);
-            await WriteFileAsync(path, bytes, cancellationToken).ConfigureAwait(false);
+            await this.WriteFileAsync(path, bytes, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
         public async Task DeleteFileAsync(
             string path,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            _logger.LogDebug("Deleting file: {Path}", normalizedPath);
+            this.logger.LogDebug("Deleting file: {Path}", normalizedPath);
 
             var code = $"""
                 import os
@@ -195,18 +173,18 @@ namespace Belay.Sync
                         print(f"error: {{e}}")
                 """;
 
-            try
-            {
-                var result = await _device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+            try {
+                var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 var trimmed = result.Trim();
-                
-                if (trimmed == "not_found")
+
+                if (trimmed == "not_found") {
                     throw new FileNotFoundException($"File not found: {normalizedPath}");
-                else if (trimmed.StartsWith("error:"))
+                }
+                else if (trimmed.StartsWith("error:")) {
                     throw new IOException($"Failed to delete file {normalizedPath}: {trimmed[6..]}");
+                }
             }
-            catch (DeviceExecutionException ex) when (!ex.Message.Contains("not_found"))
-            {
+            catch (DeviceExecutionException ex) when (!ex.Message.Contains("not_found")) {
                 throw new IOException($"Failed to delete file {normalizedPath}", ex);
             }
         }
@@ -215,10 +193,9 @@ namespace Belay.Sync
         public async Task CreateDirectoryAsync(
             string path,
             bool recursive = false,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            _logger.LogDebug("Creating directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
+            this.logger.LogDebug("Creating directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
 
             var code = recursive
                 ? $"""
@@ -247,16 +224,15 @@ namespace Belay.Sync
                             print(f"error: {{e}}")
                     """;
 
-            try
-            {
-                var result = await _device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+            try {
+                var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 var trimmed = result.Trim();
-                
-                if (trimmed.StartsWith("error:"))
+
+                if (trimmed.StartsWith("error:")) {
                     throw new IOException($"Failed to create directory {normalizedPath}: {trimmed[6..]}");
+                }
             }
-            catch (DeviceExecutionException ex)
-            {
+            catch (DeviceExecutionException ex) {
                 throw new IOException($"Failed to create directory {normalizedPath}", ex);
             }
         }
@@ -265,10 +241,9 @@ namespace Belay.Sync
         public async Task DeleteDirectoryAsync(
             string path,
             bool recursive = false,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            _logger.LogDebug("Deleting directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
+            this.logger.LogDebug("Deleting directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
 
             var code = recursive
                 ? $"""
@@ -305,20 +280,21 @@ namespace Belay.Sync
                             print(f"error: {{e}}")
                     """;
 
-            try
-            {
-                var result = await _device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+            try {
+                var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 var trimmed = result.Trim();
-                
-                if (trimmed == "not_found")
+
+                if (trimmed == "not_found") {
                     throw new DirectoryNotFoundException($"Directory not found: {normalizedPath}");
-                else if (trimmed == "not_empty")
+                }
+                else if (trimmed == "not_empty") {
                     throw new IOException($"Directory not empty: {normalizedPath}");
-                else if (trimmed.StartsWith("error:"))
+                }
+                else if (trimmed.StartsWith("error:")) {
                     throw new IOException($"Failed to delete directory {normalizedPath}: {trimmed[6..]}");
+                }
             }
-            catch (DeviceExecutionException ex)
-            {
+            catch (DeviceExecutionException ex) {
                 throw new IOException($"Failed to delete directory {normalizedPath}", ex);
             }
         }
@@ -326,9 +302,8 @@ namespace Belay.Sync
         /// <inheritdoc />
         public async Task<bool> ExistsAsync(
             string path,
-            CancellationToken cancellationToken = default)
-        {
-            var fileInfo = await GetFileInfoAsync(path, cancellationToken).ConfigureAwait(false);
+            CancellationToken cancellationToken = default) {
+            var fileInfo = await this.GetFileInfoAsync(path, cancellationToken).ConfigureAwait(false);
             return fileInfo != null;
         }
 
@@ -336,30 +311,27 @@ namespace Belay.Sync
         public async Task<string> CalculateChecksumAsync(
             string path,
             string algorithm = "md5",
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            _logger.LogDebug("Calculating {Algorithm} checksum for: {Path}", algorithm, normalizedPath);
+            this.logger.LogDebug("Calculating {Algorithm} checksum for: {Path}", algorithm, normalizedPath);
 
             // Read the file content and calculate checksum on the host side
             // This is more reliable than trying to implement hash algorithms on the device
-            var content = await ReadFileAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
+            var content = await this.ReadFileAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
 
-            using var hashAlgorithm = algorithm.ToLowerInvariant() switch
-            {
+            using var hashAlgorithm = algorithm.ToLowerInvariant() switch {
                 "md5" => MD5.Create(),
                 "sha1" => SHA1.Create(),
                 "sha256" => SHA256.Create(),
                 "sha512" => SHA512.Create(),
-                _ => throw new NotSupportedException($"Checksum algorithm not supported: {algorithm}")
+                _ => throw new NotSupportedException($"Checksum algorithm not supported: {algorithm}"),
             };
 
             var hash = hashAlgorithm.ComputeHash(content);
-            return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+            return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
         }
 
-        private static string GenerateListCode(string path)
-        {
+        private static string GenerateListCode(string path) {
             return $"""
                 import os
                 import json
@@ -381,8 +353,7 @@ namespace Belay.Sync
                 """;
         }
 
-        private static string GenerateRecursiveListCode(string path)
-        {
+        private static string GenerateRecursiveListCode(string path) {
             return $"""
                 import os
                 import json
@@ -409,8 +380,7 @@ namespace Belay.Sync
                 """;
         }
 
-        private async Task<byte[]> ReadFileDirectAsync(string path, CancellationToken cancellationToken)
-        {
+        private async Task<byte[]> ReadFileDirectAsync(string path, CancellationToken cancellationToken) {
             var code = $"""
                 import binascii
                 try:
@@ -424,25 +394,25 @@ namespace Belay.Sync
                         print(f"error: {{e}}")
                 """;
 
-            var result = await _device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+            var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
             var trimmed = result.Trim();
-            
-            if (trimmed == "not_found")
+
+            if (trimmed == "not_found") {
                 throw new FileNotFoundException($"File not found: {path}");
-            else if (trimmed.StartsWith("error:"))
+            }
+            else if (trimmed.StartsWith("error:")) {
                 throw new IOException($"Failed to read file {path}: {trimmed[6..]}");
+            }
 
             return Convert.FromHexString(trimmed);
         }
 
-        private async Task<byte[]> ReadFileChunkedAsync(string path, long fileSize, CancellationToken cancellationToken)
-        {
+        private async Task<byte[]> ReadFileChunkedAsync(string path, long fileSize, CancellationToken cancellationToken) {
             const int chunkSize = 4096; // 4KB chunks
             var result = new byte[fileSize];
             var offset = 0;
 
-            while (offset < fileSize)
-            {
+            while (offset < fileSize) {
                 var currentChunkSize = Math.Min(chunkSize, (int)(fileSize - offset));
                 var code = $"""
                     import binascii
@@ -455,11 +425,12 @@ namespace Belay.Sync
                         print(f"error: {{e}}")
                     """;
 
-                var chunkResult = await _device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+                var chunkResult = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 var trimmed = chunkResult.Trim();
-                
-                if (trimmed.StartsWith("error:"))
+
+                if (trimmed.StartsWith("error:")) {
                     throw new IOException($"Failed to read file chunk from {path}: {trimmed[6..]}");
+                }
 
                 var chunkData = Convert.FromHexString(trimmed);
                 chunkData.CopyTo(result, offset);
@@ -469,8 +440,7 @@ namespace Belay.Sync
             return result;
         }
 
-        private async Task WriteFileDirectAsync(string path, byte[] content, CancellationToken cancellationToken)
-        {
+        private async Task WriteFileDirectAsync(string path, byte[] content, CancellationToken cancellationToken) {
             var hexData = Convert.ToHexString(content);
             var code = $"""
                 import binascii
@@ -483,17 +453,17 @@ namespace Belay.Sync
                     print(f"error: {{e}}")
                 """;
 
-            var result = await _device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+            var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
             var trimmed = result.Trim();
-            
-            if (trimmed.StartsWith("error:"))
+
+            if (trimmed.StartsWith("error:")) {
                 throw new IOException($"Failed to write file {path}: {trimmed[6..]}");
+            }
         }
 
-        private async Task WriteFileChunkedAsync(string path, byte[] content, CancellationToken cancellationToken)
-        {
+        private async Task WriteFileChunkedAsync(string path, byte[] content, CancellationToken cancellationToken) {
             const int chunkSize = 4096; // 4KB chunks
-            
+
             // First, create/truncate the file
             var initCode = $"""
                 try:
@@ -504,13 +474,13 @@ namespace Belay.Sync
                     print(f"error: {{e}}")
                 """;
 
-            var initResult = await _device.ExecuteAsync<string>(initCode, cancellationToken).ConfigureAwait(false);
-            if (initResult.Trim().StartsWith("error:"))
+            var initResult = await this.device.ExecuteAsync<string>(initCode, cancellationToken).ConfigureAwait(false);
+            if (initResult.Trim().StartsWith("error:")) {
                 throw new IOException($"Failed to initialize file {path}: {initResult.Trim()[6..]}");
+            }
 
             // Write chunks
-            for (int offset = 0; offset < content.Length; offset += chunkSize)
-            {
+            for (int offset = 0; offset < content.Length; offset += chunkSize) {
                 var currentChunkSize = Math.Min(chunkSize, content.Length - offset);
                 var chunk = new byte[currentChunkSize];
                 Array.Copy(content, offset, chunk, 0, currentChunkSize);
@@ -527,77 +497,71 @@ namespace Belay.Sync
                         print(f"error: {{e}}")
                     """;
 
-                var chunkResult = await _device.ExecuteAsync<string>(chunkCode, cancellationToken).ConfigureAwait(false);
+                var chunkResult = await this.device.ExecuteAsync<string>(chunkCode, cancellationToken).ConfigureAwait(false);
                 var trimmed = chunkResult.Trim();
-                
-                if (trimmed.StartsWith("error:"))
+
+                if (trimmed.StartsWith("error:")) {
                     throw new IOException($"Failed to write chunk to file {path}: {trimmed[6..]}");
+                }
             }
         }
 
-        private static List<DeviceFileInfo> ParseListResult(string jsonResult)
-        {
-            try
-            {
+        private static List<DeviceFileInfo> ParseListResult(string jsonResult) {
+            try {
                 var entries = JsonSerializer.Deserialize<JsonElement[]>(jsonResult.Trim());
                 var result = new List<DeviceFileInfo>();
 
-                foreach (var entry in entries)
-                {
-                    var path = entry.GetProperty("path").GetString() ?? "";
+                foreach (var entry in entries) {
+                    var path = entry.GetProperty("path").GetString() ?? string.Empty;
                     var isDirectory = entry.GetProperty("is_directory").GetBoolean();
-                    
+
                     long? size = null;
-                    if (entry.TryGetProperty("size", out var sizeElement) && sizeElement.ValueKind == JsonValueKind.Number)
+                    if (entry.TryGetProperty("size", out var sizeElement) && sizeElement.ValueKind == JsonValueKind.Number) {
                         size = sizeElement.GetInt64();
+                    }
 
                     DateTime? modified = null;
-                    if (entry.TryGetProperty("modified", out var modifiedElement) && modifiedElement.ValueKind == JsonValueKind.Number)
-                    {
+                    if (entry.TryGetProperty("modified", out var modifiedElement) && modifiedElement.ValueKind == JsonValueKind.Number) {
                         var timestamp = modifiedElement.GetInt64();
                         modified = DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
                     }
 
-                    result.Add(new DeviceFileInfo
-                    {
+                    result.Add(new DeviceFileInfo {
                         Path = path,
                         IsDirectory = isDirectory,
                         Size = size,
-                        LastModified = modified
+                        LastModified = modified,
                     });
                 }
 
                 return result;
             }
-            catch (JsonException)
-            {
+            catch (JsonException) {
                 return new List<DeviceFileInfo>();
             }
         }
 
-        private static DeviceFileInfo ParseFileInfo(string jsonResult)
-        {
+        private static DeviceFileInfo ParseFileInfo(string jsonResult) {
             var entry = JsonSerializer.Deserialize<JsonElement>(jsonResult.Trim());
-            var path = entry.GetProperty("path").GetString() ?? "";
+            var path = entry.GetProperty("path").GetString() ?? string.Empty;
             var isDirectory = entry.GetProperty("is_directory").GetBoolean();
-            
+
             long? size = null;
-            if (entry.TryGetProperty("size", out var sizeElement) && sizeElement.ValueKind == JsonValueKind.Number)
+            if (entry.TryGetProperty("size", out var sizeElement) && sizeElement.ValueKind == JsonValueKind.Number) {
                 size = sizeElement.GetInt64();
+            }
 
             DateTime? modified = null;
-            if (entry.TryGetProperty("modified", out var modifiedElement) && modifiedElement.ValueKind == JsonValueKind.Number)
-            {
+            if (entry.TryGetProperty("modified", out var modifiedElement) && modifiedElement.ValueKind == JsonValueKind.Number) {
                 var timestamp = modifiedElement.GetInt64();
                 modified = DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
             }
 
-            return new DeviceFileInfo
-            {
+            return new DeviceFileInfo {
                 Path = path,
                 IsDirectory = isDirectory,
                 Size = size,
-                LastModified = modified
+                LastModified = modified,
             };
         }
     }

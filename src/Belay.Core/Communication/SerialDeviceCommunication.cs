@@ -12,8 +12,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Serial/USB implementation of device communication for MicroPython devices.
 /// </summary>
-public class SerialDeviceCommunication : IDeviceCommunication
-{
+public class SerialDeviceCommunication : IDeviceCommunication {
     private readonly SerialPort serialPort;
     private RawReplProtocol? replProtocol;
     private readonly SemaphoreSlim executionSemaphore;
@@ -28,10 +27,8 @@ public class SerialDeviceCommunication : IDeviceCommunication
 
     /// <inheritdoc/>
     public SerialDeviceCommunication(string portName, int baudRate = 115200,
-        int timeout = DefaultTimeout, ILogger<SerialDeviceCommunication>? logger = null)
-        {
-        if (string.IsNullOrWhiteSpace(portName))
-        {
+        int timeout = DefaultTimeout, ILogger<SerialDeviceCommunication>? logger = null) {
+        if (string.IsNullOrWhiteSpace(portName)) {
             throw new ArgumentException("Port name cannot be null or empty", nameof(portName));
         }
 
@@ -41,8 +38,7 @@ public class SerialDeviceCommunication : IDeviceCommunication
         this.commandHistory =[];
         this.reconnectionPolicy = new ReconnectionPolicy();
 
-        this.serialPort = new SerialPort(portName, baudRate)
-        {
+        this.serialPort = new SerialPort(portName, baudRate) {
             Parity = Parity.None,
             DataBits = 8,
             StopBits = StopBits.One,
@@ -53,7 +49,6 @@ public class SerialDeviceCommunication : IDeviceCommunication
         };
 
         // RawReplProtocol will be created when the port is opened
-
         this.State = DeviceConnectionState.Disconnected;
     }
 
@@ -76,22 +71,18 @@ public class SerialDeviceCommunication : IDeviceCommunication
     /// Connect to the device.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public virtual async Task ConnectAsync(CancellationToken cancellationToken = default)
-    {
-        if (this.disposed)
-        {
+    public virtual async Task ConnectAsync(CancellationToken cancellationToken = default) {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(SerialDeviceCommunication));
         }
 
-        if (this.State == DeviceConnectionState.Connected)
-        {
+        if (this.State == DeviceConnectionState.Connected) {
             return;
         }
 
         this.SetState(DeviceConnectionState.Connecting, "Initiating connection");
 
-        try
-        {
+        try {
             this.logger.LogDebug(
                 "Opening serial port {PortName} at {BaudRate} baud",
                 this.serialPort.PortName, this.serialPort.BaudRate);
@@ -113,18 +104,15 @@ public class SerialDeviceCommunication : IDeviceCommunication
             this.SetState(DeviceConnectionState.Connected, "Successfully connected");
             this.logger.LogInformation("Successfully connected to device on {PortName}", this.serialPort.PortName);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             this.SetState(DeviceConnectionState.Error, $"Connection failed: {ex.Message}", ex);
             this.logger.LogError(ex, "Failed to connect to device on {PortName}", this.serialPort.PortName);
 
-            if (this.serialPort.IsOpen)
-            {
+            if (this.serialPort.IsOpen) {
                 this.serialPort.Close();
             }
 
-            throw new DeviceConnectionException($"Failed to connect to device on {this.serialPort.PortName}", ex)
-            {
+            throw new DeviceConnectionException($"Failed to connect to device on {this.serialPort.PortName}", ex) {
                 PortName = this.serialPort.PortName,
             };
         }
@@ -134,29 +122,24 @@ public class SerialDeviceCommunication : IDeviceCommunication
     /// Disconnect from the device.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public virtual async Task DisconnectAsync(CancellationToken cancellationToken = default)
-    {
-        if (this.State == DeviceConnectionState.Disconnected)
-        {
+    public virtual async Task DisconnectAsync(CancellationToken cancellationToken = default) {
+        if (this.State == DeviceConnectionState.Disconnected) {
             return;
         }
 
         this.SetState(DeviceConnectionState.Disconnected, "Disconnecting");
 
-        try
-        {
-            if (this.serialPort.IsOpen)
-            {
+        try {
+            if (this.serialPort.IsOpen) {
                 // Try to exit raw mode gracefully
-                if (this.replProtocol != null)
-                {
+                if (this.replProtocol != null) {
                     await this.replProtocol.ExitRawModeAsync(cancellationToken);
                 }
+
                 this.serialPort.Close();
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             this.logger.LogWarning(ex, "Error during graceful disconnect");
         }
 
@@ -167,49 +150,40 @@ public class SerialDeviceCommunication : IDeviceCommunication
     /// Execute Python code on the device and return the result as a string.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task<string> ExecuteAsync(string code, CancellationToken cancellationToken = default)
-    {
-        if (this.disposed)
-        {
+    public async Task<string> ExecuteAsync(string code, CancellationToken cancellationToken = default) {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(SerialDeviceCommunication));
         }
 
-        if (string.IsNullOrWhiteSpace(code))
-        {
+        if (string.IsNullOrWhiteSpace(code)) {
             throw new ArgumentException("Code cannot be null or empty", nameof(code));
         }
 
         await this.EnsureConnectedAsync(cancellationToken);
         await this.executionSemaphore.WaitAsync(cancellationToken);
 
-        try
-        {
+        try {
             this.SetState(DeviceConnectionState.Executing, "Executing code");
 
             // Record command for potential replay
             this.RecordCommand(code);
 
             // Execute via raw REPL protocol
-            if (this.replProtocol == null)
-            {
+            if (this.replProtocol == null) {
                 throw new InvalidOperationException("Device not connected. Call ConnectAsync() first.");
             }
 
             RawReplResponse response = await this.replProtocol.ExecuteCodeAsync(code, useRawPasteMode: true, cancellationToken);
 
-            if (!response.IsSuccess)
-            {
-                var exception = new DeviceExecutionException("Code execution failed on device")
-                {
+            if (!response.IsSuccess) {
+                var exception = new DeviceExecutionException("Code execution failed on device") {
                     DeviceOutput = response.ErrorOutput,
                     ExecutedCode = code,
                     DeviceTraceback = response.ErrorOutput,
                 };
 
-                if (response.Exception != null)
-                {
-                    exception = new DeviceExecutionException("Code execution failed on device", response.Exception)
-                    {
+                if (response.Exception != null) {
+                    exception = new DeviceExecutionException("Code execution failed on device", response.Exception) {
                         DeviceOutput = response.ErrorOutput,
                         ExecutedCode = code,
                         DeviceTraceback = response.ErrorOutput,
@@ -220,21 +194,18 @@ public class SerialDeviceCommunication : IDeviceCommunication
             }
 
             // Forward any output to event handlers
-            if (!string.IsNullOrEmpty(response.Output))
-            {
+            if (!string.IsNullOrEmpty(response.Output)) {
                 this.OutputReceived?.Invoke(this, new DeviceOutputEventArgs(response.Output));
             }
 
             this.SetState(DeviceConnectionState.Connected, "Execution completed");
             return response.Result;
         }
-        catch (Exception ex) when (IsConnectionError(ex))
-        {
+        catch (Exception ex) when (IsConnectionError(ex)) {
             _ = Task.Run(() => this.HandleConnectionLostAsync(ex), cancellationToken);
             throw;
         }
-        finally
-        {
+        finally {
             this.executionSemaphore.Release();
         }
     }
@@ -243,42 +214,34 @@ public class SerialDeviceCommunication : IDeviceCommunication
     /// Execute Python code on the device and return the result as typed object.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task<T> ExecuteAsync<T>(string code, CancellationToken cancellationToken = default)
-    {
+    public async Task<T> ExecuteAsync<T>(string code, CancellationToken cancellationToken = default) {
         string result = await this.ExecuteAsync(code, cancellationToken);
 
-        if (string.IsNullOrWhiteSpace(result))
-        {
-            if (typeof(T) == typeof(string))
-            {
+        if (string.IsNullOrWhiteSpace(result)) {
+            if (typeof(T) == typeof(string)) {
                 return (T)(object)string.Empty;
             }
 
-            if (Nullable.GetUnderlyingType(typeof(T)) != null)
-            {
+            if (Nullable.GetUnderlyingType(typeof(T)) != null) {
                 return default!;
             }
 
             throw new InvalidOperationException($"Cannot convert empty result to {typeof(T).Name}");
         }
 
-        try
-        {
+        try {
             // Try JSON deserialization first for complex types
-            if (typeof(T) != typeof(string) && (result.StartsWith('{') || result.StartsWith('[')))
-            {
+            if (typeof(T) != typeof(string) && (result.StartsWith('{') || result.StartsWith('['))) {
                 return JsonSerializer.Deserialize<T>(result)!;
             }
 
             // Fallback to simple type conversion for basic types
             return (T)Convert.ChangeType(result.Trim(), typeof(T))!;
         }
-        catch (JsonException ex)
-        {
+        catch (JsonException ex) {
             throw new InvalidOperationException($"Failed to deserialize result '{result}' to type {typeof(T).Name}", ex);
         }
-        catch (InvalidCastException ex)
-        {
+        catch (InvalidCastException ex) {
             throw new InvalidOperationException($"Failed to convert result '{result}' to type {typeof(T).Name}", ex);
         }
     }
@@ -287,20 +250,16 @@ public class SerialDeviceCommunication : IDeviceCommunication
     /// Transfer a file from local system to device.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task PutFileAsync(string localPath, string remotePath, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(localPath))
-        {
+    public async Task PutFileAsync(string localPath, string remotePath, CancellationToken cancellationToken = default) {
+        if (string.IsNullOrWhiteSpace(localPath)) {
             throw new ArgumentException("Local path cannot be null or empty", nameof(localPath));
         }
 
-        if (string.IsNullOrWhiteSpace(remotePath))
-        {
+        if (string.IsNullOrWhiteSpace(remotePath)) {
             throw new ArgumentException("Remote path cannot be null or empty", nameof(remotePath));
         }
 
-        if (!File.Exists(localPath))
-        {
+        if (!File.Exists(localPath)) {
             throw new FileNotFoundException($"Local file not found: {localPath}");
         }
 
@@ -321,10 +280,8 @@ with open('{remotePath}', 'wb') as f:
     /// Retrieve a file from device to local system.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task<byte[]> GetFileAsync(string remotePath, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(remotePath))
-        {
+    public async Task<byte[]> GetFileAsync(string remotePath, CancellationToken cancellationToken = default) {
+        if (string.IsNullOrWhiteSpace(remotePath)) {
             throw new ArgumentException("Remote path cannot be null or empty", nameof(remotePath));
         }
 
@@ -339,31 +296,25 @@ except OSError:
 
         string result = await this.ExecuteAsync(code, cancellationToken);
 
-        if (result.Trim() == "FILE_NOT_FOUND")
-        {
+        if (result.Trim() == "FILE_NOT_FOUND") {
             throw new FileNotFoundException($"Remote file not found: {remotePath}");
         }
 
-        try
-        {
+        try {
             return Convert.FromBase64String(result.Trim());
         }
-        catch (FormatException ex)
-        {
+        catch (FormatException ex) {
             throw new InvalidOperationException($"Failed to decode file content from device: {remotePath}", ex);
         }
     }
 
-    private async Task EnsureConnectedAsync(CancellationToken cancellationToken)
-    {
-        if (this.State != DeviceConnectionState.Connected)
-        {
+    private async Task EnsureConnectedAsync(CancellationToken cancellationToken) {
+        if (this.State != DeviceConnectionState.Connected) {
             await this.ConnectAsync(cancellationToken);
         }
     }
 
-    private async Task WaitForDeviceReadyAsync(CancellationToken cancellationToken)
-    {
+    private async Task WaitForDeviceReadyAsync(CancellationToken cancellationToken) {
         this.logger.LogDebug("Waiting for device to be ready");
 
         // Send interrupt (Ctrl-C) to get to clean state
@@ -381,35 +332,29 @@ except OSError:
         this.logger.LogDebug("Device ready");
     }
 
-    private async Task SendControlCharacterAsync(byte controlChar, CancellationToken cancellationToken)
-    {
+    private async Task SendControlCharacterAsync(byte controlChar, CancellationToken cancellationToken) {
         byte[] buffer =[controlChar];
         await this.serialPort.BaseStream.WriteAsync(buffer, cancellationToken);
         await this.serialPort.BaseStream.FlushAsync(cancellationToken);
     }
 
-    private void RecordCommand(string code)
-    {
-        if (this.commandHistory.Count >= MaxCommandHistoryLength)
-        {
+    private void RecordCommand(string code) {
+        if (this.commandHistory.Count >= MaxCommandHistoryLength) {
             this.commandHistory.RemoveAt(0);
         }
 
         this.commandHistory.Add(code);
     }
 
-    private static bool IsConnectionError(Exception ex)
-    {
+    private static bool IsConnectionError(Exception ex) {
         return ex is InvalidOperationException ||
                ex is IOException ||
                ex is TimeoutException ||
                ex is UnauthorizedAccessException;
     }
 
-    private async Task HandleConnectionLostAsync(Exception ex)
-    {
-        if (!this.reconnectionPolicy.EnableAutoReconnect)
-        {
+    private async Task HandleConnectionLostAsync(Exception ex) {
+        if (!this.reconnectionPolicy.EnableAutoReconnect) {
             this.SetState(DeviceConnectionState.Error, "Connection lost", ex);
             return;
         }
@@ -417,15 +362,12 @@ except OSError:
         this.SetState(DeviceConnectionState.Reconnecting, "Attempting to reconnect");
         this.logger.LogWarning(ex, "Connection lost, attempting to reconnect");
 
-        for (int attempt = 1; attempt <= this.reconnectionPolicy.MaxReconnectAttempts; attempt++)
-        {
-            try
-            {
+        for (int attempt = 1; attempt <= this.reconnectionPolicy.MaxReconnectAttempts; attempt++) {
+            try {
                 await Task.Delay(this.CalculateReconnectDelay(attempt), this.cancellationTokenSource.Token);
 
                 // Close existing connection
-                if (this.serialPort.IsOpen)
-                {
+                if (this.serialPort.IsOpen) {
                     this.serialPort.Close();
                 }
 
@@ -438,12 +380,10 @@ except OSError:
                 this.logger.LogInformation("Successfully reconnected after {Attempts} attempts", attempt);
                 return; // Success
             }
-            catch (Exception reconnectEx)
-            {
+            catch (Exception reconnectEx) {
                 this.logger.LogWarning(reconnectEx, "Reconnection attempt {Attempt} failed", attempt);
 
-                if (attempt == this.reconnectionPolicy.MaxReconnectAttempts)
-                {
+                if (attempt == this.reconnectionPolicy.MaxReconnectAttempts) {
                     this.SetState(DeviceConnectionState.Error, "All reconnection attempts failed", reconnectEx);
                     throw new DeviceConnectionException("Device reconnection failed after maximum attempts", reconnectEx);
                 }
@@ -451,10 +391,8 @@ except OSError:
         }
     }
 
-    private TimeSpan CalculateReconnectDelay(int attempt)
-    {
-        if (!this.reconnectionPolicy.ExponentialBackoff)
-        {
+    private TimeSpan CalculateReconnectDelay(int attempt) {
+        if (!this.reconnectionPolicy.ExponentialBackoff) {
             return this.reconnectionPolicy.ReconnectDelay;
         }
 
@@ -465,21 +403,16 @@ except OSError:
         return TimeSpan.FromMilliseconds(maxDelay);
     }
 
-    private async Task ReplayCommandHistoryAsync(CancellationToken cancellationToken)
-    {
+    private async Task ReplayCommandHistoryAsync(CancellationToken cancellationToken) {
         this.logger.LogDebug("Replaying {Count} commands for state reconstruction", this.commandHistory.Count);
 
-        foreach (string? command in this.commandHistory.ToList())
-        {
-            try
-            {
-                if (this.replProtocol != null)
-                {
+        foreach (string? command in this.commandHistory.ToList()) {
+            try {
+                if (this.replProtocol != null) {
                     await this.replProtocol.ExecuteCodeAsync(command, useRawPasteMode: true, cancellationToken);
                 }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 this.logger.LogWarning(ex, "Failed to replay command during reconnection: {Command}", command);
 
                 // Continue with other commands
@@ -487,8 +420,7 @@ except OSError:
         }
     }
 
-    private void SetState(DeviceConnectionState newState, string? reason = null, Exception? exception = null)
-    {
+    private void SetState(DeviceConnectionState newState, string? reason = null, Exception? exception = null) {
         DeviceConnectionState oldState = this.State;
         this.State = newState;
 
@@ -499,23 +431,17 @@ except OSError:
     }
 
     /// <inheritdoc/>
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!this.disposed)
-        {
-            if (disposing)
-            {
+    protected virtual void Dispose(bool disposing) {
+        if (!this.disposed) {
+            if (disposing) {
                 this.cancellationTokenSource.Cancel();
 
-                try
-                {
-                    if (this.serialPort.IsOpen)
-                    {
+                try {
+                    if (this.serialPort.IsOpen) {
                         this.serialPort.Close();
                     }
                 }
-                catch (Exception ex)
-                {
+                catch (Exception ex) {
                     this.logger.LogWarning(ex, "Error closing serial port during dispose");
                 }
 
@@ -530,8 +456,7 @@ except OSError:
     }
 
     /// <inheritdoc/>
-    public void Dispose()
-    {
+    public void Dispose() {
         this.Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
@@ -540,8 +465,7 @@ except OSError:
 /// <summary>
 /// Reconnection policy configuration for serial device communication.
 /// </summary>
-public class ReconnectionPolicy
-{
+public class ReconnectionPolicy {
     /// <summary>
     /// Gets or sets a value indicating whether enable automatic reconnection on connection loss.
     /// </summary>
@@ -566,18 +490,15 @@ public class ReconnectionPolicy
 /// <summary>
 /// Exception thrown when device connection fails.
 /// </summary>
-public class DeviceConnectionException : Exception
-{
+public class DeviceConnectionException : Exception {
     /// <inheritdoc/>
     public DeviceConnectionException(string message)
-        : base(message)
-        {
+        : base(message) {
     }
 
     /// <inheritdoc/>
     public DeviceConnectionException(string message, Exception innerException)
-        : base(message, innerException)
-        {
+        : base(message, innerException) {
     }
 
     /// <summary>
@@ -589,18 +510,15 @@ public class DeviceConnectionException : Exception
 /// <summary>
 /// Exception thrown when device code execution fails.
 /// </summary>
-public class DeviceExecutionException : Exception
-{
+public class DeviceExecutionException : Exception {
     /// <inheritdoc/>
     public DeviceExecutionException(string message)
-        : base(message)
-        {
+        : base(message) {
     }
 
     /// <inheritdoc/>
     public DeviceExecutionException(string message, Exception innerException)
-        : base(message, innerException)
-        {
+        : base(message, innerException) {
     }
 
     /// <summary>

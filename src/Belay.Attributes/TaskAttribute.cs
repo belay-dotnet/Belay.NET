@@ -1,5 +1,5 @@
-// Copyright 2025 Belay.NET Contributors
-// Licensed under the Apache License, Version 2.0
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
 
 namespace Belay.Attributes;
 
@@ -37,7 +37,7 @@ namespace Belay.Attributes;
 ///         return await ExecuteAsync&lt;float&gt;(@"
 ///             import machine
 ///             import time
-///             
+///
 ///             # Read from analog temperature sensor
 ///             adc = machine.ADC(machine.Pin(26))
 ///             reading = adc.read_u16()
@@ -78,18 +78,18 @@ namespace Belay.Attributes;
 ///             temp = read_temperature()
 ///             humidity = read_humidity()
 ///             pressure = read_pressure()
-///             
+///
 ///             # Return as JSON for automatic deserialization
 ///             json.dumps({
 ///                 'temperature': temp,
-///                 'humidity': humidity,  
+///                 'humidity': humidity,
 ///                 'pressure': pressure,
 ///                 'timestamp': time.ticks_ms()
 ///             })
 ///         ");
 ///     }
 /// }
-/// 
+///
 /// public class SensorReading
 /// {
 ///     public float Temperature { get; set; }
@@ -100,13 +100,11 @@ namespace Belay.Attributes;
 /// </code>
 /// </example>
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class TaskAttribute : Attribute
-{
+public sealed class TaskAttribute : Attribute {
     /// <summary>
     /// Initializes a new instance of the <see cref="TaskAttribute"/> class.
     /// </summary>
-    public TaskAttribute()
-    {
+    public TaskAttribute() {
     }
 
     /// <summary>
@@ -130,7 +128,7 @@ public sealed class TaskAttribute : Attribute
     public string? Name { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the method should be cached on the device.
+    /// Gets or sets a value indicating whether gets or sets whether the method should be cached on the device.
     /// When true, the method code is deployed once and reused for subsequent calls.
     /// When false, the code is sent for each invocation.
     /// </summary>
@@ -204,23 +202,23 @@ public sealed class TaskAttribute : Attribute
     /// }
     /// </code>
     /// </example>
-    public int? TimeoutMs 
-    { 
-        get => _timeoutMs;
-        set
-        {
-            if (value.HasValue && value.Value <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), 
+    public int? TimeoutMs {
+        get => this.timeoutMs;
+        set {
+            if (value.HasValue && value.Value <= 0) {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
                     "Timeout must be a positive value in milliseconds");
             }
-            _timeoutMs = value;
+
+            this.timeoutMs = value;
         }
     }
-    private int? _timeoutMs;
+
+    private int? timeoutMs;
 
     /// <summary>
-    /// Gets or sets whether this task method requires exclusive access to the device.
+    /// Gets or sets a value indicating whether gets or sets whether this task method requires exclusive access to the device.
     /// When true, ensures no other methods execute concurrently on the device.
     /// </summary>
     /// <value>
@@ -266,21 +264,24 @@ public sealed class TaskAttribute : Attribute
     /// Returns a string that represents the current <see cref="TaskAttribute"/>.
     /// </summary>
     /// <returns>A string that represents the current attribute configuration.</returns>
-    public override string ToString()
-    {
+    public override string ToString() {
         var parts = new List<string>();
-        
-        if (!string.IsNullOrEmpty(Name))
-            parts.Add($"Name={Name}");
-        
-        if (!Cache)
+
+        if (!string.IsNullOrEmpty(this.Name)) {
+            parts.Add($"Name={this.Name}");
+        }
+
+        if (!this.Cache) {
             parts.Add("Cache=false");
-        
-        if (TimeoutMs.HasValue)
-            parts.Add($"TimeoutMs={TimeoutMs}");
-        
-        if (Exclusive)
+        }
+
+        if (this.TimeoutMs.HasValue) {
+            parts.Add($"TimeoutMs={this.TimeoutMs}");
+        }
+
+        if (this.Exclusive) {
             parts.Add("Exclusive=true");
+        }
 
         return parts.Count > 0 ? $"[Task({string.Join(", ", parts)})]" : "[Task]";
     }

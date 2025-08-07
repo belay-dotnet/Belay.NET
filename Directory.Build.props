@@ -6,16 +6,16 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     
-    <!-- Code Quality Settings - Temporarily disabled for testing -->
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Code Quality Settings - Re-enabled -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
     <WarningsNotAsErrors>CS1591</WarningsNotAsErrors> <!-- Missing XML comment -->
     
-    <!-- Static Analysis Configuration - Temporarily disabled -->
-    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
-    <EnableNETAnalyzers>false</EnableNETAnalyzers>
-    <AnalysisLevel>none</AnalysisLevel>
-    <CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
+    <!-- Static Analysis Configuration - Re-enabled -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
     
     <!-- Common Metadata -->
     <Company>Belay.NET</Company>
@@ -26,7 +26,7 @@
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
-  <!-- Static Analysis Packages for all projects -->
+  <!-- Static Analysis Packages for all projects - Re-enabled -->
   <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(IsTestProject)' != 'true'">
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.435" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0" PrivateAssets="all" />

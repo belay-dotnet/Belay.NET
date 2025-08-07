@@ -1,28 +1,16 @@
-// Copyright 2025 Belay.NET Contributors
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+namespace Belay.Sync {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
 
-namespace Belay.Sync
-{
     /// <summary>
     /// Represents information about a file or directory on the device.
     /// </summary>
-    public sealed class DeviceFileInfo
-    {
+    public sealed class DeviceFileInfo {
         /// <summary>
         /// Gets the full path of the file or directory.
         /// </summary>
@@ -52,8 +40,7 @@ namespace Belay.Sync
     /// <summary>
     /// Provides an abstraction for file system operations on MicroPython/CircuitPython devices.
     /// </summary>
-    public interface IDeviceFileSystem
-    {
+    public interface IDeviceFileSystem {
         /// <summary>
         /// Lists the contents of a directory on the device.
         /// </summary>
@@ -110,6 +97,7 @@ namespace Belay.Sync
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <exception cref="UnauthorizedAccessException">Thrown when access is denied.</exception>
         /// <exception cref="IOException">Thrown when an I/O error occurs.</exception>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         Task WriteFileAsync(
             string path,
             byte[] content,
@@ -123,6 +111,7 @@ namespace Belay.Sync
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <exception cref="UnauthorizedAccessException">Thrown when access is denied.</exception>
         /// <exception cref="IOException">Thrown when an I/O error occurs.</exception>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         Task WriteTextFileAsync(
             string path,
             string content,
@@ -135,6 +124,7 @@ namespace Belay.Sync
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <exception cref="FileNotFoundException">Thrown when the file does not exist.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when access is denied.</exception>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         Task DeleteFileAsync(
             string path,
             CancellationToken cancellationToken = default);
@@ -147,6 +137,7 @@ namespace Belay.Sync
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <exception cref="UnauthorizedAccessException">Thrown when access is denied.</exception>
         /// <exception cref="IOException">Thrown when an I/O error occurs.</exception>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         Task CreateDirectoryAsync(
             string path,
             bool recursive = false,
@@ -161,6 +152,7 @@ namespace Belay.Sync
         /// <exception cref="DirectoryNotFoundException">Thrown when the directory does not exist.</exception>
         /// <exception cref="UnauthorizedAccessException">Thrown when access is denied.</exception>
         /// <exception cref="IOException">Thrown when the directory is not empty and recursive is false.</exception>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         Task DeleteDirectoryAsync(
             string path,
             bool recursive = false,

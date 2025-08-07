@@ -12,8 +12,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Information about a discovered MicroPython device.
 /// </summary>
-public class DeviceInfo
-{
+public class DeviceInfo {
     /// <summary>
     /// Gets serial port name (e.g., COM3, /dev/ttyUSB0).
     /// </summary>
@@ -65,13 +64,11 @@ public class DeviceInfo
 /// <summary>
 /// Discovery service for MicroPython devices connected via serial/USB.
 /// </summary>
-public class SerialDeviceDiscoveryLogger
-{
+public class SerialDeviceDiscoveryLogger {
 }
 
 /// <inheritdoc/>
-public static partial class SerialDeviceDiscovery
-{
+public static partial class SerialDeviceDiscovery {
     private static readonly ILogger Logger =
         Microsoft.Extensions.Logging.Abstractions.NullLogger<SerialDeviceDiscoveryLogger>.Instance;
 
@@ -82,8 +79,7 @@ public static partial class SerialDeviceDiscovery
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public static async Task<DeviceInfo[]> DiscoverMicroPythonDevicesAsync(
-        CancellationToken cancellationToken = default)
-        {
+        CancellationToken cancellationToken = default) {
         string[] availablePorts = SerialPort.GetPortNames();
         var devices = new List<DeviceInfo>();
         var probeTasks = new List<Task<DeviceInfo?>>();
@@ -91,8 +87,7 @@ public static partial class SerialDeviceDiscovery
         Logger.LogDebug("Discovering MicroPython devices on {Count} available ports", availablePorts.Length);
 
         // Probe all ports concurrently with timeout
-        foreach (string? port in availablePorts)
-        {
+        foreach (string? port in availablePorts) {
             probeTasks.Add(ProbeDeviceWithTimeoutAsync(port, cancellationToken));
         }
 
@@ -100,10 +95,8 @@ public static partial class SerialDeviceDiscovery
         DeviceInfo?[] results = await Task.WhenAll(probeTasks);
 
         // Collect successful identifications
-        foreach (DeviceInfo? result in results)
-        {
-            if (result != null)
-            {
+        foreach (DeviceInfo? result in results) {
+            if (result != null) {
                 devices.Add(result);
             }
         }
@@ -118,8 +111,7 @@ public static partial class SerialDeviceDiscovery
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public static async Task<DeviceInfo[]> DiscoverDevicesAsync(
         Func<DeviceInfo, bool> filter,
-        CancellationToken cancellationToken = default)
-        {
+        CancellationToken cancellationToken = default) {
         DeviceInfo[] allDevices = await DiscoverMicroPythonDevicesAsync(cancellationToken);
         return allDevices.Where(filter).ToArray();
     }
@@ -128,12 +120,10 @@ public static partial class SerialDeviceDiscovery
     /// Find the best MicroPython device automatically.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public static async Task<DeviceInfo?> FindBestDeviceAsync(CancellationToken cancellationToken = default)
-    {
+    public static async Task<DeviceInfo?> FindBestDeviceAsync(CancellationToken cancellationToken = default) {
         DeviceInfo[] devices = await DiscoverMicroPythonDevicesAsync(cancellationToken);
 
-        if (devices.Length == 0)
-        {
+        if (devices.Length == 0) {
             return null;
         }
 
@@ -150,10 +140,8 @@ public static partial class SerialDeviceDiscovery
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public static async Task<DeviceInfo?> ProbePortAsync(
         string portName,
-        CancellationToken cancellationToken = default)
-        {
-        if (string.IsNullOrWhiteSpace(portName))
-        {
+        CancellationToken cancellationToken = default) {
+        if (string.IsNullOrWhiteSpace(portName)) {
             throw new ArgumentException("Port name cannot be null or empty", nameof(portName));
         }
 
@@ -162,34 +150,28 @@ public static partial class SerialDeviceDiscovery
 
     private static async Task<DeviceInfo?> ProbeDeviceWithTimeoutAsync(
         string portName,
-        CancellationToken cancellationToken)
-        {
-        try
-        {
+        CancellationToken cancellationToken) {
+        try {
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeoutCts.CancelAfter(ProbeTimeout);
 
             return await ProbeDeviceAsync(portName, timeoutCts.Token);
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) {
             Logger.LogDebug("Probe timeout for port {PortName}", portName);
             return null;
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             Logger.LogDebug(ex, "Probe failed for port {PortName}", portName);
             return null;
         }
     }
 
-    private static async Task<DeviceInfo?> ProbeDeviceAsync(string portName, CancellationToken cancellationToken)
-    {
+    private static async Task<DeviceInfo?> ProbeDeviceAsync(string portName, CancellationToken cancellationToken) {
         Logger.LogDebug("Probing device on port {PortName}", portName);
 
         SerialDeviceCommunication? communication = null;
-        try
-        {
+        try {
             // Create communication with shorter timeout for probing
             communication = new SerialDeviceCommunication(portName, baudRate: 115200, timeout: 2000);
 
@@ -205,59 +187,48 @@ public static partial class SerialDeviceDiscovery
 
             return deviceInfo;
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             Logger.LogDebug(ex, "Failed to probe device on port {PortName}", portName);
             return null;
         }
-        finally
-        {
-            try
-            {
-                if (communication != null)
-                {
+        finally {
+            try {
+                if (communication != null) {
                     await communication.DisconnectAsync(cancellationToken);
                     communication.Dispose();
                 }
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 Logger.LogDebug(ex, "Error cleaning up probe connection for {PortName}", portName);
             }
         }
     }
 
     private static async Task<DeviceInfo> QueryDeviceInformationAsync(
-        SerialDeviceCommunication communication, string portName, CancellationToken cancellationToken)
-        {
+        SerialDeviceCommunication communication, string portName, CancellationToken cancellationToken) {
         var deviceInfo = new DeviceInfo { PortName = portName };
         double confidence = 0.1; // Base confidence for responding device
 
-        try
-        {
+        try {
             // Query implementation information
             string implInfo = await communication.ExecuteAsync(
                 "import sys; print(sys.implementation.name, sys.implementation.version, sys.platform)",
                 cancellationToken);
 
-            if (!string.IsNullOrWhiteSpace(implInfo))
-            {
+            if (!string.IsNullOrWhiteSpace(implInfo)) {
                 string[] parts = implInfo.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length >= 3)
-                {
+                if (parts.Length >= 3) {
                     string implementation = parts[0];
                     string versionStr = parts[1].Trim('(', ')');
                     string platform = parts[2];
 
                     // Parse version
                     Version? version = null;
-                    if (TryParseVersion(versionStr, out Version? parsedVersion))
-                    {
+                    if (TryParseVersion(versionStr, out Version? parsedVersion)) {
                         version = parsedVersion;
                     }
 
-                    deviceInfo = new DeviceInfo
-                    {
+                    deviceInfo = new DeviceInfo {
                         PortName = deviceInfo.PortName,
                         Implementation = implementation,
                         Version = version,
@@ -271,8 +242,7 @@ public static partial class SerialDeviceDiscovery
 
                     // Check if it's a known MicroPython implementation
                     if (implementation.Equals("micropython", StringComparison.OrdinalIgnoreCase) ||
-                        implementation.Equals("circuitpython", StringComparison.OrdinalIgnoreCase))
-                        {
+                        implementation.Equals("circuitpython", StringComparison.OrdinalIgnoreCase)) {
                         confidence += 0.2; // Bonus for recognized implementation
                     }
                 }
@@ -280,46 +250,38 @@ public static partial class SerialDeviceDiscovery
 
             // Test raw-paste mode support
             bool supportsRawPaste = false;
-            try
-            {
+            try {
                 // This is a simple test - a full implementation would test the actual protocol
                 await communication.ExecuteAsync("1+1", cancellationToken);
                 supportsRawPaste = true;
                 confidence += 0.1;
             }
-            catch
-            {
+            catch {
                 // Raw-paste mode test failed, but device still works
             }
 
             // Query additional capabilities
             var capabilities = new List<string>();
 
-            try
-            {
+            try {
                 string modules = await communication.ExecuteAsync("help('modules')", cancellationToken);
-                if (modules.Contains("machine"))
-                {
+                if (modules.Contains("machine")) {
                     capabilities.Add("machine");
                 }
 
-                if (modules.Contains("network"))
-                {
+                if (modules.Contains("network")) {
                     capabilities.Add("network");
                 }
 
-                if (modules.Contains("bluetooth"))
-                {
+                if (modules.Contains("bluetooth")) {
                     capabilities.Add("bluetooth");
                 }
             }
-            catch
-            {
+            catch {
                 // Capabilities query failed, continue anyway
             }
 
-            return new DeviceInfo
-            {
+            return new DeviceInfo {
                 PortName = deviceInfo.PortName,
                 Implementation = deviceInfo.Implementation,
                 Version = deviceInfo.Version,
@@ -329,13 +291,11 @@ public static partial class SerialDeviceDiscovery
                 IdentificationConfidence = Math.Min(confidence, 1.0),
             };
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             Logger.LogDebug(ex, "Error querying device information for {PortName}", portName);
 
             // Return minimal device info if basic queries fail
-            return new DeviceInfo
-            {
+            return new DeviceInfo {
                 PortName = deviceInfo.PortName,
                 Implementation = deviceInfo.Implementation,
                 Version = deviceInfo.Version,
@@ -347,19 +307,16 @@ public static partial class SerialDeviceDiscovery
         }
     }
 
-    private static bool TryParseVersion(string versionString, out Version version)
-    {
+    private static bool TryParseVersion(string versionString, out Version version) {
         version = new Version();
 
-        try
-        {
+        try {
             // Handle version strings like "(1, 20, 0)" or "1.20.0"
             string cleanVersion = versionString.Trim('(', ')').Replace(',', '.');
             var versionRegex = MyRegex();
             Match match = versionRegex.Match(cleanVersion);
 
-            if (match.Success)
-            {
+            if (match.Success) {
                 int major = int.Parse(match.Groups[1].Value);
                 int minor = int.Parse(match.Groups[2].Value);
                 int build = match.Groups[3].Success ? int.Parse(match.Groups[3].Value) : 0;
@@ -368,32 +325,27 @@ public static partial class SerialDeviceDiscovery
                 return true;
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             Logger.LogDebug(ex, "Failed to parse version string: {VersionString}", versionString);
         }
 
         return false;
     }
 
-    private static bool IsKnownDevice(string portName)
-    {
+    private static bool IsKnownDevice(string portName) {
         // Simple heuristic based on port name patterns
         // More sophisticated implementations could query USB device information
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             // Windows COM ports
             return portName.StartsWith("COM", StringComparison.OrdinalIgnoreCase);
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
             // Linux device patterns for common MicroPython devices
             return portName.StartsWith("/dev/ttyUSB") ||
                    portName.StartsWith("/dev/ttyACM") ||
                    portName.StartsWith("/dev/ttyS");
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
             // macOS device patterns
             return portName.StartsWith("/dev/cu.") ||
                    portName.StartsWith("/dev/tty.");
@@ -407,8 +359,7 @@ public static partial class SerialDeviceDiscovery
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public static async Task<DeviceInfo[]> FindMicroPythonDevicesAsync(
-        CancellationToken cancellationToken = default)
-        {
+        CancellationToken cancellationToken = default) {
         return await DiscoverDevicesAsync(
             d => d.Implementation?.Equals("micropython", StringComparison.OrdinalIgnoreCase) == true,
             cancellationToken);
@@ -419,8 +370,7 @@ public static partial class SerialDeviceDiscovery
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public static async Task<DeviceInfo[]> FindCircuitPythonDevicesAsync(
-        CancellationToken cancellationToken = default)
-        {
+        CancellationToken cancellationToken = default) {
         return await DiscoverDevicesAsync(
             d => d.Implementation?.Equals("circuitpython", StringComparison.OrdinalIgnoreCase) == true,
             cancellationToken);
@@ -431,8 +381,7 @@ public static partial class SerialDeviceDiscovery
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public static async Task<DeviceInfo[]> FindDevicesOnPlatformAsync(
-        string platform, CancellationToken cancellationToken = default)
-        {
+        string platform, CancellationToken cancellationToken = default) {
         return await DiscoverDevicesAsync(
             d => d.Platform?.Contains(platform, StringComparison.OrdinalIgnoreCase) == true,
             cancellationToken);

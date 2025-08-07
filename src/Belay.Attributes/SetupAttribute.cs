@@ -1,5 +1,5 @@
-// Copyright 2025 Belay.NET Contributors
-// Licensed under the Apache License, Version 2.0
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
 
 namespace Belay.Attributes;
 
@@ -36,15 +36,15 @@ namespace Belay.Attributes;
 ///         await ExecuteAsync(@"
 ///             import machine
 ///             import time
-///             
+///
 ///             # Configure temperature sensor
 ///             sensor_pin = machine.Pin(26)
 ///             temp_adc = machine.ADC(sensor_pin)
-///             
+///
 ///             # Set reference voltage
 ///             machine.ADC.ATTN_11DB = 3  # 3.3V range
 ///             temp_adc.atten(machine.ADC.ATTN_11DB)
-///             
+///
 ///             print('Temperature sensor initialized')
 ///         ");
 ///     }
@@ -59,7 +59,7 @@ namespace Belay.Attributes;
 ///     {
 ///         await ExecuteAsync(@"
 ///             import machine
-///             
+///
 ///             # Initialize motor pins
 ///             motor_left = machine.PWM(machine.Pin(12))
 ///             motor_right = machine.PWM(machine.Pin(13))
@@ -67,7 +67,7 @@ namespace Belay.Attributes;
 ///             motor_right.freq(1000)
 ///         ");
 ///     }
-/// 
+///
 ///     [Setup]
 ///     private async Task LoadCalibrationAsync()
 ///     {
@@ -85,7 +85,7 @@ namespace Belay.Attributes;
 /// </code>
 /// <para><strong>Setup with Error Handling</strong></para>
 /// <code>
-/// public class DisplayController : Device  
+/// public class DisplayController : Device
 /// {
 ///     [Setup]
 ///     private async Task InitializeDisplayAsync()
@@ -93,7 +93,7 @@ namespace Belay.Attributes;
 ///         await ExecuteAsync(@"
 ///             import machine
 ///             import ssd1306
-///             
+///
 ///             try:
 ///                 i2c = machine.I2C(0, scl=machine.Pin(22), sda=machine.Pin(21))
 ///                 display = ssd1306.SSD1306_I2C(128, 64, i2c)
@@ -110,13 +110,11 @@ namespace Belay.Attributes;
 /// </code>
 /// </example>
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class SetupAttribute : Attribute
-{
+public sealed class SetupAttribute : Attribute {
     /// <summary>
     /// Initializes a new instance of the <see cref="SetupAttribute"/> class.
     /// </summary>
-    public SetupAttribute()
-    {
+    public SetupAttribute() {
     }
 
     /// <summary>
@@ -145,14 +143,14 @@ public sealed class SetupAttribute : Attribute
     ///         // Initialize hardware first
     ///         await ExecuteAsync("setup_i2c_bus()");
     ///     }
-    /// 
+    ///
     ///     [Setup(Order = 2)]
     ///     private async Task ConfigureSensorsAsync()
     ///     {
     ///         // Configure sensors after hardware is ready
     ///         await ExecuteAsync("configure_all_sensors()");
     ///     }
-    /// 
+    ///
     ///     [Setup(Order = 3)]
     ///     private async Task StartDataCollectionAsync()
     ///     {
@@ -165,7 +163,7 @@ public sealed class SetupAttribute : Attribute
     public int Order { get; set; } = 0;
 
     /// <summary>
-    /// Gets or sets whether setup failure should be treated as a critical error.
+    /// Gets or sets a value indicating whether gets or sets whether setup failure should be treated as a critical error.
     /// When true, setup failure will cause device connection to fail completely.
     /// When false, setup failure will be logged but connection will proceed.
     /// </summary>
@@ -194,7 +192,7 @@ public sealed class SetupAttribute : Attribute
     ///         // Essential initialization - must succeed
     ///         await ExecuteAsync("initialize_core_systems()");
     ///     }
-    /// 
+    ///
     ///     [Setup(Critical = false)]
     ///     private async Task LoadOptionalConfig()
     ///     {
@@ -232,54 +230,56 @@ public sealed class SetupAttribute : Attribute
     ///     await ExecuteAsync(@"
     ///         import network
     ///         import time
-    ///         
+    ///
     ///         wifi = network.WLAN(network.STA_IF)
     ///         wifi.active(True)
     ///         wifi.connect('MyNetwork', 'password')
-    ///         
+    ///
     ///         # Wait for connection
     ///         timeout = 25  # Leave some buffer
     ///         while not wifi.isconnected() and timeout > 0:
     ///             time.sleep(1)
     ///             timeout -= 1
-    ///             
+    ///
     ///         if not wifi.isconnected():
     ///             raise Exception('WiFi connection failed')
     ///     ");
     /// }
     /// </code>
     /// </example>
-    public int? TimeoutMs
-    {
-        get => _timeoutMs;
-        set
-        {
-            if (value.HasValue && value.Value <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value),
+    public int? TimeoutMs {
+        get => this.timeoutMs;
+        set {
+            if (value.HasValue && value.Value <= 0) {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
                     "Timeout must be a positive value in milliseconds");
             }
-            _timeoutMs = value;
+
+            this.timeoutMs = value;
         }
     }
-    private int? _timeoutMs;
+
+    private int? timeoutMs;
 
     /// <summary>
     /// Returns a string that represents the current <see cref="SetupAttribute"/>.
     /// </summary>
     /// <returns>A string that represents the current attribute configuration.</returns>
-    public override string ToString()
-    {
+    public override string ToString() {
         var parts = new List<string>();
 
-        if (Order != 0)
-            parts.Add($"Order={Order}");
+        if (this.Order != 0) {
+            parts.Add($"Order={this.Order}");
+        }
 
-        if (!Critical)
+        if (!this.Critical) {
             parts.Add("Critical=false");
+        }
 
-        if (TimeoutMs.HasValue)
-            parts.Add($"TimeoutMs={TimeoutMs}");
+        if (this.TimeoutMs.HasValue) {
+            parts.Add($"TimeoutMs={this.TimeoutMs}");
+        }
 
         return parts.Count > 0 ? $"[Setup({string.Join(", ", parts)})]" : "[Setup]";
     }

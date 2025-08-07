@@ -1,5 +1,5 @@
-// Copyright 2025 Belay.NET Contributors
-// Licensed under the Apache License, Version 2.0
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
 
 namespace Belay.Attributes;
 
@@ -46,7 +46,7 @@ namespace Belay.Attributes;
 ///             motor_right.freq(1000)
 ///         ");
 ///     }
-/// 
+///
 ///     [Teardown]
 ///     private async Task StopMotorsAsync()
 ///     {
@@ -75,14 +75,14 @@ namespace Belay.Attributes;
 ///     {
 ///         await ExecuteAsync(@"
 ///             import json
-///             
+///
 ///             try:
 ///                 # Save any pending data before disconnect
 ///                 if 'pending_data' in globals() and pending_data:
 ///                     with open('data_backup.json', 'w') as f:
 ///                         json.dump(pending_data, f)
 ///                     print(f'Saved {len(pending_data)} pending records')
-///                 
+///
 ///                 # Update status file
 ///                 status = {
 ///                     'last_disconnect': time.time(),
@@ -90,7 +90,7 @@ namespace Belay.Attributes;
 ///                 }
 ///                 with open('status.json', 'w') as f:
 ///                     json.dump(status, f)
-///                     
+///
 ///             except Exception as e:
 ///                 print(f'Data save error: {e}')
 ///         ");
@@ -108,13 +108,13 @@ namespace Belay.Attributes;
 ///             # Stop background threads
 ///             monitoring_active = False
 ///             data_collection_active = False
-///             
+///
 ///             # Wait briefly for threads to notice
 ///             import time
 ///             time.sleep_ms(100)
 ///         ");
 ///     }
-/// 
+///
 ///     [Teardown(Order = 2)] // Execute second
 ///     private async Task SaveStateAsync()
 ///     {
@@ -124,7 +124,7 @@ namespace Belay.Attributes;
 ///             flush_data_buffers()
 ///         ");
 ///     }
-/// 
+///
 ///     [Teardown(Order = 3)] // Execute last
 ///     private async Task CleanupHardwareAsync()
 ///     {
@@ -151,13 +151,13 @@ namespace Belay.Attributes;
 ///                 lambda: save_critical_data(),
 ///                 lambda: disable_hardware()
 ///             ]
-///             
+///
 ///             for task in cleanup_tasks:
 ///                 try:
 ///                     task()
 ///                 except Exception as e:
 ///                     print(f'Cleanup task failed: {e}')
-///             
+///
 ///             print('Best-effort cleanup completed')
 ///         ");
 ///     }
@@ -165,13 +165,11 @@ namespace Belay.Attributes;
 /// </code>
 /// </example>
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class TeardownAttribute : Attribute
-{
+public sealed class TeardownAttribute : Attribute {
     /// <summary>
     /// Initializes a new instance of the <see cref="TeardownAttribute"/> class.
     /// </summary>
-    public TeardownAttribute()
-    {
+    public TeardownAttribute() {
     }
 
     /// <summary>
@@ -204,14 +202,14 @@ public sealed class TeardownAttribute : Attribute
     ///         // Stop data collection first
     ///         await ExecuteAsync("stop_all_sensors()");
     ///     }
-    /// 
+    ///
     ///     [Teardown(Order = 2)]
     ///     private async Task SaveDataAsync()
     ///     {
     ///         // Save collected data second
     ///         await ExecuteAsync("save_buffered_data()");
     ///     }
-    /// 
+    ///
     ///     [Teardown(Order = 3)]
     ///     private async Task PowerDownAsync()
     ///     {
@@ -224,7 +222,7 @@ public sealed class TeardownAttribute : Attribute
     public int Order { get; set; } = 0;
 
     /// <summary>
-    /// Gets or sets whether errors in this teardown method should be ignored.
+    /// Gets or sets a value indicating whether gets or sets whether errors in this teardown method should be ignored.
     /// When true, exceptions from this method will be logged but will not prevent
     /// other teardown methods from executing or the disconnection from proceeding.
     /// </summary>
@@ -253,7 +251,7 @@ public sealed class TeardownAttribute : Attribute
     ///     // Nice to have, but not critical if it fails
     ///     await ExecuteAsync("log_final_device_state()");
     /// }
-    /// 
+    ///
     /// [Teardown(IgnoreErrors = false)]
     /// private async Task EmergencyStopAsync()
     /// {
@@ -300,7 +298,7 @@ public sealed class TeardownAttribute : Attribute
     ///             print('Dataset saved successfully')
     ///     ");
     /// }
-    /// 
+    ///
     /// [Teardown] // Use default timeout for quick operations
     /// private async Task QuickCleanupAsync()
     /// {
@@ -308,23 +306,23 @@ public sealed class TeardownAttribute : Attribute
     /// }
     /// </code>
     /// </example>
-    public int? TimeoutMs
-    {
-        get => _timeoutMs;
-        set
-        {
-            if (value.HasValue && value.Value <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value),
+    public int? TimeoutMs {
+        get => this.timeoutMs;
+        set {
+            if (value.HasValue && value.Value <= 0) {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
                     "Timeout must be a positive value in milliseconds");
             }
-            _timeoutMs = value;
+
+            this.timeoutMs = value;
         }
     }
-    private int? _timeoutMs;
+
+    private int? timeoutMs;
 
     /// <summary>
-    /// Gets or sets whether this teardown method is critical and must execute
+    /// Gets or sets a value indicating whether gets or sets whether this teardown method is critical and must execute
     /// even in emergency disconnection scenarios.
     /// </summary>
     /// <value>
@@ -365,21 +363,24 @@ public sealed class TeardownAttribute : Attribute
     /// Returns a string that represents the current <see cref="TeardownAttribute"/>.
     /// </summary>
     /// <returns>A string that represents the current attribute configuration.</returns>
-    public override string ToString()
-    {
+    public override string ToString() {
         var parts = new List<string>();
 
-        if (Order != 0)
-            parts.Add($"Order={Order}");
+        if (this.Order != 0) {
+            parts.Add($"Order={this.Order}");
+        }
 
-        if (IgnoreErrors)
+        if (this.IgnoreErrors) {
             parts.Add("IgnoreErrors=true");
+        }
 
-        if (TimeoutMs.HasValue)
-            parts.Add($"TimeoutMs={TimeoutMs}");
+        if (this.TimeoutMs.HasValue) {
+            parts.Add($"TimeoutMs={this.TimeoutMs}");
+        }
 
-        if (Critical)
+        if (this.Critical) {
             parts.Add("Critical=true");
+        }
 
         return parts.Count > 0 ? $"[Teardown({string.Join(", ", parts)})]" : "[Teardown]";
     }

@@ -19,8 +19,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Belay.Tests.Integration.Hardware
-{
+namespace Belay.Tests.Integration.Hardware {
     /// <summary>
     /// ESP32 protocol validation tests.
     /// Validates raw REPL protocol compatibility with ESP32 devices.
@@ -28,23 +27,20 @@ namespace Belay.Tests.Integration.Hardware
     [Collection("Hardware")]
     [Trait("Category", "Hardware")]
     [Trait("Category", "ESP32")]
-    public class Esp32ProtocolValidationTests : IDisposable
-    {
+    public class Esp32ProtocolValidationTests : IDisposable {
         private readonly ITestOutputHelper _output;
         private SerialPort? _serialPort;
         private readonly string _devicePath;
 
-        public Esp32ProtocolValidationTests(ITestOutputHelper output)
-        {
+        public Esp32ProtocolValidationTests(ITestOutputHelper output) {
             _output = output;
             // Device path should be configurable via environment variable
-            _devicePath = Environment.GetEnvironmentVariable("ESP32_DEVICE_PATH") 
+            _devicePath = Environment.GetEnvironmentVariable("ESP32_DEVICE_PATH")
                 ?? "/dev/usb/tty-USB_JTAG_serial_debug_unit-40:4C:CA:5B:20:94";
         }
 
         [SkippableFact]
-        public async Task BasicPrintStatement_ShouldReturnExpectedOutput()
-        {
+        public async Task BasicPrintStatement_ShouldReturnExpectedOutput() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             using var port = OpenSerialPort();
@@ -58,7 +54,7 @@ namespace Belay.Tests.Integration.Hardware
             // Send print statement
             await WriteAsync(port, Encoding.ASCII.GetBytes("print('Hello ESP32')\x04"));
             await Task.Delay(500);
-            
+
             var response = await ReadAsync(port, 1000);
             _output.WriteLine($"Response: {BitConverter.ToString(response)}");
 
@@ -69,8 +65,7 @@ namespace Belay.Tests.Integration.Hardware
         }
 
         [SkippableFact]
-        public async Task MathOperation_ShouldComputeCorrectly()
-        {
+        public async Task MathOperation_ShouldComputeCorrectly() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             using var port = OpenSerialPort();
@@ -84,7 +79,7 @@ namespace Belay.Tests.Integration.Hardware
             // Send math operation
             await WriteAsync(port, Encoding.ASCII.GetBytes("print(25 + 17)\x04"));
             await Task.Delay(500);
-            
+
             var response = await ReadAsync(port, 1000);
             _output.WriteLine($"Response: {BitConverter.ToString(response)}");
 
@@ -95,8 +90,7 @@ namespace Belay.Tests.Integration.Hardware
         }
 
         [SkippableFact]
-        public async Task VariableOperations_ShouldWorkCorrectly()
-        {
+        public async Task VariableOperations_ShouldWorkCorrectly() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             using var port = OpenSerialPort();
@@ -110,7 +104,7 @@ namespace Belay.Tests.Integration.Hardware
             // Send variable operations
             await WriteAsync(port, Encoding.ASCII.GetBytes("x = 100; print(x * 2)\x04"));
             await Task.Delay(500);
-            
+
             var response = await ReadAsync(port, 1000);
             _output.WriteLine($"Response: {BitConverter.ToString(response)}");
 
@@ -121,8 +115,7 @@ namespace Belay.Tests.Integration.Hardware
         }
 
         [SkippableFact]
-        public async Task ErrorHandling_ShouldReturnExceptionDetails()
-        {
+        public async Task ErrorHandling_ShouldReturnExceptionDetails() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             using var port = OpenSerialPort();
@@ -136,7 +129,7 @@ namespace Belay.Tests.Integration.Hardware
             // Send code that causes error
             await WriteAsync(port, Encoding.ASCII.GetBytes("1 / 0\x04"));
             await Task.Delay(500);
-            
+
             var response = await ReadAsync(port, 1000);
             _output.WriteLine($"Response: {BitConverter.ToString(response)}");
 
@@ -147,8 +140,7 @@ namespace Belay.Tests.Integration.Hardware
         }
 
         [SkippableFact]
-        public async Task RecoveryAfterError_ShouldContinueNormally()
-        {
+        public async Task RecoveryAfterError_ShouldContinueNormally() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             using var port = OpenSerialPort();
@@ -171,7 +163,7 @@ namespace Belay.Tests.Integration.Hardware
 
             await WriteAsync(port, Encoding.ASCII.GetBytes("print('Recovered!')\x04"));
             await Task.Delay(500);
-            
+
             var response = await ReadAsync(port, 1000);
             _output.WriteLine($"Response: {BitConverter.ToString(response)}");
 
@@ -181,10 +173,8 @@ namespace Belay.Tests.Integration.Hardware
             Assert.Contains(Encoding.ASCII.GetBytes("Recovered!"), response);
         }
 
-        private SerialPort OpenSerialPort()
-        {
-            _serialPort = new SerialPort(_devicePath, 115200)
-            {
+        private SerialPort OpenSerialPort() {
+            _serialPort = new SerialPort(_devicePath, 115200) {
                 ReadTimeout = 3000,
                 WriteTimeout = 3000
             };
@@ -193,52 +183,42 @@ namespace Belay.Tests.Integration.Hardware
             return _serialPort;
         }
 
-        private async Task ResetDeviceAsync(SerialPort port)
-        {
+        private async Task ResetDeviceAsync(SerialPort port) {
             // Send Ctrl-C + Ctrl-D to reset
             await WriteAsync(port, new byte[] { 0x03, 0x04 });
             await Task.Delay(1000);
             await ClearBufferAsync(port);
         }
 
-        private async Task WriteAsync(SerialPort port, byte[] data)
-        {
+        private async Task WriteAsync(SerialPort port, byte[] data) {
             await Task.Run(() => port.Write(data, 0, data.Length));
         }
 
-        private async Task<byte[]> ReadAsync(SerialPort port, int maxBytes)
-        {
+        private async Task<byte[]> ReadAsync(SerialPort port, int maxBytes) {
             var buffer = new byte[maxBytes];
-            var bytesRead = await Task.Run(() =>
-            {
-                try
-                {
+            var bytesRead = await Task.Run(() => {
+                try {
                     return port.Read(buffer, 0, maxBytes);
                 }
-                catch (TimeoutException)
-                {
+                catch (TimeoutException) {
                     return port.BytesToRead > 0 ? port.Read(buffer, 0, Math.Min(port.BytesToRead, maxBytes)) : 0;
                 }
             });
-            
+
             var result = new byte[bytesRead];
             Array.Copy(buffer, result, bytesRead);
             return result;
         }
 
-        private async Task ClearBufferAsync(SerialPort port)
-        {
-            await Task.Run(() =>
-            {
-                if (port.BytesToRead > 0)
-                {
+        private async Task ClearBufferAsync(SerialPort port) {
+            await Task.Run(() => {
+                if (port.BytesToRead > 0) {
                     port.DiscardInBuffer();
                 }
             });
         }
 
-        public void Dispose()
-        {
+        public void Dispose() {
             _serialPort?.Close();
             _serialPort?.Dispose();
         }

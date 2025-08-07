@@ -7,8 +7,7 @@ namespace Belay.Core.Communication;
 /// Represents the output received from a device.
 /// </summary>
 /// <inheritdoc/>
-public class DeviceOutputEventArgs(string output, bool isError = false) : EventArgs
-{
+public class DeviceOutputEventArgs(string output, bool isError = false) : EventArgs {
     /// <inheritdoc/>
     public string Output { get; }
 
@@ -24,8 +23,7 @@ public class DeviceOutputEventArgs(string output, bool isError = false) : EventA
 /// </summary>
 /// <inheritdoc/>
 public class DeviceStateChangeEventArgs(DeviceConnectionState oldState, DeviceConnectionState newState,
-    string? reason = null, Exception? exception = null) : EventArgs
-    {
+    string? reason = null, Exception? exception = null) : EventArgs {
     /// <inheritdoc/>
     public DeviceConnectionState OldState { get; }
 
@@ -45,8 +43,7 @@ public class DeviceStateChangeEventArgs(DeviceConnectionState oldState, DeviceCo
 /// <summary>
 /// Represents the connection state of a device.
 /// </summary>
-public enum DeviceConnectionState
-{
+public enum DeviceConnectionState {
     /// <summary>Device is not connected.</summary>
     Disconnected,
 
@@ -69,8 +66,7 @@ public enum DeviceConnectionState
 /// <summary>
 /// Core interface for device communication implementations.
 /// </summary>
-public interface IDeviceCommunication : IDisposable
-{
+public interface IDeviceCommunication : IDisposable {
     /// <summary>
     /// Gets current connection state of the device.
     /// </summary>

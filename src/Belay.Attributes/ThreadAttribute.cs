@@ -1,5 +1,5 @@
-// Copyright 2025 Belay.NET Contributors
-// Licensed under the Apache License, Version 2.0
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
 
 namespace Belay.Attributes;
 
@@ -42,7 +42,7 @@ namespace Belay.Attributes;
 ///             import _thread
 ///             import time
 ///             import machine
-///             
+///
 ///             def monitor_environment():
 ///                 adc = machine.ADC(machine.Pin(26))
 ///                 while globals().get('monitoring_active', True):
@@ -50,20 +50,20 @@ namespace Belay.Attributes;
 ///                         # Read sensor values
 ///                         temp = read_temperature(adc)
 ///                         humidity = read_humidity()
-///                         
+///
 ///                         # Log or transmit data
 ///                         print(f'Temp: {{temp}}C, Humidity: {{humidity}}%')
-///                         
+///
 ///                         time.sleep_ms({intervalMs})
 ///                     except Exception as e:
 ///                         print(f'Monitoring error: {{e}}')
 ///                         time.sleep_ms(5000)  # Back off on error
-///             
+///
 ///             # Start monitoring thread
 ///             _thread.start_new_thread(monitor_environment, ())
 ///         ");
 ///     }
-/// 
+///
 ///     [Task]
 ///     public async Task StopMonitoringAsync()
 ///     {
@@ -82,25 +82,25 @@ namespace Belay.Attributes;
 ///             import _thread
 ///             import machine
 ///             import time
-///             
+///
 ///             def watch_buttons():
 ///                 button1 = machine.Pin(2, machine.Pin.IN, machine.Pin.PULL_UP)
 ///                 button2 = machine.Pin(3, machine.Pin.IN, machine.Pin.PULL_UP)
-///                 
+///
 ///                 last_state = [True, True]  # Pulled up initially
-///                 
+///
 ///                 while globals().get('button_watching', True):
 ///                     current_state = [button1.value(), button2.value()]
-///                     
+///
 ///                     # Check for button presses (high to low transition)
 ///                     for i, (last, current) in enumerate(zip(last_state, current_state)):
 ///                         if last and not current:  # Button pressed
 ///                             print(f'Button {i+1} pressed!')
 ///                             handle_button_press(i+1)
-///                     
+///
 ///                     last_state = current_state
 ///                     time.sleep_ms(50)  # 50ms polling
-///             
+///
 ///             _thread.start_new_thread(watch_buttons, ())
 ///         ");
 ///     }
@@ -118,34 +118,34 @@ namespace Belay.Attributes;
 ///             import machine
 ///             import gc
 ///             import time
-///             
+///
 ///             def system_watchdog():
 ///                 last_heartbeat = time.ticks_ms()
-///                 
+///
 ///                 while globals().get('watchdog_active', True):
 ///                     try:
 ///                         current_time = time.ticks_ms()
-///                         
+///
 ///                         # Check system health
 ///                         free_mem = gc.mem_free()
-///                         if free_mem < 1000:  # Low memory warning
-///                             print(f'WARNING: Low memory: {free_mem} bytes')
+///                         if free_mem &lt; 1000:  # Low memory warning
+///                             print(f'WARNING: Low memory: {{free_mem}} bytes')
 ///                             gc.collect()
-///                         
+///
 ///                         # Check for system heartbeat
 ///                         if time.ticks_diff(current_time, last_heartbeat) > 30000:
 ///                             print('WARNING: No heartbeat for 30 seconds')
-///                         
+///
 ///                         # Update heartbeat if main loop is responsive
 ///                         if globals().get('system_heartbeat', 0) > last_heartbeat:
 ///                             last_heartbeat = globals()['system_heartbeat']
-///                         
+///
 ///                         time.sleep_ms(5000)  # Check every 5 seconds
-///                         
+///
 ///                     except Exception as e:
 ///                         print(f'Watchdog error: {e}')
 ///                         time.sleep_ms(10000)  # Back off on error
-///             
+///
 ///             _thread.start_new_thread(system_watchdog, ())
 ///         ");
 ///     }
@@ -153,13 +153,11 @@ namespace Belay.Attributes;
 /// </code>
 /// </example>
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class ThreadAttribute : Attribute
-{
+public sealed class ThreadAttribute : Attribute {
     /// <summary>
     /// Initializes a new instance of the <see cref="ThreadAttribute"/> class.
     /// </summary>
-    public ThreadAttribute()
-    {
+    public ThreadAttribute() {
     }
 
     /// <summary>
@@ -193,7 +191,7 @@ public sealed class ThreadAttribute : Attribute
     public string? Name { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the thread should automatically restart if it terminates unexpectedly.
+    /// Gets or sets a value indicating whether gets or sets whether the thread should automatically restart if it terminates unexpectedly.
     /// When true, the thread will be monitored and restarted if it exits due to an error.
     /// </summary>
     /// <value>
@@ -222,7 +220,7 @@ public sealed class ThreadAttribute : Attribute
     /// {
     ///     await ExecuteAsync(@"
     ///         import _thread
-    ///         
+    ///
     ///         def data_logger():
     ///             while True:
     ///                 try:
@@ -232,7 +230,7 @@ public sealed class ThreadAttribute : Attribute
     ///                 except Exception as e:
     ///                     print(f'Logger error: {e}')
     ///                     time.sleep(10)  # Brief recovery delay
-    ///         
+    ///
     ///         _thread.start_new_thread(data_logger, ())
     ///     ");
     /// }
@@ -270,7 +268,7 @@ public sealed class ThreadAttribute : Attribute
     ///     // High priority for safety-critical monitoring
     ///     await ExecuteAsync("start_safety_monitor_thread()");
     /// }
-    /// 
+    ///
     /// [Thread(Priority = ThreadPriority.Low)]
     /// public async Task StartDataLoggerAsync()
     /// {
@@ -311,63 +309,66 @@ public sealed class ThreadAttribute : Attribute
     ///     await ExecuteAsync(@"
     ///         import _thread
     ///         import time
-    ///         
+    ///
     ///         def benchmark():
     ///             start_time = time.ticks_ms()
     ///             iterations = 0
-    ///             
+    ///
     ///             # Run until stop flag is set (by runtime limit)
     ///             while not globals().get('benchmark_stop', False):
     ///                 perform_benchmark_iteration()
     ///                 iterations += 1
-    ///                 
+    ///
     ///                 # Check stop condition periodically
     ///                 if iterations % 100 == 0:
     ///                     if globals().get('benchmark_stop', False):
     ///                         break
-    ///             
+    ///
     ///             elapsed = time.ticks_diff(time.ticks_ms(), start_time)
     ///             print(f'Benchmark completed: {iterations} iterations in {elapsed}ms')
-    ///         
+    ///
     ///         _thread.start_new_thread(benchmark, ())
     ///     ");
     /// }
     /// </code>
     /// </example>
-    public int? MaxRuntimeMs
-    {
-        get => _maxRuntimeMs;
-        set
-        {
-            if (value.HasValue && value.Value <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(value),
+    public int? MaxRuntimeMs {
+        get => this.maxRuntimeMs;
+        set {
+            if (value.HasValue && value.Value <= 0) {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
                     "Maximum runtime must be a positive value in milliseconds");
             }
-            _maxRuntimeMs = value;
+
+            this.maxRuntimeMs = value;
         }
     }
-    private int? _maxRuntimeMs;
+
+    private int? maxRuntimeMs;
 
     /// <summary>
     /// Returns a string that represents the current <see cref="ThreadAttribute"/>.
     /// </summary>
     /// <returns>A string that represents the current attribute configuration.</returns>
-    public override string ToString()
-    {
+    public override string ToString() {
         var parts = new List<string>();
 
-        if (!string.IsNullOrEmpty(Name))
-            parts.Add($"Name=\"{Name}\"");
+        if (!string.IsNullOrEmpty(this.Name)) {
+            parts.Add($"Name=\"{this.Name}\"");
+        }
 
-        if (AutoRestart)
+        if (this.AutoRestart) {
             parts.Add("AutoRestart=true");
+        }
 
-        if (Priority != ThreadPriority.Normal)
-            parts.Add($"Priority={Priority}");
+        if (this.Priority != ThreadPriority.Normal) {
+            parts.Add($"Priority={this.Priority}");
+        }
 
-        if (MaxRuntimeMs.HasValue)
-            parts.Add($"MaxRuntimeMs={MaxRuntimeMs}");
+        if (this.MaxRuntimeMs.HasValue) {
+            parts.Add($"MaxRuntimeMs={this.MaxRuntimeMs}");
+        }
 
         return parts.Count > 0 ? $"[Thread({string.Join(", ", parts)})]" : "[Thread]";
     }
@@ -381,8 +382,7 @@ public sealed class ThreadAttribute : Attribute
 /// on all MicroPython platforms. Actual scheduling behavior depends on
 /// the underlying platform and available threading implementation.
 /// </remarks>
-public enum ThreadPriority
-{
+public enum ThreadPriority {
     /// <summary>
     /// Low priority thread for background tasks.
     /// </summary>
@@ -396,5 +396,5 @@ public enum ThreadPriority
     /// <summary>
     /// High priority thread for time-critical operations.
     /// </summary>
-    High = 2
+    High = 2,
 }

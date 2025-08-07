@@ -18,40 +18,34 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
 
-namespace Belay.Tests.Unit.Sync
-{
+namespace Belay.Tests.Unit.Sync {
     /// <summary>
     /// Tests for the DeviceFileSystem class.
     /// </summary>
-    public class DeviceFileSystemTests
-    {
+    public class DeviceFileSystemTests {
         private readonly Device _mockDevice;
         private readonly ILogger<DeviceFileSystem> _mockLogger;
         private readonly DeviceFileSystem _fileSystem;
 
-        public DeviceFileSystemTests()
-        {
+        public DeviceFileSystemTests() {
             _mockDevice = Substitute.For<Device>();
             _mockLogger = Substitute.For<ILogger<DeviceFileSystem>>();
             _fileSystem = new DeviceFileSystem(_mockDevice, _mockLogger);
         }
 
         [Fact]
-        public void Constructor_WithNullDevice_ThrowsArgumentNullException()
-        {
+        public void Constructor_WithNullDevice_ThrowsArgumentNullException() {
             Assert.Throws<ArgumentNullException>(() => new DeviceFileSystem(null!));
         }
 
         [Fact]
-        public void Constructor_WithNullLogger_CreatesInstance()
-        {
+        public void Constructor_WithNullLogger_CreatesInstance() {
             var fileSystem = new DeviceFileSystem(_mockDevice, null);
             Assert.NotNull(fileSystem);
         }
 
         [Fact]
-        public async Task ListAsync_WithValidDirectory_ReturnsFileInfoList()
-        {
+        public async Task ListAsync_WithValidDirectory_ReturnsFileInfoList() {
             // Arrange
             var jsonResponse = """
                 [
@@ -67,7 +61,7 @@ namespace Belay.Tests.Unit.Sync
 
             // Assert
             Assert.Equal(2, result.Count);
-            
+
             var file = result.First(f => !f.IsDirectory);
             Assert.Equal("/test/file1.txt", file.Path);
             Assert.False(file.IsDirectory);
@@ -81,8 +75,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task ListAsync_WithNonexistentDirectory_ThrowsDirectoryNotFoundException()
-        {
+        public async Task ListAsync_WithNonexistentDirectory_ThrowsDirectoryNotFoundException() {
             // Arrange
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Throws(new DeviceExecutionException("OSError: ENOENT"));
@@ -93,8 +86,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task GetFileInfoAsync_WithExistingFile_ReturnsFileInfo()
-        {
+        public async Task GetFileInfoAsync_WithExistingFile_ReturnsFileInfo() {
             // Arrange
             var jsonResponse = """{"path": "/test/file.txt", "is_directory": false, "size": 42, "modified": 1640995200}""";
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -112,8 +104,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task GetFileInfoAsync_WithNonexistentFile_ReturnsNull()
-        {
+        public async Task GetFileInfoAsync_WithNonexistentFile_ReturnsNull() {
             // Arrange
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns("null");
@@ -126,17 +117,16 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task ReadFileAsync_WithSmallFile_ReturnsFileContent()
-        {
+        public async Task ReadFileAsync_WithSmallFile_ReturnsFileContent() {
             // Arrange
             var testData = "Hello, World!"u8.ToArray();
             var hexData = Convert.ToHexString(testData);
-            
+
             // Mock GetFileInfoAsync
             var fileInfoResponse = """{"path": "/test/file.txt", "is_directory": false, "size": 13, "modified": 1640995200}""";
             _mockDevice.ExecuteAsync<string>(Arg.Is<string>(s => s.Contains("os.stat")), Arg.Any<CancellationToken>())
                 .Returns(fileInfoResponse);
-            
+
             // Mock ReadFileAsync
             _mockDevice.ExecuteAsync<string>(Arg.Is<string>(s => s.Contains("binascii.hexlify")), Arg.Any<CancellationToken>())
                 .Returns(hexData.ToLowerInvariant());
@@ -149,8 +139,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task ReadFileAsync_WithNonexistentFile_ThrowsFileNotFoundException()
-        {
+        public async Task ReadFileAsync_WithNonexistentFile_ThrowsFileNotFoundException() {
             // Arrange
             _mockDevice.ExecuteAsync<string>(Arg.Is<string>(s => s.Contains("os.stat")), Arg.Any<CancellationToken>())
                 .Returns("null");
@@ -161,8 +150,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task ReadFileAsync_WithDirectory_ThrowsUnauthorizedAccessException()
-        {
+        public async Task ReadFileAsync_WithDirectory_ThrowsUnauthorizedAccessException() {
             // Arrange
             var fileInfoResponse = """{"path": "/test/dir", "is_directory": true, "size": null, "modified": 1640995200}""";
             _mockDevice.ExecuteAsync<string>(Arg.Is<string>(s => s.Contains("os.stat")), Arg.Any<CancellationToken>())
@@ -174,18 +162,17 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task ReadTextFileAsync_WithValidFile_ReturnsTextContent()
-        {
+        public async Task ReadTextFileAsync_WithValidFile_ReturnsTextContent() {
             // Arrange
             var testText = "Hello, World!";
             var testData = Encoding.UTF8.GetBytes(testText);
             var hexData = Convert.ToHexString(testData);
-            
+
             // Mock GetFileInfoAsync
             var fileInfoResponse = """{"path": "/test/file.txt", "is_directory": false, "size": 13, "modified": 1640995200}""";
             _mockDevice.ExecuteAsync<string>(Arg.Is<string>(s => s.Contains("os.stat")), Arg.Any<CancellationToken>())
                 .Returns(fileInfoResponse);
-            
+
             // Mock ReadFileAsync
             _mockDevice.ExecuteAsync<string>(Arg.Is<string>(s => s.Contains("binascii.hexlify")), Arg.Any<CancellationToken>())
                 .Returns(hexData.ToLowerInvariant());
@@ -198,8 +185,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task WriteFileAsync_WithSmallFile_WritesSuccessfully()
-        {
+        public async Task WriteFileAsync_WithSmallFile_WritesSuccessfully() {
             // Arrange
             var testData = "Hello, World!"u8.ToArray();
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -215,8 +201,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task WriteTextFileAsync_WithValidText_WritesSuccessfully()
-        {
+        public async Task WriteTextFileAsync_WithValidText_WritesSuccessfully() {
             // Arrange
             var testText = "Hello, World!";
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -232,8 +217,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task DeleteFileAsync_WithExistingFile_DeletesSuccessfully()
-        {
+        public async Task DeleteFileAsync_WithExistingFile_DeletesSuccessfully() {
             // Arrange
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns("success");
@@ -248,8 +232,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task DeleteFileAsync_WithNonexistentFile_ThrowsFileNotFoundException()
-        {
+        public async Task DeleteFileAsync_WithNonexistentFile_ThrowsFileNotFoundException() {
             // Arrange
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns("not_found");
@@ -260,8 +243,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task CreateDirectoryAsync_WithValidPath_CreatesSuccessfully()
-        {
+        public async Task CreateDirectoryAsync_WithValidPath_CreatesSuccessfully() {
             // Arrange
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns("success");
@@ -276,8 +258,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task DeleteDirectoryAsync_WithValidPath_DeletesSuccessfully()
-        {
+        public async Task DeleteDirectoryAsync_WithValidPath_DeletesSuccessfully() {
             // Arrange
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns("success");
@@ -292,8 +273,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task DeleteDirectoryAsync_WithNonexistentDirectory_ThrowsDirectoryNotFoundException()
-        {
+        public async Task DeleteDirectoryAsync_WithNonexistentDirectory_ThrowsDirectoryNotFoundException() {
             // Arrange
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns("not_found");
@@ -304,8 +284,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task DeleteDirectoryAsync_WithNonEmptyDirectory_ThrowsIOException()
-        {
+        public async Task DeleteDirectoryAsync_WithNonEmptyDirectory_ThrowsIOException() {
             // Arrange
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns("not_empty");
@@ -316,8 +295,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task ExistsAsync_WithExistingPath_ReturnsTrue()
-        {
+        public async Task ExistsAsync_WithExistingPath_ReturnsTrue() {
             // Arrange
             var fileInfoResponse = """{"path": "/test/file.txt", "is_directory": false, "size": 42, "modified": 1640995200}""";
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -331,8 +309,7 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task ExistsAsync_WithNonexistentPath_ReturnsFalse()
-        {
+        public async Task ExistsAsync_WithNonexistentPath_ReturnsFalse() {
             // Arrange
             _mockDevice.ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns("null");
@@ -345,17 +322,16 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task CalculateChecksumAsync_WithValidFile_ReturnsChecksum()
-        {
+        public async Task CalculateChecksumAsync_WithValidFile_ReturnsChecksum() {
             // Arrange
             var testData = "Hello, World!"u8.ToArray();
             var hexData = Convert.ToHexString(testData);
-            
+
             // Mock GetFileInfoAsync
             var fileInfoResponse = """{"path": "/test/file.txt", "is_directory": false, "size": 13, "modified": 1640995200}""";
             _mockDevice.ExecuteAsync<string>(Arg.Is<string>(s => s.Contains("os.stat")), Arg.Any<CancellationToken>())
                 .Returns(fileInfoResponse);
-            
+
             // Mock ReadFileAsync
             _mockDevice.ExecuteAsync<string>(Arg.Is<string>(s => s.Contains("binascii.hexlify")), Arg.Any<CancellationToken>())
                 .Returns(hexData.ToLowerInvariant());
@@ -369,17 +345,16 @@ namespace Belay.Tests.Unit.Sync
         }
 
         [Fact]
-        public async Task CalculateChecksumAsync_WithUnsupportedAlgorithm_ThrowsNotSupportedException()
-        {
+        public async Task CalculateChecksumAsync_WithUnsupportedAlgorithm_ThrowsNotSupportedException() {
             // Arrange
             var testData = "Hello, World!"u8.ToArray();
             var hexData = Convert.ToHexString(testData);
-            
+
             // Mock GetFileInfoAsync
             var fileInfoResponse = """{"path": "/test/file.txt", "is_directory": false, "size": 13, "modified": 1640995200}""";
             _mockDevice.ExecuteAsync<string>(Arg.Is<string>(s => s.Contains("os.stat")), Arg.Any<CancellationToken>())
                 .Returns(fileInfoResponse);
-            
+
             // Mock ReadFileAsync
             _mockDevice.ExecuteAsync<string>(Arg.Is<string>(s => s.Contains("binascii.hexlify")), Arg.Any<CancellationToken>())
                 .Returns(hexData.ToLowerInvariant());

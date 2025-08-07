@@ -14,13 +14,11 @@
 using Belay.Sync;
 using Xunit;
 
-namespace Belay.Tests.Unit.Sync
-{
+namespace Belay.Tests.Unit.Sync {
     /// <summary>
     /// Tests for the DevicePathUtil class.
     /// </summary>
-    public class DevicePathUtilTests
-    {
+    public class DevicePathUtilTests {
         [Theory]
         [InlineData("", "/")]
         [InlineData(null, "/")]
@@ -36,8 +34,7 @@ namespace Belay.Tests.Unit.Sync
         [InlineData("\\test\\path\\", "/test/path")]
         [InlineData("//test//path//", "/test/path")]
         [InlineData("test//path", "/test/path")]
-        public void NormalizePath_ValidPaths_ReturnsNormalizedPath(string? input, string expected)
-        {
+        public void NormalizePath_ValidPaths_ReturnsNormalizedPath(string? input, string expected) {
             var result = DevicePathUtil.NormalizePath(input);
             Assert.Equal(expected, result);
         }
@@ -52,8 +49,7 @@ namespace Belay.Tests.Unit.Sync
         [InlineData("test*file")]
         [InlineData("test\x00file")]
         [InlineData("test\x1ffile")]
-        public void NormalizePath_InvalidCharacters_ThrowsArgumentException(string invalidPath)
-        {
+        public void NormalizePath_InvalidCharacters_ThrowsArgumentException(string invalidPath) {
             Assert.Throws<ArgumentException>(() => DevicePathUtil.NormalizePath(invalidPath));
         }
 
@@ -66,8 +62,7 @@ namespace Belay.Tests.Unit.Sync
         [InlineData("LPT1")]
         [InlineData("con.txt")]
         [InlineData("prn.py")]
-        public void NormalizePath_ReservedNames_ThrowsArgumentException(string reservedName)
-        {
+        public void NormalizePath_ReservedNames_ThrowsArgumentException(string reservedName) {
             Assert.Throws<ArgumentException>(() => DevicePathUtil.NormalizePath($"/test/{reservedName}"));
         }
 
@@ -78,15 +73,13 @@ namespace Belay.Tests.Unit.Sync
         [InlineData("/test/", "/path/", "/test/path")]
         [InlineData("", "test", "/test")]
         [InlineData("test", "", "/test")]
-        public void Combine_ValidPaths_ReturnsCombinedPath(string path1, string path2, string expected)
-        {
+        public void Combine_ValidPaths_ReturnsCombinedPath(string path1, string path2, string expected) {
             var result = DevicePathUtil.Combine(path1, path2);
             Assert.Equal(expected, result);
         }
 
         [Fact]
-        public void Combine_EmptyArray_ReturnsRoot()
-        {
+        public void Combine_EmptyArray_ReturnsRoot() {
             var result = DevicePathUtil.Combine();
             Assert.Equal("/", result);
         }
@@ -96,8 +89,7 @@ namespace Belay.Tests.Unit.Sync
         [InlineData("/test", "/")]
         [InlineData("/test/path", "/test")]
         [InlineData("/test/path/file.txt", "/test/path")]
-        public void GetDirectoryName_ValidPaths_ReturnsDirectoryName(string path, string expected)
-        {
+        public void GetDirectoryName_ValidPaths_ReturnsDirectoryName(string path, string expected) {
             var result = DevicePathUtil.GetDirectoryName(path);
             Assert.Equal(expected, result);
         }
@@ -107,8 +99,7 @@ namespace Belay.Tests.Unit.Sync
         [InlineData("/test", "test")]
         [InlineData("/test/path", "path")]
         [InlineData("/test/path/file.txt", "file.txt")]
-        public void GetFileName_ValidPaths_ReturnsFileName(string path, string expected)
-        {
+        public void GetFileName_ValidPaths_ReturnsFileName(string path, string expected) {
             var result = DevicePathUtil.GetFileName(path);
             Assert.Equal(expected, result);
         }
@@ -120,8 +111,7 @@ namespace Belay.Tests.Unit.Sync
         [InlineData("/test/file", "file")]
         [InlineData("/test/.hidden", ".hidden")]
         [InlineData("/test/", "")]
-        public void GetFileNameWithoutExtension_ValidPaths_ReturnsNameWithoutExtension(string path, string expected)
-        {
+        public void GetFileNameWithoutExtension_ValidPaths_ReturnsNameWithoutExtension(string path, string expected) {
             var result = DevicePathUtil.GetFileNameWithoutExtension(path);
             Assert.Equal(expected, result);
         }
@@ -133,8 +123,7 @@ namespace Belay.Tests.Unit.Sync
         [InlineData("/test/file", "")]
         [InlineData("/test/.hidden", "")]
         [InlineData("/test/", "")]
-        public void GetExtension_ValidPaths_ReturnsExtension(string path, string expected)
-        {
+        public void GetExtension_ValidPaths_ReturnsExtension(string path, string expected) {
             var result = DevicePathUtil.GetExtension(path);
             Assert.Equal(expected, result);
         }
@@ -146,8 +135,7 @@ namespace Belay.Tests.Unit.Sync
         [InlineData(null, false)]
         [InlineData("test<file", false)]
         [InlineData("CON", false)]
-        public void IsValidPath_VariousPaths_ReturnsExpectedResult(string? path, bool expected)
-        {
+        public void IsValidPath_VariousPaths_ReturnsExpectedResult(string? path, bool expected) {
             var result = DevicePathUtil.IsValidPath(path);
             Assert.Equal(expected, result);
         }
@@ -159,8 +147,7 @@ namespace Belay.Tests.Unit.Sync
         [InlineData("/other/file.txt", "/test", false)]
         [InlineData("/test", "/test/subdir", false)]
         [InlineData("/anything", "/", true)]
-        public void IsUnderDirectory_VariousPaths_ReturnsExpectedResult(string path, string parentDirectory, bool expected)
-        {
+        public void IsUnderDirectory_VariousPaths_ReturnsExpectedResult(string path, string parentDirectory, bool expected) {
             var result = DevicePathUtil.IsUnderDirectory(path, parentDirectory);
             Assert.Equal(expected, result);
         }
@@ -170,32 +157,29 @@ namespace Belay.Tests.Unit.Sync
         [InlineData("/home/user/file.txt", "/home/user", "/file.txt")]
         [InlineData("relative/path/file.txt", null, "/relative/path/file.txt")]
         [InlineData("", null, "/")]
-        public void FromHostPath_ValidPaths_ReturnsDevicePath(string hostPath, string? baseHostPath, string expected)
-        {
+        public void FromHostPath_ValidPaths_ReturnsDevicePath(string hostPath, string? baseHostPath, string expected) {
             var result = DevicePathUtil.FromHostPath(hostPath, baseHostPath);
             Assert.Equal(expected, result);
         }
 
         [Fact]
-        public void ToHostPath_ValidDevicePath_ReturnsHostPath()
-        {
+        public void ToHostPath_ValidDevicePath_ReturnsHostPath() {
             var devicePath = "/test/file.txt";
             var baseHostPath = "/base/directory";
-            
+
             var result = DevicePathUtil.ToHostPath(devicePath, baseHostPath);
             var expectedPath = Path.Combine("/base/directory", "test", "file.txt");
-            
+
             Assert.Equal(expectedPath, result);
         }
 
         [Fact]
-        public void ToHostPath_RootDevicePath_ReturnsBaseHostPath()
-        {
+        public void ToHostPath_RootDevicePath_ReturnsBaseHostPath() {
             var devicePath = "/";
             var baseHostPath = "/base/directory";
-            
+
             var result = DevicePathUtil.ToHostPath(devicePath, baseHostPath);
-            
+
             Assert.Equal(baseHostPath, result);
         }
     }

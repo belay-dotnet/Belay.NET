@@ -188,7 +188,59 @@ _logger.LogError(ex, "Device communication failed for port {Port}", portName);
 4. **Performance**: Profile communication protocols and optimize hot paths
 5. **Compatibility**: Ensure cross-platform functionality
 
-## Development Guidance
+## Development Workflow
+
+### Agent-Based Development Process
+
+Development follows a structured workflow using specialized agents to ensure quality and alignment with project goals:
+
+#### 1. Sprint Planning Phase
+- **Consult Architecture Agent**: Use the `project-architect-scrum-master` agent to determine the next sprint of work
+- **Create Tickets**: Each sprint consists of multiple implementation tickets with clear acceptance criteria
+- **Prioritize Backlog**: Ensure tickets align with current milestone objectives and technical dependencies
+
+#### 2. Implementation Phase (Per Ticket)
+- **Plan Implementation**: Break down ticket requirements into discrete tasks
+- **Write Code**: Implement features following established patterns and conventions
+- **Unit Testing**: Create comprehensive unit tests for new functionality
+
+#### 3. Quality Assurance Phase
+- **Build & Test**: Use the `build-test-commit-engineer` agent to:
+  - Run all linting and static analysis checks
+  - Compile all affected code
+  - Execute unit tests and relevant integration tests
+- **Issue Resolution**: If issues are reported:
+  - Consult the `project-architect-scrum-master` agent to ensure fixes meet overall project needs
+  - Make necessary corrections
+  - Re-run build-test cycle until all checks pass
+
+#### 4. Code Review Phase
+- **Critical Review**: MUST use the `principal-code-reviewer` agent for final sign-off on all changes
+- **Review Feedback**: If issues are reported by the code reviewer:
+  - Consult the `project-architect-scrum-master` agent for architectural guidance
+  - Address all review feedback
+  - Repeat the build-test-commit cycle
+  - Re-submit for code review until approved
+
+#### 5. Commit Phase
+- **Final Commit**: Once approved by the code reviewer, use the `build-test-commit-engineer` agent to:
+  - Perform final validation
+  - Commit changes to git with appropriate commit message
+  - Ensure commit follows project conventions
+
+### Agent Responsibilities
+
+- **`project-architect-scrum-master`**: Sprint planning, architectural decisions, issue prioritization, design guidance
+- **`build-test-commit-engineer`**: Code compilation, testing, linting, static analysis, git operations
+- **`principal-code-reviewer`**: Critical technical review, architecture alignment validation, quality assurance
+
+### Workflow Rules
+
+1. **No Bypassing**: All implementation work MUST follow this workflow - no shortcuts
+2. **Agent Consultation**: Each phase requires consultation with the appropriate specialized agent
+3. **Quality Gates**: Code cannot proceed to the next phase without passing all quality checks
+4. **Documentation Updates**: Update planning documents and CLAUDE.md as implementation progresses
+5. **Iterative Improvement**: Use feedback from each phase to improve subsequent implementations
 
 ### Hardware Testing Workflow
 After completing the foundation implementation with all unit tests passing, the project transitions to hardware validation:

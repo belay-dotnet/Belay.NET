@@ -8,11 +8,9 @@ using NUnit.Framework;
 namespace Belay.Tests.Unit;
 
 [TestFixture]
-public class DeviceTests
-{
+public class DeviceTests {
     [Test]
-    public void Device_Constructor_ShouldInitializeCorrectly()
-    {
+    public void Device_Constructor_ShouldInitializeCorrectly() {
         // Arrange
         var mockCommunication = new Mock<IDeviceCommunication>();
         mockCommunication.SetupGet(x => x.State).Returns(DeviceConnectionState.Disconnected);
@@ -25,8 +23,7 @@ public class DeviceTests
     }
 
     [Test]
-    public void Device_Constructor_WithNullCommunication_ShouldThrowArgumentNullException()
-    {
+    public void Device_Constructor_WithNullCommunication_ShouldThrowArgumentNullException() {
         // Act & Assert
         Action action = () => new Device(null!);
         action.Should().Throw<ArgumentNullException>().WithParameterName("communication");
@@ -36,8 +33,7 @@ public class DeviceTests
     [TestCase("serial:COM3")]
     [TestCase("serial:/dev/ttyUSB0")]
     [TestCase("subprocess:micropython")]
-    public void FromConnectionString_ValidConnectionStrings_ShouldCreateDevice(string connectionString)
-    {
+    public void FromConnectionString_ValidConnectionStrings_ShouldCreateDevice(string connectionString) {
         // Act
         using var device = Device.FromConnectionString(connectionString);
 
@@ -50,8 +46,7 @@ public class DeviceTests
     [TestCase("")]
     [TestCase("   ")]
     [TestCase(null)]
-    public void FromConnectionString_InvalidConnectionString_ShouldThrowArgumentException(string? connectionString)
-    {
+    public void FromConnectionString_InvalidConnectionString_ShouldThrowArgumentException(string? connectionString) {
         // Act & Assert
         Action action = () => Device.FromConnectionString(connectionString!);
         action.Should().Throw<ArgumentException>();
@@ -62,24 +57,21 @@ public class DeviceTests
     [TestCase("serial")]
     [TestCase("serial:")]
     [TestCase(":COM3")]
-    public void FromConnectionString_MalformedConnectionString_ShouldThrowArgumentException(string connectionString)
-    {
+    public void FromConnectionString_MalformedConnectionString_ShouldThrowArgumentException(string connectionString) {
         // Act & Assert
         Action action = () => Device.FromConnectionString(connectionString);
         action.Should().Throw<ArgumentException>();
     }
 
     [Test]
-    public void FromConnectionString_UnsupportedConnectionType_ShouldThrowArgumentException()
-    {
+    public void FromConnectionString_UnsupportedConnectionType_ShouldThrowArgumentException() {
         // Act & Assert
         Action action = () => Device.FromConnectionString("unsupported:parameter");
         action.Should().Throw<ArgumentException>().WithMessage("*Unsupported connection type: unsupported*");
     }
 
     [Test]
-    public async Task ExecuteAsync_DisposedDevice_ShouldThrowObjectDisposedException()
-    {
+    public async Task ExecuteAsync_DisposedDevice_ShouldThrowObjectDisposedException() {
         // Arrange
         var mockCommunication = new Mock<IDeviceCommunication>();
         var device = new Device(mockCommunication.Object);
@@ -94,8 +86,7 @@ public class DeviceTests
     [TestCase("")]
     [TestCase("   ")]
     [TestCase(null)]
-    public async Task ExecuteAsync_InvalidCode_ShouldThrowArgumentException(string? code)
-    {
+    public async Task ExecuteAsync_InvalidCode_ShouldThrowArgumentException(string? code) {
         // Arrange
         var mockCommunication = new Mock<IDeviceCommunication>();
         using var device = new Device(mockCommunication.Object);
@@ -106,8 +97,7 @@ public class DeviceTests
     }
 
     [Test]
-    public async Task ExecuteAsync_ValidCode_ShouldCallCommunicationLayer()
-    {
+    public async Task ExecuteAsync_ValidCode_ShouldCallCommunicationLayer() {
         // Arrange
         var mockCommunication = new Mock<IDeviceCommunication>();
         mockCommunication.Setup(x => x.ExecuteAsync("print('test')", It.IsAny<CancellationToken>()))
@@ -124,8 +114,7 @@ public class DeviceTests
     }
 
     [Test]
-    public async Task ConnectAsync_SerialCommunication_ShouldCallConnectAsync()
-    {
+    public async Task ConnectAsync_SerialCommunication_ShouldCallConnectAsync() {
         // Arrange
         var mockSerial = new Mock<SerialDeviceCommunication>("COM3", 115200, 30000, null);
         mockSerial.Setup(x => x.ConnectAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -140,8 +129,7 @@ public class DeviceTests
     }
 
     [Test]
-    public async Task DisconnectAsync_SerialCommunication_ShouldCallDisconnectAsync()
-    {
+    public async Task DisconnectAsync_SerialCommunication_ShouldCallDisconnectAsync() {
         // Arrange
         var mockSerial = new Mock<SerialDeviceCommunication>("COM3", 115200, 30000, null);
         mockSerial.Setup(x => x.DisconnectAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
@@ -156,8 +144,7 @@ public class DeviceTests
     }
 
     [Test]
-    public void Dispose_MultipleCallsToDispose_ShouldNotThrow()
-    {
+    public void Dispose_MultipleCallsToDispose_ShouldNotThrow() {
         // Arrange
         var mockCommunication = new Mock<IDeviceCommunication>();
         var device = new Device(mockCommunication.Object);

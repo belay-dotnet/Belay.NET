@@ -1,0 +1,342 @@
+// Copyright 2025 Belay.NET Contributors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Collections.Concurrent;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Belay.Attributes;
+using Microsoft.Extensions.Logging;
+
+namespace Belay.Core.Execution
+{
+    /// <summary>
+    /// Executor for methods decorated with the [Setup] attribute.
+    /// Handles automatic deployment and execution of setup methods during device initialization.
+    /// </summary>
+    public sealed class SetupExecutor : BaseExecutor
+    {
+        private readonly ConcurrentHashSet<string> _executedSetupMethods;
+        private readonly object _setupLock = new object();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SetupExecutor"/> class.
+        /// </summary>
+        /// <param name="device">The device to execute methods on.</param>
+        /// <param name="logger">The logger for diagnostic information.</param>
+        public SetupExecutor(Device device, ILogger<SetupExecutor> logger)
+            : base(device, logger)
+        {
+            _executedSetupMethods = new ConcurrentHashSet<string>();
+        }
+
+        /// <summary>
+        /// Executes a method decorated with [Setup] attribute.
+        /// Setup methods are executed once per device session and are used for initialization.
+        /// </summary>
+        /// <typeparam name="T">The return type of the method.</typeparam>
+        /// <param name="method">The method to execute.</param>
+        /// <param name="parameters">The parameters to pass to the method.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>The result of the method execution.</returns>
+        public async Task<T> ExecuteSetupAsync<T>(MethodInfo method, object?[]? parameters = null, CancellationToken cancellationToken = default)
+        {
+            var setupAttribute = method.GetAttribute<SetupAttribute>();
+            if (setupAttribute == null)
+                throw new InvalidOperationException($"Method {method.Name} is not decorated with [Setup] attribute");
+
+            var methodKey = method.GetDeviceMethodName();
+
+            // Check if already executed (setup methods should only run once per session)
+            lock (_setupLock)
+            {
+                if (_executedSetupMethods.Contains(methodKey))
+                {
+                    Logger.LogDebug("Setup method {MethodName} already executed, skipping", method.Name);
+                    return default(T)!; // Setup methods that have already run return default value
+                }
+            }
+
+            Logger.LogInformation("Executing setup method {MethodName}", method.Name);
+
+            try
+            {
+                var result = await ExecuteAsync<T>(method, parameters, cancellationToken).ConfigureAwait(false);
+
+                lock (_setupLock)
+                {
+                    _executedSetupMethods.Add(methodKey);
+                }
+
+                Logger.LogInformation("Setup method {MethodName} completed successfully", method.Name);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Setup method {MethodName} failed", method.Name);
+                
+                // Setup failures are critical - they should stop the initialization process
+                throw new InvalidOperationException($"Setup method {method.Name} failed: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Executes a method decorated with [Setup] attribute without returning a value.
+        /// </summary>
+        /// <param name="method">The method to execute.</param>
+        /// <param name="parameters">The parameters to pass to the method.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        public async Task ExecuteSetupAsync(MethodInfo method, object?[]? parameters = null, CancellationToken cancellationToken = default)
+        {
+            await ExecuteSetupAsync<object>(method, parameters, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Executes all setup methods found on the specified type.
+        /// </summary>
+        /// <param name="type">The type to scan for setup methods.</param>
+        /// <param name="instance">The instance to execute methods on (null for static methods).</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        public async Task ExecuteAllSetupMethodsAsync(Type type, object? instance = null, CancellationToken cancellationToken = default)
+        {
+            Logger.LogDebug("Scanning type {TypeName} for setup methods", type.Name);
+
+            var setupMethods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+                .Where(m => m.HasAttribute<SetupAttribute>())
+                .OrderBy(m => m.GetAttribute<SetupAttribute>()!.Order)
+                .ThenBy(m => m.Name)
+                .ToList();
+
+            if (setupMethods.Count == 0)
+            {
+                Logger.LogDebug("No setup methods found on type {TypeName}", type.Name);
+                return;
+            }
+
+            Logger.LogInformation("Found {Count} setup methods on type {TypeName}", setupMethods.Count, type.Name);
+
+            foreach (var method in setupMethods)
+            {
+                if (method.IsStatic || instance != null)
+                {
+                    await ExecuteSetupAsync(method, null, cancellationToken).ConfigureAwait(false);
+                }
+                else
+                {
+                    Logger.LogWarning("Skipping instance setup method {MethodName} because no instance was provided", 
+                        method.Name);
+                }
+            }
+
+            Logger.LogInformation("Completed execution of {Count} setup methods on type {TypeName}", 
+                setupMethods.Count, type.Name);
+        }
+
+        /// <summary>
+        /// Resets the execution state, allowing setup methods to be executed again.
+        /// This is typically called when reconnecting to a device.
+        /// </summary>
+        public void ResetSetupState()
+        {
+            lock (_setupLock)
+            {
+                var count = _executedSetupMethods.Count;
+                _executedSetupMethods.Clear();
+                Logger.LogDebug("Reset setup state - {Count} methods can now be executed again", count);
+            }
+        }
+
+        /// <summary>
+        /// Gets the list of setup methods that have been executed.
+        /// </summary>
+        /// <returns>A collection of executed setup method keys.</returns>
+        public IReadOnlyCollection<string> GetExecutedSetupMethods()
+        {
+            lock (_setupLock)
+            {
+                return _executedSetupMethods.ToArray();
+            }
+        }
+
+        /// <inheritdoc />
+        protected override async Task<string> GeneratePythonCodeAsync(MethodInfo method, string deviceMethodName, CancellationToken cancellationToken)
+        {
+            var setupAttribute = method.GetAttribute<SetupAttribute>()!;
+            
+            Logger.LogDebug("Generating Python code for setup method {MethodName} (order: {Order})", 
+                method.Name, setupAttribute.Order);
+
+            var codeBuilder = new StringBuilder();
+            
+            // Add method signature
+            var parameters = method.GetParameters();
+            var paramNames = parameters.Length > 0 
+                ? string.Join(", ", parameters.Select(p => p.Name))
+                : "";
+
+            codeBuilder.AppendLine($"def {deviceMethodName}({paramNames}):");
+            codeBuilder.AppendLine("    \"\"\"");
+            codeBuilder.AppendLine($"    Setup method: {method.Name} (order: {setupAttribute.Order})");
+            codeBuilder.AppendLine($"    Generated from: {method.DeclaringType?.Name}.{method.Name}");
+            codeBuilder.AppendLine("    \"\"\"");
+
+            // Generate method body for setup operations
+            var pythonBody = await GenerateSetupMethodBodyAsync(method, cancellationToken).ConfigureAwait(false);
+            
+            // Indent the body
+            var indentedBody = string.Join("\n", pythonBody.Split('\n').Select(line => 
+                string.IsNullOrWhiteSpace(line) ? line : $"    {line}"));
+            
+            codeBuilder.AppendLine(indentedBody);
+
+            // Add setup metadata as comments
+            codeBuilder.AppendLine($"# Setup order: {setupAttribute.Order}");
+            codeBuilder.AppendLine($"# Method signature: {method.GetSignatureHash()}");
+
+            return codeBuilder.ToString();
+        }
+
+        /// <inheritdoc />
+        protected override Task ValidateMethodExecutionAsync(MethodInfo method, CancellationToken cancellationToken)
+        {
+            if (!method.HasAttribute<SetupAttribute>())
+            {
+                throw new NotSupportedException($"Method {method.Name} must be decorated with [Setup] attribute to be executed by SetupExecutor");
+            }
+
+            var setupAttribute = method.GetAttribute<SetupAttribute>()!;
+            
+            // Validate order value
+            if (setupAttribute.Order < 0)
+            {
+                throw new ArgumentException($"Invalid order value {setupAttribute.Order} for setup method {method.Name}");
+            }
+
+            // Setup methods should typically not have complex return types
+            var returnType = method.ReturnType;
+            if (returnType != typeof(void) && returnType != typeof(Task) && 
+                !returnType.IsValueType && returnType != typeof(string))
+            {
+                Logger.LogWarning("Setup method {MethodName} has complex return type {ReturnType} - " +
+                    "setup methods should typically return void or simple types", 
+                    method.Name, returnType.Name);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Generates the Python method body for setup operations.
+        /// </summary>
+        /// <param name="method">The method to generate body for.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>The Python method body code.</returns>
+        private async Task<string> GenerateSetupMethodBodyAsync(MethodInfo method, CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask; // Placeholder for async pattern
+            
+            // Setup methods typically perform initialization tasks
+            // This is a simplified implementation - a complete version would analyze
+            // the C# method body and generate equivalent Python initialization code
+            
+            var codeBuilder = new StringBuilder();
+            
+            codeBuilder.AppendLine("# Setup method implementation");
+            codeBuilder.AppendLine($"print('Executing setup: {method.Name}')");
+            
+            var returnType = method.ReturnType;
+            
+            if (returnType == typeof(void) || returnType == typeof(Task))
+            {
+                codeBuilder.AppendLine("pass  # TODO: Implement setup logic");
+            }
+            else if (returnType == typeof(bool))
+            {
+                codeBuilder.AppendLine("return True  # Setup completed successfully");
+            }
+            else if (returnType == typeof(string))
+            {
+                codeBuilder.AppendLine($"return 'Setup {method.Name} completed'");
+            }
+            else
+            {
+                codeBuilder.AppendLine("return None  # TODO: Implement setup return value");
+            }
+            
+            return codeBuilder.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Thread-safe hash set implementation.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the set.</typeparam>
+    internal sealed class ConcurrentHashSet<T> where T : notnull
+    {
+        private readonly HashSet<T> _hashSet = new HashSet<T>();
+        private readonly object _lock = new object();
+
+        public bool Add(T item)
+        {
+            lock (_lock)
+            {
+                return _hashSet.Add(item);
+            }
+        }
+
+        public bool Contains(T item)
+        {
+            lock (_lock)
+            {
+                return _hashSet.Contains(item);
+            }
+        }
+
+        public bool Remove(T item)
+        {
+            lock (_lock)
+            {
+                return _hashSet.Remove(item);
+            }
+        }
+
+        public void Clear()
+        {
+            lock (_lock)
+            {
+                _hashSet.Clear();
+            }
+        }
+
+        public int Count
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    return _hashSet.Count;
+                }
+            }
+        }
+
+        public T[] ToArray()
+        {
+            lock (_lock)
+            {
+                return _hashSet.ToArray();
+            }
+        }
+    }
+}

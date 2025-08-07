@@ -22,16 +22,14 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Belay.Tests.Integration.Sync
-{
+namespace Belay.Tests.Integration.Sync {
     /// <summary>
     /// Integration tests for DeviceFileSystem using real hardware.
     /// </summary>
     [Collection("Hardware")]
     [Trait("Category", "Hardware")]
     [Trait("Category", "FileSystem")]
-    public class DeviceFileSystemIntegrationTests : IAsyncLifetime
-    {
+    public class DeviceFileSystemIntegrationTests : IAsyncLifetime {
         private readonly ITestOutputHelper _output;
         private readonly ILoggerFactory _loggerFactory;
         private Device? _device;
@@ -39,21 +37,18 @@ namespace Belay.Tests.Integration.Sync
         private readonly string _devicePath;
         private readonly string _testDirectory = "/belay_test";
 
-        public DeviceFileSystemIntegrationTests(ITestOutputHelper output)
-        {
+        public DeviceFileSystemIntegrationTests(ITestOutputHelper output) {
             _output = output;
-            _loggerFactory = LoggerFactory.Create(builder =>
-            {
+            _loggerFactory = LoggerFactory.Create(builder => {
                 builder.AddXUnit(output).SetMinimumLevel(LogLevel.Debug);
             });
 
             // Device path should be configurable via environment variable
-            _devicePath = Environment.GetEnvironmentVariable("ESP32_DEVICE_PATH") 
+            _devicePath = Environment.GetEnvironmentVariable("ESP32_DEVICE_PATH")
                 ?? "/dev/usb/tty-USB_JTAG_serial_debug_unit-40:4C:CA:5B:20:94";
         }
 
-        public async Task InitializeAsync()
-        {
+        public async Task InitializeAsync() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var logger = _loggerFactory.CreateLogger<Device>();
@@ -64,12 +59,10 @@ namespace Belay.Tests.Integration.Sync
             _fileSystem = new DeviceFileSystem(_device, fileSystemLogger);
 
             // Clean up any existing test directory
-            try
-            {
+            try {
                 await _fileSystem.DeleteDirectoryAsync(_testDirectory, recursive: true);
             }
-            catch
-            {
+            catch {
                 // Ignore cleanup errors
             }
 
@@ -77,23 +70,18 @@ namespace Belay.Tests.Integration.Sync
             await _fileSystem.CreateDirectoryAsync(_testDirectory);
         }
 
-        public async Task DisposeAsync()
-        {
-            if (_fileSystem != null && _device != null)
-            {
-                try
-                {
+        public async Task DisposeAsync() {
+            if (_fileSystem != null && _device != null) {
+                try {
                     // Clean up test directory
                     await _fileSystem.DeleteDirectoryAsync(_testDirectory, recursive: true);
                 }
-                catch
-                {
+                catch {
                     // Ignore cleanup errors
                 }
             }
 
-            if (_device != null)
-            {
+            if (_device != null) {
                 await _device.DisconnectAsync();
                 _device.Dispose();
             }
@@ -102,8 +90,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task CreateAndDeleteDirectory_ShouldWorkCorrectly()
-        {
+        public async Task CreateAndDeleteDirectory_ShouldWorkCorrectly() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var testDir = $"{_testDirectory}/new_directory";
@@ -128,8 +115,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task WriteAndReadTextFile_ShouldPreserveContent()
-        {
+        public async Task WriteAndReadTextFile_ShouldPreserveContent() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var testFile = $"{_testDirectory}/test.txt";
@@ -161,8 +147,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task WriteAndReadBinaryFile_ShouldPreserveContent()
-        {
+        public async Task WriteAndReadBinaryFile_ShouldPreserveContent() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var testFile = $"{_testDirectory}/binary.bin";
@@ -180,8 +165,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task ListDirectory_ShouldReturnCorrectEntries()
-        {
+        public async Task ListDirectory_ShouldReturnCorrectEntries() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             // Create test structure
@@ -197,10 +181,9 @@ namespace Belay.Tests.Integration.Sync
 
             // List non-recursive
             var entries = await _fileSystem.ListAsync(_testDirectory, recursive: false);
-            
+
             _output.WriteLine($"Found {entries.Count} entries in {_testDirectory}");
-            foreach (var entry in entries)
-            {
+            foreach (var entry in entries) {
                 _output.WriteLine($"  {entry.Path} - Directory: {entry.IsDirectory}, Size: {entry.Size}");
             }
 
@@ -211,10 +194,9 @@ namespace Belay.Tests.Integration.Sync
 
             // List recursive
             var recursiveEntries = await _fileSystem.ListAsync(_testDirectory, recursive: true);
-            
+
             _output.WriteLine($"Found {recursiveEntries.Count} entries recursively in {_testDirectory}");
-            foreach (var entry in recursiveEntries)
-            {
+            foreach (var entry in recursiveEntries) {
                 _output.WriteLine($"  {entry.Path} - Directory: {entry.IsDirectory}, Size: {entry.Size}");
             }
 
@@ -223,8 +205,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task CalculateChecksum_ShouldReturnCorrectHash()
-        {
+        public async Task CalculateChecksum_ShouldReturnCorrectHash() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var testFile = $"{_testDirectory}/checksum_test.txt";
@@ -252,19 +233,17 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task LargeFile_ShouldUseChunkedTransfer()
-        {
+        public async Task LargeFile_ShouldUseChunkedTransfer() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var testFile = $"{_testDirectory}/large_file.txt";
             var largeContent = new StringBuilder();
-            
+
             // Create content larger than chunk size (8KB)
-            for (int i = 0; i < 1000; i++)
-            {
+            for (int i = 0; i < 1000; i++) {
                 largeContent.AppendLine($"Line {i}: This is a test line with some content to make the file larger.");
             }
-            
+
             var content = largeContent.ToString();
             _output.WriteLine($"Creating large file with {content.Length} characters");
 
@@ -273,7 +252,7 @@ namespace Belay.Tests.Integration.Sync
 
             // Read large file (should trigger chunked read)
             var readContent = await _fileSystem.ReadTextFileAsync(testFile);
-            
+
             Assert.Equal(content, readContent);
 
             // Get file info to verify size
@@ -287,8 +266,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task DeleteNonexistentFile_ShouldThrowFileNotFoundException()
-        {
+        public async Task DeleteNonexistentFile_ShouldThrowFileNotFoundException() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var nonexistentFile = $"{_testDirectory}/nonexistent.txt";
@@ -298,8 +276,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task DeleteNonexistentDirectory_ShouldThrowDirectoryNotFoundException()
-        {
+        public async Task DeleteNonexistentDirectory_ShouldThrowDirectoryNotFoundException() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var nonexistentDir = $"{_testDirectory}/nonexistent_dir";
@@ -309,8 +286,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task CreateDirectoryRecursive_ShouldCreateParentDirectories()
-        {
+        public async Task CreateDirectoryRecursive_ShouldCreateParentDirectories() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var nestedDir = $"{_testDirectory}/level1/level2/level3";
@@ -328,8 +304,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task ReadDirectory_ShouldThrowUnauthorizedAccessException()
-        {
+        public async Task ReadDirectory_ShouldThrowUnauthorizedAccessException() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             // Try to read the test directory as if it were a file
@@ -338,8 +313,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task ListNonexistentDirectory_ShouldThrowDirectoryNotFoundException()
-        {
+        public async Task ListNonexistentDirectory_ShouldThrowDirectoryNotFoundException() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var nonexistentDir = $"{_testDirectory}/nonexistent";
@@ -349,8 +323,7 @@ namespace Belay.Tests.Integration.Sync
         }
 
         [SkippableFact]
-        public async Task FileOperations_WithSpecialCharacters_ShouldWork()
-        {
+        public async Task FileOperations_WithSpecialCharacters_ShouldWork() {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             var testFile = $"{_testDirectory}/special_chars_äöü_测试.txt";

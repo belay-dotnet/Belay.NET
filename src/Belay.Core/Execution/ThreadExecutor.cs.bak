@@ -1,0 +1,385 @@
+// Copyright 2025 Belay.NET Contributors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Collections.Concurrent;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Belay.Attributes;
+using Microsoft.Extensions.Logging;
+
+namespace Belay.Core.Execution
+{
+    /// <summary>
+    /// Represents information about a running background thread on the device.
+    /// </summary>
+    public sealed class RunningThread
+    {
+        /// <summary>
+        /// Gets the method information for the thread method.
+        /// </summary>
+        public required MethodInfo Method { get; init; }
+
+        /// <summary>
+        /// Gets the unique identifier for this thread on the device.
+        /// </summary>
+        public required string ThreadId { get; init; }
+
+        /// <summary>
+        /// Gets the device method name for the thread function.
+        /// </summary>
+        public required string DeviceMethodName { get; init; }
+
+        /// <summary>
+        /// Gets the timestamp when the thread was started.
+        /// </summary>
+        public required DateTime StartedAt { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether the thread is daemon (non-blocking).
+        /// </summary>
+        public bool IsDaemon { get; init; }
+
+        /// <summary>
+        /// Gets a value indicating whether the thread is currently running.
+        /// </summary>
+        public bool IsRunning { get; internal set; } = true;
+
+        /// <summary>
+        /// Gets the parameters that were passed to start the thread.
+        /// </summary>
+        public object?[]? Parameters { get; init; }
+    }
+
+    /// <summary>
+    /// Executor for methods decorated with the [Thread] attribute.
+    /// Handles automatic deployment and execution of background thread methods on MicroPython devices.
+    /// </summary>
+    public sealed class ThreadExecutor : BaseExecutor
+    {
+        private readonly ConcurrentDictionary<string, RunningThread> _runningThreads;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ThreadExecutor"/> class.
+        /// </summary>
+        /// <param name="device">The device to execute methods on.</param>
+        /// <param name="logger">The logger for diagnostic information.</param>
+        public ThreadExecutor(Device device, ILogger<ThreadExecutor> logger)
+            : base(device, logger)
+        {
+            _runningThreads = new ConcurrentDictionary<string, RunningThread>();
+        }
+
+        /// <summary>
+        /// Starts a background thread for a method decorated with [Thread] attribute.
+        /// </summary>
+        /// <param name="method">The method to execute in a background thread.</param>
+        /// <param name="parameters">The parameters to pass to the method.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>Information about the started thread.</returns>
+        public async Task<RunningThread> StartThreadAsync(MethodInfo method, object?[]? parameters = null, CancellationToken cancellationToken = default)
+        {
+            var threadAttribute = method.GetAttribute<ThreadAttribute>();
+            if (threadAttribute == null)
+                throw new InvalidOperationException($"Method {method.Name} is not decorated with [Thread] attribute");
+
+            var threadId = Guid.NewGuid().ToString("N")[..8];
+            var deviceMethodName = method.GetDeviceMethodName();
+
+            Logger.LogInformation("Starting background thread {ThreadId} for method {MethodName} (daemon: {IsDaemon})", 
+                threadId, method.Name, threadAttribute.Daemon);
+
+            // Deploy the method if not already deployed
+            await DeployAsync(method, cancellationToken).ConfigureAwait(false);
+
+            // Generate thread startup code
+            var threadStartCode = GenerateThreadStartCode(deviceMethodName, threadId, parameters, threadAttribute.Daemon);
+
+            try
+            {
+                // Execute the thread start code
+                await Device.ExecuteAsync(threadStartCode, cancellationToken).ConfigureAwait(false);
+
+                var runningThread = new RunningThread
+                {
+                    Method = method,
+                    ThreadId = threadId,
+                    DeviceMethodName = deviceMethodName,
+                    StartedAt = DateTime.UtcNow,
+                    IsDaemon = threadAttribute.Daemon,
+                    Parameters = parameters,
+                    IsRunning = true
+                };
+
+                _runningThreads[threadId] = runningThread;
+
+                Logger.LogInformation("Background thread {ThreadId} started successfully", threadId);
+                return runningThread;
+            }
+            catch (DeviceExecutionException ex)
+            {
+                Logger.LogError(ex, "Failed to start background thread {ThreadId}", threadId);
+                throw new InvalidOperationException($"Failed to start background thread for method {method.Name}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Stops a running background thread.
+        /// </summary>
+        /// <param name="threadId">The ID of the thread to stop.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>True if the thread was stopped, false if it wasn't running.</returns>
+        public async Task<bool> StopThreadAsync(string threadId, CancellationToken cancellationToken = default)
+        {
+            if (!_runningThreads.TryGetValue(threadId, out var thread))
+            {
+                Logger.LogWarning("Attempted to stop non-existent thread {ThreadId}", threadId);
+                return false;
+            }
+
+            Logger.LogDebug("Stopping background thread {ThreadId}", threadId);
+
+            try
+            {
+                // Generate thread stop code
+                var threadStopCode = GenerateThreadStopCode(threadId);
+                await Device.ExecuteAsync(threadStopCode, cancellationToken).ConfigureAwait(false);
+
+                thread.IsRunning = false;
+                _runningThreads.TryRemove(threadId, out _);
+
+                Logger.LogInformation("Background thread {ThreadId} stopped successfully", threadId);
+                return true;
+            }
+            catch (DeviceExecutionException ex)
+            {
+                Logger.LogError(ex, "Failed to stop background thread {ThreadId}", threadId);
+                throw new InvalidOperationException($"Failed to stop background thread {threadId}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Stops all running background threads.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>The number of threads that were stopped.</returns>
+        public async Task<int> StopAllThreadsAsync(CancellationToken cancellationToken = default)
+        {
+            var threadIds = _runningThreads.Keys.ToArray();
+            var stoppedCount = 0;
+
+            Logger.LogInformation("Stopping all {Count} running threads", threadIds.Length);
+
+            foreach (var threadId in threadIds)
+            {
+                try
+                {
+                    if (await StopThreadAsync(threadId, cancellationToken).ConfigureAwait(false))
+                    {
+                        stoppedCount++;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error stopping thread {ThreadId}", threadId);
+                    // Continue with other threads
+                }
+            }
+
+            Logger.LogInformation("Stopped {StoppedCount} of {TotalCount} threads", stoppedCount, threadIds.Length);
+            return stoppedCount;
+        }
+
+        /// <summary>
+        /// Gets information about all currently running threads.
+        /// </summary>
+        /// <returns>A collection of running thread information.</returns>
+        public IReadOnlyCollection<RunningThread> GetRunningThreads()
+        {
+            return _runningThreads.Values.Where(t => t.IsRunning).ToArray();
+        }
+
+        /// <summary>
+        /// Checks if a specific thread is currently running.
+        /// </summary>
+        /// <param name="threadId">The thread ID to check.</param>
+        /// <returns>True if the thread is running, false otherwise.</returns>
+        public bool IsThreadRunning(string threadId)
+        {
+            return _runningThreads.TryGetValue(threadId, out var thread) && thread.IsRunning;
+        }
+
+        /// <inheritdoc />
+        protected override async Task<string> GeneratePythonCodeAsync(MethodInfo method, string deviceMethodName, CancellationToken cancellationToken)
+        {
+            var threadAttribute = method.GetAttribute<ThreadAttribute>()!;
+            
+            Logger.LogDebug("Generating Python code for thread method {MethodName} (daemon: {IsDaemon})", 
+                method.Name, threadAttribute.Daemon);
+
+            var codeBuilder = new StringBuilder();
+            
+            // Import required threading modules
+            codeBuilder.AppendLine("import _thread");
+            codeBuilder.AppendLine("import time");
+            codeBuilder.AppendLine();
+
+            // Add method signature
+            var parameters = method.GetParameters();
+            var paramNames = parameters.Length > 0 
+                ? string.Join(", ", parameters.Select(p => p.Name))
+                : "";
+
+            codeBuilder.AppendLine($"def {deviceMethodName}({paramNames}):");
+            codeBuilder.AppendLine("    \"\"\"");
+            codeBuilder.AppendLine($"    Thread method: {method.Name} (daemon: {threadAttribute.Daemon})");
+            codeBuilder.AppendLine($"    Generated from: {method.DeclaringType?.Name}.{method.Name}");
+            codeBuilder.AppendLine("    \"\"\"");
+
+            // Generate method body for thread operations
+            var pythonBody = await GenerateThreadMethodBodyAsync(method, cancellationToken).ConfigureAwait(false);
+            
+            // Indent the body
+            var indentedBody = string.Join("\n", pythonBody.Split('\n').Select(line => 
+                string.IsNullOrWhiteSpace(line) ? line : $"    {line}"));
+            
+            codeBuilder.AppendLine(indentedBody);
+
+            // Add thread metadata as comments
+            codeBuilder.AppendLine($"# Thread daemon: {threadAttribute.Daemon}");
+            codeBuilder.AppendLine($"# Method signature: {method.GetSignatureHash()}");
+
+            return codeBuilder.ToString();
+        }
+
+        /// <inheritdoc />
+        protected override Task ValidateMethodExecutionAsync(MethodInfo method, CancellationToken cancellationToken)
+        {
+            if (!method.HasAttribute<ThreadAttribute>())
+            {
+                throw new NotSupportedException($"Method {method.Name} must be decorated with [Thread] attribute to be executed by ThreadExecutor");
+            }
+
+            // Thread methods should typically return void or Task
+            var returnType = method.ReturnType;
+            if (returnType != typeof(void) && returnType != typeof(Task))
+            {
+                Logger.LogWarning("Thread method {MethodName} has return type {ReturnType} - " +
+                    "thread methods should typically return void or Task", 
+                    method.Name, returnType.Name);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Generates Python code to start a background thread.
+        /// </summary>
+        /// <param name="deviceMethodName">The name of the method on the device.</param>
+        /// <param name="threadId">The unique thread identifier.</param>
+        /// <param name="parameters">The parameters to pass to the method.</param>
+        /// <param name="isDaemon">Whether the thread should be a daemon thread.</param>
+        /// <returns>Python code to start the thread.</returns>
+        private string GenerateThreadStartCode(string deviceMethodName, string threadId, object?[]? parameters, bool isDaemon)
+        {
+            var paramList = GenerateParameterList(parameters);
+            var threadFunction = $"{deviceMethodName}_thread_{threadId}";
+
+            var codeBuilder = new StringBuilder();
+            
+            // Create a wrapper function for the thread
+            codeBuilder.AppendLine($"def {threadFunction}():");
+            codeBuilder.AppendLine("    try:");
+            
+            if (!string.IsNullOrEmpty(paramList))
+            {
+                codeBuilder.AppendLine($"        {deviceMethodName}({paramList})");
+            }
+            else
+            {
+                codeBuilder.AppendLine($"        {deviceMethodName}()");
+            }
+            
+            codeBuilder.AppendLine("    except Exception as e:");
+            codeBuilder.AppendLine($"        print('Thread {threadId} error:', e)");
+            codeBuilder.AppendLine();
+
+            // Start the thread
+            codeBuilder.AppendLine($"_thread.start_new_thread({threadFunction}, ())");
+            codeBuilder.AppendLine($"print('Thread {threadId} started')");
+
+            return codeBuilder.ToString();
+        }
+
+        /// <summary>
+        /// Generates Python code to stop a background thread.
+        /// </summary>
+        /// <param name="threadId">The unique thread identifier.</param>
+        /// <returns>Python code to stop the thread.</returns>
+        private string GenerateThreadStopCode(string threadId)
+        {
+            // Note: MicroPython's _thread module doesn't have direct thread termination
+            // This is a simplified implementation - in practice, threads would need
+            // to implement cooperative cancellation
+            return $"print('Attempting to stop thread {threadId}')  # TODO: Implement thread termination";
+        }
+
+        /// <summary>
+        /// Generates a parameter list string for Python function calls.
+        /// </summary>
+        /// <param name="parameters">The parameters to convert.</param>
+        /// <returns>A comma-separated parameter list string.</returns>
+        private string GenerateParameterList(object?[]? parameters)
+        {
+            if (parameters == null || parameters.Length == 0)
+                return string.Empty;
+
+            return string.Join(", ", parameters.Select(SerializeParameter));
+        }
+
+        /// <summary>
+        /// Generates the Python method body for thread operations.
+        /// </summary>
+        /// <param name="method">The method to generate body for.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>The Python method body code.</returns>
+        private async Task<string> GenerateThreadMethodBodyAsync(MethodInfo method, CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask; // Placeholder for async pattern
+            
+            // Thread methods typically run continuously or perform background tasks
+            var codeBuilder = new StringBuilder();
+            
+            codeBuilder.AppendLine("# Background thread implementation");
+            codeBuilder.AppendLine($"print('Thread {method.Name} started')");
+            codeBuilder.AppendLine();
+            codeBuilder.AppendLine("# Main thread loop");
+            codeBuilder.AppendLine("while True:");
+            codeBuilder.AppendLine("    try:");
+            codeBuilder.AppendLine("        # TODO: Implement thread logic");
+            codeBuilder.AppendLine("        time.sleep(1)  # Prevent busy waiting");
+            codeBuilder.AppendLine("        pass");
+            codeBuilder.AppendLine("    except KeyboardInterrupt:");
+            codeBuilder.AppendLine("        break");
+            codeBuilder.AppendLine("    except Exception as e:");
+            codeBuilder.AppendLine($"        print('Thread {method.Name} error:', e)");
+            codeBuilder.AppendLine("        time.sleep(1)  # Brief pause before retry");
+            codeBuilder.AppendLine();
+            codeBuilder.AppendLine($"print('Thread {method.Name} stopped')");
+            
+            return codeBuilder.ToString();
+        }
+    }
+}
