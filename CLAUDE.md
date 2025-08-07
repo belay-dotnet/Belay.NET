@@ -59,8 +59,10 @@ All implementation work is planned using structured documents in the `./plan/` f
 ### Current Planning Status
 - ✅ Technical specification completed
 - ✅ Architecture design completed  
-- 🔄 Implementation planning in progress
-- ⏳ Epic and issue breakdown pending
+- ✅ Core foundation implementation completed
+- ✅ Unit test coverage achieved
+- 🔄 Hardware validation testing phase
+- ⏳ Advanced features development pending
 
 ## Development Commands
 
@@ -73,6 +75,18 @@ make
 
 # Run tests against unix port
 dotnet test --filter "Category=UnixPort"
+```
+
+### Hardware Testing
+```bash
+# Run all hardware validation tests (requires physical devices)
+dotnet test --filter "Category=Hardware" --logger console
+
+# Run hardware tests for specific device type
+dotnet test --filter "Category=Hardware&Category=RaspberryPi" --logger console
+
+# Run performance benchmarks
+dotnet test --filter "Category=Performance" --logger console
 ```
 
 ### Code Quality
@@ -176,6 +190,16 @@ _logger.LogError(ex, "Device communication failed for port {Port}", portName);
 
 ## Development Guidance
 
+### Hardware Testing Workflow
+After completing the foundation implementation with all unit tests passing, the project transitions to hardware validation:
+
+1. **Hardware Setup**: Install required firmware on test devices (see [Hardware Testing Guide](./docs/hardware-testing-guide.md))
+2. **Platform Testing**: Validate implementation on Windows, Linux, and macOS with real hardware
+3. **Protocol Validation**: Test Raw REPL protocol implementation with MicroPython and CircuitPython devices
+4. **Performance Benchmarking**: Measure communication latency and throughput
+5. **Reliability Testing**: Validate error handling, reconnection logic, and edge cases
+6. **Integration Validation**: Ensure all implemented features work correctly with physical devices
+
 ### Test Failure Resolution
 - Whenever there are test failures, ensure they are fixed by improving the core implementation and/or the test implementation the best meet the functional needs of the project, check with the planning subagent for clarification if needed.
 
@@ -185,3 +209,4 @@ _logger.LogError(ex, "Device communication failed for port {Port}", portName);
 - [Original Python Belay Library](https://github.com/BrianPugh/belay)
 - [Technical Specification](./belay_technical_specification.md)
 - [Architecture Plan](./belay_csharp_architecture.md)
+- [Hardware Testing Guide](./docs/hardware-testing-guide.md)
