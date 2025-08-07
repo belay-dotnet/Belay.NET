@@ -1,5 +1,5 @@
-// Copyright (c) Belay.NET. All rights reserved.
-// Licensed under the MIT License.
+// Copyright 2025 Belay.NET Contributors
+// Licensed under the Apache License, Version 2.0
 
 namespace Belay.Core;
 
@@ -109,6 +109,18 @@ public class Device : IDisposable
     /// <param name="code">The Python code to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The execution result as a string.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the device has been disposed.</exception>
+    /// <exception cref="ArgumentException">Thrown when code is null or empty.</exception>
+    /// <exception cref="DeviceConnectionException">Thrown when the device is not connected.</exception>
+    /// <exception cref="DeviceExecutionException">Thrown when code execution fails on the device.</exception>
+    /// <example>
+    /// <code>
+    /// var device = Device.FromConnectionString("serial:COM3");
+    /// await device.ConnectAsync();
+    /// string result = await device.ExecuteAsync("print('Hello World')");
+    /// // result contains the output from the device
+    /// </code>
+    /// </example>
     public async Task<string> ExecuteAsync(string code, CancellationToken cancellationToken = default)
     {
         if (this.disposed)
@@ -132,6 +144,23 @@ public class Device : IDisposable
     /// <param name="code">The Python code to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The execution result cast to the specified type.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the device has been disposed.</exception>
+    /// <exception cref="ArgumentException">Thrown when code is null or empty.</exception>
+    /// <exception cref="DeviceConnectionException">Thrown when the device is not connected.</exception>
+    /// <exception cref="DeviceExecutionException">Thrown when code execution fails on the device.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the result cannot be converted to type T.</exception>
+    /// <example>
+    /// <code>
+    /// var device = Device.FromConnectionString("serial:COM3");
+    /// await device.ConnectAsync();
+    /// 
+    /// // Execute code that returns a number
+    /// int result = await device.ExecuteAsync&lt;int&gt;("2 + 3");
+    /// 
+    /// // Execute code that returns a complex object
+    /// var data = await device.ExecuteAsync&lt;Dictionary&lt;string, object&gt;&gt;("{'temperature': 25.5, 'humidity': 60}");
+    /// </code>
+    /// </example>
     public async Task<T> ExecuteAsync<T>(string code, CancellationToken cancellationToken = default)
     {
         return await this.communication.ExecuteAsync<T>(code, cancellationToken);
@@ -181,6 +210,20 @@ public class Device : IDisposable
     /// <param name="connectionString">Connection string (e.g., "serial:COM3", "subprocess:micropython").</param>
     /// <param name="loggerFactory">Optional logger factory.</param>
     /// <returns>A configured Device instance.</returns>
+    /// <exception cref="ArgumentException">Thrown when the connection string is invalid or unsupported.</exception>
+    /// <example>
+    /// <code>
+    /// // Connect to a device via serial port
+    /// var device = Device.FromConnectionString("serial:COM3");
+    /// 
+    /// // Connect to MicroPython subprocess for testing
+    /// var testDevice = Device.FromConnectionString("subprocess:micropython");
+    /// 
+    /// // With logging
+    /// var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+    /// var deviceWithLogging = Device.FromConnectionString("serial:/dev/ttyACM0", loggerFactory);
+    /// </code>
+    /// </example>
     public static Device FromConnectionString(string connectionString, ILoggerFactory? loggerFactory = null)
     {
         if (string.IsNullOrWhiteSpace(connectionString))

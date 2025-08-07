@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>CS1591</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>Belay.Attributes</PackageId>
+    <Title>Belay.NET Attributes</Title>
+    <Description>Method decoration attributes for Belay.NET device programming framework</Description>
+    <PackageTags>micropython;circuitpython;iot;embedded;attributes;decorators</PackageTags>
+    <RepositoryUrl>https://github.com/belay-dotnet/belay</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <Copyright>Copyright 2025 Belay.NET Contributors</Copyright>
+    <Authors>Belay.NET Contributors</Authors>
+    <Company>Belay.NET</Company>
+  </PropertyGroup>
+
+</Project>

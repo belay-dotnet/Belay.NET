@@ -1,0 +1,11 @@
+- name: Getting Started
+  href: articles/getting-started.md
+- name: Device Programming
+  href: articles/device-programming.md
+- name: Attributes Reference  
+  href: articles/attributes-reference.md
+- name: Hardware Testing
+  href: articles/hardware-testing.md
+- name: API Reference
+  href: api/
+  homepage: api/index.md

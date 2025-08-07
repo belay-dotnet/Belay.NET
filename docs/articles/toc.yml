@@ -1,0 +1,8 @@
+- name: Getting Started
+  href: getting-started.md
+- name: Device Programming  
+  href: device-programming.md
+- name: Attributes Reference
+  href: attributes-reference.md
+- name: Hardware Testing
+  href: hardware-testing.md

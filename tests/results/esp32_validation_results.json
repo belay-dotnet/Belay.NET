@@ -1,0 +1,47 @@
+{
+  "device_path": "/dev/usb/tty-USB_JTAG_serial_debug_unit-40:4C:CA:5B:20:94",
+  "baudrate": 115200,
+  "timestamp": "2025-08-07 15:03:15",
+  "tests_passed": 3,
+  "tests_total": 7,
+  "overall_success": false,
+  "detailed_results": [
+    {
+      "test": "device_info",
+      "success": true,
+      "version": "import sys; sys.version\r\n'3.4.0; MicroPython v1.24.0-dirty on 2024-10-28'\r\n>>>",
+      "platform": "sys.platform\r\n'esp32'\r\n>>>"
+    },
+    {
+      "test": "basic_execution",
+      "success": true,
+      "response": "2 + 3\r\n5\r\n>>>"
+    },
+    {
+      "test": "variable_persistence",
+      "success": true,
+      "response": "test_var * 2\r\n84\r\n>>>"
+    },
+    {
+      "test": "raw_mode_execution",
+      "success": false,
+      "response": "OK\u0004\u0004>"
+    },
+    {
+      "test": "multiline_code",
+      "success": false,
+      "response": "OK\u0004\u0004>"
+    },
+    {
+      "test": "large_data_transfer",
+      "success": false,
+      "response": "OK\u0004\u0004>"
+    },
+    {
+      "test": "error_handling",
+      "success": false,
+      "error_response": "OK\u0004Traceback (most recent call last):\r\n  File \"<stdin>\", line 1, in <module>\r\nZeroDivisionError: divide by zero\r\n\u0004>",
+      "recovery_response": "OK\u0004\u0004>"
+    }
+  ]
+}
