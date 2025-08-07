@@ -56,12 +56,13 @@ public class RawReplProtocolException(string message, RawReplState expectedState
 /// Exception thrown when flow control encounters an error.
 /// </summary>
 /// <inheritdoc/>
-public class FlowControlException(string message, int windowSize, byte receivedByte) : RawReplProtocolException(message, RawReplState.RawPaste, RawReplState.RawPaste) {
+public class FlowControlException(string message, int windowSize, byte receivedByte, RawReplState expectedState = RawReplState.RawPaste, RawReplState actualState = RawReplState.RawPaste) 
+    : RawReplProtocolException(message, expectedState, actualState) {
     /// <inheritdoc/>
-    public int WindowSize { get; }
+    public int WindowSize { get; } = windowSize;
 
     /// <inheritdoc/>
-    public byte ReceivedByte { get; }
+    public byte ReceivedByte { get; } = receivedByte;
 }
 
 /// <summary>

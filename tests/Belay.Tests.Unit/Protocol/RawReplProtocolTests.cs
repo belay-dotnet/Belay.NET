@@ -75,8 +75,8 @@ public class RawReplProtocolTests {
         _protocol.Dispose();
 
         // Act & Assert
-        Assert.ThrowsAsync<ObjectDisposedException>(async () =>
-            await _protocol.ExecuteCodeAsync("print('hello')"));
+        Assert.ThrowsAsync<ObjectDisposedException>(
+            () => _protocol.ExecuteCodeAsync("print('hello')"));
     }
 
     [Test]

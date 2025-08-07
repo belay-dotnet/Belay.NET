@@ -86,7 +86,9 @@ namespace Belay.Tests.Unit.Execution {
                 _executor.ApplyPoliciesAndExecuteAsync<string>(null!).GetAwaiter().GetResult();
             });
 
-            Assert.That(ex.Message, Does.Contain("Python code cannot be null or empty"));
+#pragma warning disable CS8602 // Dereference of a possibly null reference
+            StringAssert.Contains("Python code cannot be null or empty", ex.Message);
+#pragma warning restore CS8602
         }
 
         [Test]
@@ -96,7 +98,9 @@ namespace Belay.Tests.Unit.Execution {
                 _executor.ApplyPoliciesAndExecuteAsync<string>("").GetAwaiter().GetResult();
             });
 
-            Assert.That(ex.Message, Does.Contain("Python code cannot be null or empty"));
+#pragma warning disable CS8602 // Dereference of a possibly null reference
+            StringAssert.Contains("Python code cannot be null or empty", ex.Message);
+#pragma warning restore CS8602
         }
 
         [Test]
@@ -143,16 +147,32 @@ namespace Belay.Tests.Unit.Execution {
         [Test]
         public async Task StopAllThreadsAsync_ReturnsStoppedCount() {
             // Arrange
-            const int expectedStoppedCount = 3;
-            _mockCommunication.ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<CancellationToken>())
-                .Returns(expectedStoppedCount);
+            const string threadName1 = "thread1";
+            const string threadName2 = "thread2";
+            const string threadName3 = "thread3";
+
+            // Simulate existing threads
+            var threads = new[]
+            {
+                new RunningThread { ThreadId = "id1", MethodName = threadName1, IsRunning = true },
+                new RunningThread { ThreadId = "id2", MethodName = threadName2, IsRunning = true },
+                new RunningThread { ThreadId = "id3", MethodName = threadName3, IsRunning = true }
+            };
+
+            var privateField = typeof(ThreadExecutor).GetField("runningThreads", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            privateField?.SetValue(_executor, new ConcurrentDictionary<string, RunningThread>(
+                threads.ToDictionary(t => t.MethodName, t => t)));
+
+            // All stop operations are successful
+            _mockCommunication.ExecuteAsync<bool>(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(true);
 
             // Act
             var result = await _executor.StopAllThreadsAsync();
 
             // Assert
-            Assert.AreEqual(expectedStoppedCount, result);
-            await _mockCommunication.Received(1).ExecuteAsync<int>(Arg.Any<string>(), Arg.Any<CancellationToken>());
+            Assert.AreEqual(3, result);
+            await _mockCommunication.Received(3).ExecuteAsync<bool>(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
 
         [Test]

@@ -89,7 +89,9 @@ namespace Belay.Tests.Unit.Execution {
                 _executor.ApplyPoliciesAndExecuteAsync<string>(null!).GetAwaiter().GetResult();
             });
 
-            Assert.That(ex.Message, Does.Contain("Python code cannot be null or empty"));
+#pragma warning disable CS8602 // Dereference of a possibly null reference
+            StringAssert.Contains("Python code cannot be null or empty", ex.Message);
+#pragma warning restore CS8602
         }
 
         [Test]
@@ -99,7 +101,9 @@ namespace Belay.Tests.Unit.Execution {
                 _executor.ApplyPoliciesAndExecuteAsync<string>("").GetAwaiter().GetResult();
             });
 
-            Assert.That(ex.Message, Does.Contain("Python code cannot be null or empty"));
+#pragma warning disable CS8602 // Dereference of a possibly null reference
+            StringAssert.Contains("Python code cannot be null or empty", ex.Message);
+#pragma warning restore CS8602
         }
 
         [Test]

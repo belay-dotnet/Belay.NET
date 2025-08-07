@@ -54,7 +54,7 @@ namespace Belay.Core.Sessions {
                     sessionId,
                     this.communication,
                     this.loggerFactory,
-                    await this.GetDeviceInfoAsync(cancellationToken).ConfigureAwait(false));
+                    await GetDeviceInfoAsync(cancellationToken).ConfigureAwait(false));
 
                 this.activeSessions.TryAdd(sessionId, session);
                 this.currentSessionId = sessionId;
