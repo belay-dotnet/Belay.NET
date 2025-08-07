@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Belay.Core\Belay.Core.csproj" />
+    <ProjectReference Include="..\..\src\Belay.Sync\Belay.Sync.csproj" />
   </ItemGroup>
 
 </Project>
