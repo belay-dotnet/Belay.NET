@@ -117,8 +117,10 @@ public class SubprocessDeviceCommunication : IDeviceCommunication
             this.stdout = this.micropythonProcess.StandardOutput;
             this.stderr = this.micropythonProcess.StandardError;
 
-            // Create duplex stream for raw REPL protocol
-            var duplexStream = new DuplexStream(this.stdin.BaseStream, this.stdout.BaseStream);
+            // Create duplex stream for raw REPL protocol - use base streams directly to avoid buffering
+            var duplexStream = new DuplexStream(
+                this.micropythonProcess.StandardInput.BaseStream, 
+                this.micropythonProcess.StandardOutput.BaseStream);
             this.replProtocol = new RawReplProtocol(
                 duplexStream,
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<RawReplProtocol>.Instance);
