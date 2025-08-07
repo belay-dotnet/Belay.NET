@@ -355,7 +355,7 @@ public class SubprocessDeviceCommunication : IDeviceCommunication {
         this.logger.LogDebug("Waiting for MicroPython subprocess to be ready");
 
         // Give MicroPython additional time to complete initialization
-        await Task.Delay(2000, cancellationToken);
+        await Task.Delay(3000, cancellationToken);
 
         // Simple test to ensure the subprocess can enter Raw REPL
         try {

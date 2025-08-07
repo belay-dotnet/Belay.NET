@@ -271,7 +271,17 @@ os.getcwd()
     }
 
     private SubprocessDeviceCommunication CreateDevice() {
-        var micropythonPath = MicroPythonUnixPort.FindMicroPythonExecutable()!;
+        // Get MicroPython path from environment or use default search
+        string? micropythonPath = Environment.GetEnvironmentVariable("MICROPYTHON_EXECUTABLE");
+        
+        if (string.IsNullOrEmpty(micropythonPath)) {
+            micropythonPath = MicroPythonUnixPort.FindMicroPythonExecutable();
+        }
+        
+        if (string.IsNullOrEmpty(micropythonPath)) {
+            throw new InvalidOperationException("MicroPython executable not found. Set MICROPYTHON_EXECUTABLE environment variable or ensure MicroPython is built in micropython/ports/unix/build-standard/micropython");
+        }
+
         var device = new SubprocessDeviceCommunication(
             micropythonPath,
             logger: _loggerFactory.CreateLogger<SubprocessDeviceCommunication>());

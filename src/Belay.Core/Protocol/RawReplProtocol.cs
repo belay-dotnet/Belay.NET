@@ -114,7 +114,7 @@ public class RawReplProtocol : IDisposable {
 
             // Wait for initial startup output and banner
             this.logger.LogDebug("Waiting for MicroPython startup...");
-            await Task.Delay(1000, cancellationToken); // Give MicroPython time to start
+            await Task.Delay(2000, cancellationToken); // Give MicroPython time to start
 
             // Drain any startup output
             this.logger.LogDebug("Draining startup output...");
@@ -184,7 +184,7 @@ public class RawReplProtocol : IDisposable {
 
         // Read response - MicroPython unix port may send banner first, then "raw REPL"
         this.logger.LogDebug("Starting to read Raw REPL response...");
-        string response = await this.ReadWithTimeoutAsync(2000, cancellationToken);
+        string response = await this.ReadWithTimeoutAsync(3000, cancellationToken);
         this.logger.LogDebug($"Raw REPL response: '{response}' (length: {response.Length})");
 
         if (!response.Contains("raw REPL")) {
