@@ -21,9 +21,10 @@ namespace Belay.Core.Execution {
         /// Initializes a new instance of the <see cref="SetupExecutor"/> class.
         /// </summary>
         /// <param name="device">The device to execute code on.</param>
+        /// <param name="sessionManager">The session manager for device coordination.</param>
         /// <param name="logger">The logger for diagnostic information.</param>
-        public SetupExecutor(Device device, ILogger<SetupExecutor> logger)
-            : base(device, logger) {
+        public SetupExecutor(Device device, Belay.Core.Sessions.IDeviceSessionManager sessionManager, ILogger<SetupExecutor> logger)
+            : base(device, sessionManager, logger) {
             this.executedSetupMethods = new ConcurrentDictionary<string, bool>();
             this.setupSemaphore = new SemaphoreSlim(1, 1);
         }

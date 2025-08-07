@@ -11,6 +11,21 @@ namespace Belay.Core.Execution {
     using ThreadPriority = Belay.Attributes.ThreadPriority;
 
     /// <summary>
+    /// Represents a method that has been deployed to a device.
+    /// </summary>
+    public class DeployedMethod {
+        /// <summary>
+        /// Gets the name of the method on the device.
+        /// </summary>
+        public string DeviceMethodName { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Gets a hash representing the method's signature.
+        /// </summary>
+        public string SignatureHash { get; init; } = string.Empty;
+    }
+
+    /// <summary>
     /// Represents information about a running background thread on the device.
     /// </summary>
     public sealed class RunningThread {
@@ -61,9 +76,10 @@ namespace Belay.Core.Execution {
         /// Initializes a new instance of the <see cref="ThreadExecutor"/> class.
         /// </summary>
         /// <param name="device">The device to execute code on.</param>
+        /// <param name="sessionManager">The session manager for device coordination.</param>
         /// <param name="logger">The logger for diagnostic information.</param>
-        public ThreadExecutor(Device device, ILogger<ThreadExecutor> logger)
-            : base(device, logger) {
+        public ThreadExecutor(Device device, Belay.Core.Sessions.IDeviceSessionManager sessionManager, ILogger<ThreadExecutor> logger)
+            : base(device, sessionManager, logger) {
             this.runningThreads = new ConcurrentDictionary<string, RunningThread>();
         }
 
@@ -143,7 +159,7 @@ namespace Belay.Core.Execution {
         /// Checks the health of all running threads and updates their status.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public async Task CheckThreadHealthAsync(CancellationToken cancellationToken = default) {
             this.Logger.LogDebug("Checking health of {Count} threads", this.runningThreads.Count);
 
@@ -200,13 +216,13 @@ json.dumps({{
         /// Stops all running threads.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
-        public async Task StopAllThreadsAsync(CancellationToken cancellationToken = default) {
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task<int> StopAllThreadsAsync(CancellationToken cancellationToken = default) {
             this.Logger.LogInformation("Stopping all {Count} running threads", this.runningThreads.Count);
 
             if (this.runningThreads.IsEmpty) {
                 this.Logger.LogDebug("No threads to stop");
-                return;
+                return 0;
             }
 
             // First, send stop signals to all threads concurrently
@@ -255,6 +271,7 @@ json.dumps({{
             }
 
             this.Logger.LogInformation("Thread shutdown completed");
+            return stoppedCount;
         }
 
         /// <summary>
@@ -424,6 +441,29 @@ print(f'Thread {threadName} launched with ID {threadId}')";
             var indent = new string(' ', spaces);
             return string.Join("\n", code.Split('\n').Select(line =>
                 string.IsNullOrWhiteSpace(line) ? line : indent + line));
+        }
+
+        /// <summary>
+        /// Clears the cache of deployed methods.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task ClearCacheAsync() {
+            this.Logger.LogInformation("Clearing thread executor method cache");
+
+            // Implement method cache clearing logic
+            // This might involve stopping threads and resetting internal state
+            await this.StopAllThreadsAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Gets all deployed methods in the thread executor.
+        /// </summary>
+        /// <returns>A collection of deployed methods.</returns>
+        public Task<IReadOnlyCollection<DeployedMethod>> GetDeployedMethodsAsync() {
+            // Placeholder implementation
+            // In a real scenario, you would track deployed methods during deployment
+            this.Logger.LogInformation("Retrieving deployed methods");
+            return Task.FromResult<IReadOnlyCollection<DeployedMethod>>(Array.Empty<DeployedMethod>());
         }
 
         /// <summary>

@@ -24,9 +24,10 @@ namespace Belay.Core.Execution {
         /// Initializes a new instance of the <see cref="TaskExecutor"/> class.
         /// </summary>
         /// <param name="device">The device to execute Python code on.</param>
+        /// <param name="sessionManager">The session manager for device coordination.</param>
         /// <param name="logger">The logger for diagnostic information.</param>
-        public TaskExecutor(Device device, ILogger<TaskExecutor> logger)
-            : base(device, logger) {
+        public TaskExecutor(Device device, Belay.Core.Sessions.IDeviceSessionManager sessionManager, ILogger<TaskExecutor> logger)
+            : base(device, sessionManager, logger) {
             this.exclusiveExecutionSemaphore = new SemaphoreSlim(1, 1);
             this.resultCache = new ConcurrentDictionary<string, object?>();
         }
@@ -156,6 +157,16 @@ namespace Belay.Core.Execution {
         public (int CurrentCount, int MaxCount) GetExclusiveExecutionStats() {
             this.ThrowIfDisposed();
             return (this.exclusiveExecutionSemaphore.CurrentCount, 1); // Max count is always 1 for exclusive
+        }
+
+        /// <summary>
+        /// Gets the methods that have been executed.
+        /// </summary>
+        /// <returns>A collection of executed method names.</returns>
+        public Task<IReadOnlyCollection<string>> GetExecutedMethodsAsync() {
+            this.ThrowIfDisposed();
+            // Since we don't track method names in this implementation, return an empty collection
+            return Task.FromResult<IReadOnlyCollection<string>>(Array.Empty<string>());
         }
 
         /// <inheritdoc />

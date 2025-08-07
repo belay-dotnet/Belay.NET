@@ -6,6 +6,7 @@ namespace Belay.Core;
 using Belay.Core.Communication;
 using Belay.Core.Discovery;
 using Belay.Core.Execution;
+using Belay.Core.Sessions;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -15,6 +16,7 @@ using Microsoft.Extensions.Logging;
 public class Device : IDisposable {
     private readonly IDeviceCommunication communication;
     private readonly ILogger<Device> logger;
+    private readonly IDeviceSessionManager sessionManager;
     private readonly Lazy<TaskExecutor> taskExecutor;
     private readonly Lazy<SetupExecutor> setupExecutor;
     private readonly Lazy<ThreadExecutor> threadExecutor;
@@ -46,11 +48,16 @@ public class Device : IDisposable {
 
         var executorLoggerFactory = loggerFactory ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
 
-        // Initialize executors lazily to avoid circular dependencies
-        this.taskExecutor = new Lazy<TaskExecutor>(() => new TaskExecutor(this, executorLoggerFactory.CreateLogger<TaskExecutor>()));
-        this.setupExecutor = new Lazy<SetupExecutor>(() => new SetupExecutor(this, executorLoggerFactory.CreateLogger<SetupExecutor>()));
-        this.threadExecutor = new Lazy<ThreadExecutor>(() => new ThreadExecutor(this, executorLoggerFactory.CreateLogger<ThreadExecutor>()));
-        this.teardownExecutor = new Lazy<TeardownExecutor>(() => new TeardownExecutor(this, executorLoggerFactory.CreateLogger<TeardownExecutor>()));
+        // Initialize session manager
+        this.sessionManager = new DeviceSessionManager(
+            this.communication,
+            executorLoggerFactory);
+
+        // Initialize executors lazily with session management support
+        this.taskExecutor = new Lazy<TaskExecutor>(() => new TaskExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<TaskExecutor>()));
+        this.setupExecutor = new Lazy<SetupExecutor>(() => new SetupExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<SetupExecutor>()));
+        this.threadExecutor = new Lazy<ThreadExecutor>(() => new ThreadExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<ThreadExecutor>()));
+        this.teardownExecutor = new Lazy<TeardownExecutor>(() => new TeardownExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<TeardownExecutor>()));
     }
 
     /// <summary>
@@ -87,6 +94,11 @@ public class Device : IDisposable {
     /// Gets the teardown executor for methods decorated with [Teardown] attribute.
     /// </summary>
     public TeardownExecutor Teardown => this.teardownExecutor.Value;
+
+    /// <summary>
+    /// Gets the session manager for advanced session coordination scenarios.
+    /// </summary>
+    public IDeviceSessionManager Sessions => this.sessionManager;
 
     /// <summary>
     /// Connect to the MicroPython device.
@@ -324,7 +336,7 @@ public class Device : IDisposable {
             _ => throw new ArgumentException($"Unsupported connection type: {type}"),
         };
 
-        return new Device(communication, loggerFactory?.CreateLogger<Device>());
+        return new Device(communication, loggerFactory?.CreateLogger<Device>(), loggerFactory);
     }
 
     /// <summary>
@@ -353,7 +365,7 @@ public class Device : IDisposable {
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Array of discovered device information.</returns>
-    public static async Task<DeviceInfo[]> DiscoverDevicesAsync(CancellationToken cancellationToken = default) {
+    public static async Task<Discovery.DeviceInfo[]> DiscoverDevicesAsync(CancellationToken cancellationToken = default) {
         return await SerialDeviceDiscovery.DiscoverMicroPythonDevicesAsync(cancellationToken);
     }
 
@@ -364,7 +376,7 @@ public class Device : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A Device instance for the first discovered device, or null if none found.</returns>
     public static async Task<Device?> DiscoverFirstAsync(ILoggerFactory? loggerFactory = null, CancellationToken cancellationToken = default) {
-        DeviceInfo[] devices = await DiscoverDevicesAsync(cancellationToken);
+        Discovery.DeviceInfo[] devices = await DiscoverDevicesAsync(cancellationToken);
         if (devices.Length == 0) {
             return null;
         }
@@ -378,6 +390,8 @@ public class Device : IDisposable {
             return;
         }
 
+        // Dispose session manager first to clean up resources
+        this.sessionManager?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         this.communication?.Dispose();
         this.disposed = true;
     }

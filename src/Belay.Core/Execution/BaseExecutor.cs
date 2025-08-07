@@ -8,6 +8,7 @@ namespace Belay.Core.Execution {
     using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
+    using Belay.Core.Sessions;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -20,6 +21,11 @@ namespace Belay.Core.Execution {
         protected Device Device { get; }
 
         /// <summary>
+        /// Gets the session manager for coordinating device sessions.
+        /// </summary>
+        protected IDeviceSessionManager SessionManager { get; }
+
+        /// <summary>
         /// Gets logger for diagnostic information.
         /// </summary>
         protected ILogger Logger { get; }
@@ -28,9 +34,11 @@ namespace Belay.Core.Execution {
         /// Initializes a new instance of the <see cref="BaseExecutor"/> class.
         /// </summary>
         /// <param name="device">The device to execute Python code on.</param>
+        /// <param name="sessionManager">The session manager for device coordination.</param>
         /// <param name="logger">The logger for diagnostic information.</param>
-        protected BaseExecutor(Device device, ILogger logger) {
+        protected BaseExecutor(Device device, IDeviceSessionManager sessionManager, ILogger logger) {
             this.Device = device ?? throw new ArgumentNullException(nameof(device));
+            this.SessionManager = sessionManager ?? throw new ArgumentNullException(nameof(sessionManager));
             this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -83,6 +91,39 @@ namespace Belay.Core.Execution {
         protected async Task ExecuteOnDeviceAsync(string pythonCode, CancellationToken cancellationToken = default) {
             this.Logger.LogDebug("Executing Python code on device: {Code}", pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
             await this.Device.ExecuteAsync(pythonCode, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Executes an operation within a session context, providing access to session state and resources.
+        /// </summary>
+        /// <typeparam name="T">The return type of the operation.</typeparam>
+        /// <param name="operation">The operation to execute within the session.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>The result of the operation.</returns>
+        protected async Task<T> ExecuteInSessionAsync<T>(
+            Func<IDeviceSession, Task<T>> operation,
+            CancellationToken cancellationToken = default) {
+            if (operation == null) {
+                throw new ArgumentNullException(nameof(operation));
+            }
+
+            return await this.SessionManager.ExecuteInSessionAsync(operation, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Executes an operation within a session context without returning a value.
+        /// </summary>
+        /// <param name="operation">The operation to execute within the session.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        protected async Task ExecuteInSessionAsync(
+            Func<IDeviceSession, Task> operation,
+            CancellationToken cancellationToken = default) {
+            if (operation == null) {
+                throw new ArgumentNullException(nameof(operation));
+            }
+
+            await this.SessionManager.ExecuteInSessionAsync(operation, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
