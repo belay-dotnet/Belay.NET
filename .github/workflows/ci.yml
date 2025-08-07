@@ -1,0 +1,179 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Install build dependencies for MicroPython
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc make
+
+    - name: Build MicroPython unix port
+      run: |
+        cd micropython/ports/unix
+        make submodules
+        make
+      env:
+        MICROPYTHON_EXECUTABLE: ${{ github.workspace }}/micropython/ports/unix/build-standard/micropython
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run unit tests
+      run: |
+        dotnet test tests/Belay.Tests.Unit/Belay.Tests.Unit.csproj \
+          --no-build --configuration Release \
+          --logger trx --results-directory TestResults \
+          --collect:"XPlat Code Coverage"
+
+    - name: Run integration tests (if available)
+      run: |
+        if [ -f "tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj" ]; then
+          dotnet test tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj \
+            --no-build --configuration Release \
+            --logger trx --results-directory TestResults
+        fi
+
+    - name: Run subprocess tests (if available) 
+      run: |
+        if [ -f "tests/Belay.Tests.Subprocess/Belay.Tests.Subprocess.csproj" ]; then
+          dotnet test tests/Belay.Tests.Subprocess/Belay.Tests.Subprocess.csproj \
+            --no-build --configuration Release \
+            --logger trx --results-directory TestResults
+        fi
+      env:
+        MICROPYTHON_EXECUTABLE: ${{ github.workspace }}/micropython/ports/unix/build-standard/micropython
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: TestResults
+
+    - name: Upload code coverage
+      uses: codecov/codecov-action@v4
+      if: always()
+      with:
+        directory: TestResults
+        fail_ci_if_error: false
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Check for vulnerable packages
+      run: |
+        dotnet list package --vulnerable --include-transitive || exit_code=$?
+        if [ $exit_code -ne 0 ]; then
+          echo "❌ Vulnerable packages detected"
+          exit 1
+        else
+          echo "✅ No vulnerable packages found"
+        fi
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Check code formatting
+      run: |
+        dotnet format --verify-no-changes --verbosity diagnostic
+
+    - name: Run static analysis
+      run: |
+        dotnet build --configuration Release --verbosity normal
+
+  performance-benchmark:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Build MicroPython unix port
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc make
+        cd micropython/ports/unix
+        make submodules
+        make
+
+    - name: Run performance benchmarks
+      run: |
+        if [ -f "tests/Belay.Tests.Performance/Belay.Tests.Performance.csproj" ]; then
+          dotnet run --project tests/Belay.Tests.Performance --configuration Release
+        else
+          echo "Performance tests not yet implemented"
+        fi
+      env:
+        MICROPYTHON_EXECUTABLE: ${{ github.workspace }}/micropython/ports/unix/build-standard/micropython
