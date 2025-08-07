@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 public class SerialDeviceCommunication : IDeviceCommunication
 {
     private readonly SerialPort serialPort;
-    private readonly RawReplProtocol replProtocol;
+    private RawReplProtocol? replProtocol;
     private readonly SemaphoreSlim executionSemaphore;
     private readonly CancellationTokenSource cancellationTokenSource;
     private readonly ILogger<SerialDeviceCommunication> logger;
@@ -52,9 +52,7 @@ public class SerialDeviceCommunication : IDeviceCommunication
             NewLine = "\n",
         };
 
-        this.replProtocol = new RawReplProtocol(
-            this.serialPort.BaseStream,
-            Microsoft.Extensions.Logging.Abstractions.NullLogger<RawReplProtocol>.Instance);
+        // RawReplProtocol will be created when the port is opened
 
         this.State = DeviceConnectionState.Disconnected;
     }
@@ -78,7 +76,7 @@ public class SerialDeviceCommunication : IDeviceCommunication
     /// Connect to the device.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task ConnectAsync(CancellationToken cancellationToken = default)
+    public virtual async Task ConnectAsync(CancellationToken cancellationToken = default)
     {
         if (this.disposed)
         {
@@ -100,6 +98,11 @@ public class SerialDeviceCommunication : IDeviceCommunication
 
             // Open serial port
             this.serialPort.Open();
+
+            // Create raw REPL protocol now that port is open
+            this.replProtocol = new RawReplProtocol(
+                this.serialPort.BaseStream,
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<RawReplProtocol>.Instance);
 
             // Wait for device to be ready (may need soft reset)
             await this.WaitForDeviceReadyAsync(cancellationToken);
@@ -131,7 +134,7 @@ public class SerialDeviceCommunication : IDeviceCommunication
     /// Disconnect from the device.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task DisconnectAsync(CancellationToken cancellationToken = default)
+    public virtual async Task DisconnectAsync(CancellationToken cancellationToken = default)
     {
         if (this.State == DeviceConnectionState.Disconnected)
         {
@@ -145,7 +148,10 @@ public class SerialDeviceCommunication : IDeviceCommunication
             if (this.serialPort.IsOpen)
             {
                 // Try to exit raw mode gracefully
-                await this.replProtocol.ExitRawModeAsync(cancellationToken);
+                if (this.replProtocol != null)
+                {
+                    await this.replProtocol.ExitRawModeAsync(cancellationToken);
+                }
                 this.serialPort.Close();
             }
         }
@@ -184,6 +190,11 @@ public class SerialDeviceCommunication : IDeviceCommunication
             this.RecordCommand(code);
 
             // Execute via raw REPL protocol
+            if (this.replProtocol == null)
+            {
+                throw new InvalidOperationException("Device not connected. Call ConnectAsync() first.");
+            }
+
             RawReplResponse response = await this.replProtocol.ExecuteCodeAsync(code, useRawPasteMode: true, cancellationToken);
 
             if (!response.IsSuccess)
@@ -462,7 +473,10 @@ except OSError:
         {
             try
             {
-                await this.replProtocol.ExecuteCodeAsync(command, useRawPasteMode: true, cancellationToken);
+                if (this.replProtocol != null)
+                {
+                    await this.replProtocol.ExecuteCodeAsync(command, useRawPasteMode: true, cancellationToken);
+                }
             }
             catch (Exception ex)
             {
@@ -506,7 +520,7 @@ except OSError:
                 }
 
                 this.serialPort.Dispose();
-                this.replProtocol.Dispose();
+                this.replProtocol?.Dispose();
                 this.executionSemaphore.Dispose();
                 this.cancellationTokenSource.Dispose();
             }

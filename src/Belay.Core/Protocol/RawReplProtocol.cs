@@ -49,10 +49,10 @@ public class RawReplResponse
 public class RawReplProtocolException(string message, RawReplState expectedState, RawReplState actualState) : Exception(message)
 {
     /// <inheritdoc/>
-    public RawReplState ExpectedState { get; }
+    public RawReplState ExpectedState { get; } = expectedState;
 
     /// <inheritdoc/>
-    public RawReplState ActualState { get; }
+    public RawReplState ActualState { get; } = actualState;
 }
 
 /// <summary>
@@ -62,10 +62,10 @@ public class RawReplProtocolException(string message, RawReplState expectedState
 public class FlowControlException(string message, int windowSize, byte receivedByte) : RawReplProtocolException(message, RawReplState.RawPaste, RawReplState.RawPaste)
 {
     /// <inheritdoc/>
-    public int WindowSize { get; }
+    public int WindowSize { get; } = windowSize;
 
     /// <inheritdoc/>
-    public byte ReceivedByte { get; }
+    public byte ReceivedByte { get; } = receivedByte;
 }
 
 /// <summary>
