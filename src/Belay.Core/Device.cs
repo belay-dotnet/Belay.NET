@@ -38,7 +38,18 @@ public class Device : IDisposable {
     /// <param name="communication">The device communication implementation.</param>
     /// <param name="logger">Optional logger for device operations.</param>
     /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
-    public Device(IDeviceCommunication communication, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null) {
+    public Device(IDeviceCommunication communication, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null)
+        : this(communication, null, logger, loggerFactory) {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Device"/> class with dependency injection support.
+    /// </summary>
+    /// <param name="communication">The device communication implementation.</param>
+    /// <param name="sessionManager">The session manager for device coordination.</param>
+    /// <param name="logger">Logger for device operations.</param>
+    /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
+    public Device(IDeviceCommunication communication, IDeviceSessionManager? sessionManager, ILogger<Device> logger, ILoggerFactory? loggerFactory = null) {
         this.communication = communication ?? throw new ArgumentNullException(nameof(communication));
         this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Device>.Instance;
 
@@ -48,8 +59,8 @@ public class Device : IDisposable {
 
         var executorLoggerFactory = loggerFactory ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
 
-        // Initialize session manager
-        this.sessionManager = new DeviceSessionManager(
+        // Use injected session manager or create a default one
+        this.sessionManager = sessionManager ?? new DeviceSessionManager(
             this.communication,
             executorLoggerFactory);
 

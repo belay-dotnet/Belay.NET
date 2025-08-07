@@ -12,6 +12,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,8 +20,10 @@ using Belay.Attributes;
 using Belay.Core;
 using Belay.Core.Communication;
 using Belay.Core.Execution;
+using Belay.Core.Sessions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NUnit.Framework;
 
 namespace Belay.Tests.Unit.Execution {
     /// <summary>
@@ -47,13 +50,19 @@ namespace Belay.Tests.Unit.Execution {
 
         [Test]
         public void Constructor_WithNullDevice_ThrowsArgumentNullException() {
-            Assert.Throws<ArgumentNullException>(() => new TaskExecutor(null!, _mockLogger));
+            var mockSessionManager = Substitute.For<IDeviceSessionManager>();
+            Assert.Throws<ArgumentNullException>(() => new TaskExecutor(null!, mockSessionManager, _mockLogger));
+        }
+
+        [Test]
+        public void Constructor_WithNullSessionManager_ThrowsArgumentNullException() {
+            Assert.Throws<ArgumentNullException>(() => new TaskExecutor(_device, null!, _mockLogger));
         }
 
         [Test]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException() {
-            var mockDevice = Substitute.For<Device>(Substitute.For<IDeviceCommunication>());
-            Assert.Throws<ArgumentNullException>(() => new TaskExecutor(mockDevice, null!));
+            var mockSessionManager = Substitute.For<IDeviceSessionManager>();
+            Assert.Throws<ArgumentNullException>(() => new TaskExecutor(_device, mockSessionManager, null!));
         }
 
         [Test]
@@ -69,30 +78,32 @@ namespace Belay.Tests.Unit.Execution {
             var result = await _executor.ApplyPoliciesAndExecuteAsync<string>(pythonCode);
 
             // Assert
-            Assert.Equal(expectedResult, result);
+            Assert.AreEqual(expectedResult, result);
             await _mockCommunication.Received(1).ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
 
         [Test]
-        public async Task ApplyPoliciesAndExecuteAsync_WithNullCode_ThrowsArgumentException() {
+        public void ApplyPoliciesAndExecuteAsync_WithNullCode_ThrowsArgumentException() {
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _executor.ApplyPoliciesAndExecuteAsync<string>(null!));
+            var ex = Assert.Throws<ArgumentException>(() => {
+                _executor.ApplyPoliciesAndExecuteAsync<string>(null!).GetAwaiter().GetResult();
+            });
 
-            Assert.Contains("Python code cannot be null or empty", exception.Message);
+            Assert.That(ex.Message, Does.Contain("Python code cannot be null or empty"));
         }
 
         [Test]
-        public async Task ApplyPoliciesAndExecuteAsync_WithEmptyCode_ThrowsArgumentException() {
+        public void ApplyPoliciesAndExecuteAsync_WithEmptyCode_ThrowsArgumentException() {
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _executor.ApplyPoliciesAndExecuteAsync<string>(""));
+            var ex = Assert.Throws<ArgumentException>(() => {
+                _executor.ApplyPoliciesAndExecuteAsync<string>("").GetAwaiter().GetResult();
+            });
 
-            Assert.Contains("Python code cannot be null or empty", exception.Message);
+            Assert.That(ex.Message, Does.Contain("Python code cannot be null or empty"));
         }
 
         [Test]
-        public async Task ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() {
+        public void ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() {
             // Arrange
             const string pythonCode = "import time; time.sleep(2)";
 
@@ -102,8 +113,9 @@ namespace Belay.Tests.Unit.Execution {
             using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
             // Act & Assert - Should timeout quickly due to cancellation token
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(
-                () => _executor.ApplyPoliciesAndExecuteAsync<string>(pythonCode, cts.Token));
+            Assert.Throws<OperationCanceledException>(() => {
+                _executor.ApplyPoliciesAndExecuteAsync<string>(pythonCode, cts.Token).GetAwaiter().GetResult();
+            });
         }
 
         [Test]
@@ -131,17 +143,18 @@ namespace Belay.Tests.Unit.Execution {
             var results = await Task.WhenAll(tasks);
 
             // Assert - All should complete successfully
-            Assert.All(results, result => Assert.Equal("42", result));
-            Assert.True(executionCount >= 3); // All executions should have occurred
+            Assert.That(results, Is.All.InstanceOf<string>());
+            Assert.That(results, Has.All.EqualTo("42"));
+            Assert.That(executionCount, Is.GreaterThanOrEqualTo(3)); // All executions should have occurred
         }
 
         [Test]
-        public void GetExecutedMethods_InitiallyEmpty() {
+        public async Task GetExecutedMethods_InitiallyEmpty() {
             // Act
-            var executedMethods = _executor.GetExecutedMethods();
+            var executedMethods = await _executor.GetExecutedMethodsAsync();
 
             // Assert
-            Assert.Empty(executedMethods);
+            Assert.IsEmpty(executedMethods);
         }
 
         [Test]
@@ -155,23 +168,23 @@ namespace Belay.Tests.Unit.Execution {
 
             // Act
             await _executor.ApplyPoliciesAndExecuteAsync<string>(pythonCode, default, methodName);
-            var executedMethods = _executor.GetExecutedMethods();
+            var executedMethods = await _executor.GetExecutedMethodsAsync();
 
             // Assert
-            Assert.Contains(methodName, executedMethods);
+            Assert.That(executedMethods, Contains.Item(methodName));
         }
 
         [Test]
-        public void ClearCache_RemovesExecutedMethods() {
+        public async Task ClearCache_RemovesExecutedMethods() {
             // This test would need to be implemented based on the actual caching behavior
             // For now, we'll test the basic clearing functionality
 
             // Act
             _executor.ClearCache();
-            var executedMethods = _executor.GetExecutedMethods();
+            var executedMethods = await _executor.GetExecutedMethodsAsync();
 
             // Assert
-            Assert.Empty(executedMethods);
+            Assert.IsEmpty(executedMethods);
         }
     }
 }

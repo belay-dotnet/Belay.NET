@@ -70,8 +70,7 @@ namespace Belay.Core.Sessions {
 
         /// <inheritdoc />
         public T? GetExecutor<T>()
-            where T : class
-        {
+            where T : class {
             var executorType = typeof(T);
             return this.registeredExecutors.TryGetValue(executorType, out var executor)
                 ? executor as T

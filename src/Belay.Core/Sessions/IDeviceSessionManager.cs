@@ -83,5 +83,32 @@ namespace Belay.Core.Sessions {
         Task ExecuteInSessionAsync(
             Func<IDeviceSession, Task> operation,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Gets statistics about the session manager.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>Session statistics.</returns>
+        Task<SessionStats> GetSessionStatsAsync(CancellationToken cancellationToken = default);
+    }
+
+    /// <summary>
+    /// Statistics about the session manager.
+    /// </summary>
+    public record SessionStats {
+        /// <summary>
+        /// Gets the number of active sessions.
+        /// </summary>
+        public int ActiveSessionCount { get; init; }
+
+        /// <summary>
+        /// Gets the total number of sessions created.
+        /// </summary>
+        public int TotalSessionCount { get; init; }
+
+        /// <summary>
+        /// Gets the maximum number of concurrent sessions.
+        /// </summary>
+        public int MaxSessionCount { get; init; }
     }
 }

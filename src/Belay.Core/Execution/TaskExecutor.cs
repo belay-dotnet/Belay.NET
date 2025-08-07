@@ -9,6 +9,7 @@ namespace Belay.Core.Execution {
     using System.Threading;
     using System.Threading.Tasks;
     using Belay.Attributes;
+    using Belay.Core.Exceptions;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -26,8 +27,9 @@ namespace Belay.Core.Execution {
         /// <param name="device">The device to execute Python code on.</param>
         /// <param name="sessionManager">The session manager for device coordination.</param>
         /// <param name="logger">The logger for diagnostic information.</param>
-        public TaskExecutor(Device device, Belay.Core.Sessions.IDeviceSessionManager sessionManager, ILogger<TaskExecutor> logger)
-            : base(device, sessionManager, logger) {
+        /// <param name="errorMapper">Optional error mapper for exception handling.</param>
+        public TaskExecutor(Device device, Belay.Core.Sessions.IDeviceSessionManager sessionManager, ILogger<TaskExecutor> logger, IErrorMapper? errorMapper = null)
+            : base(device, sessionManager, logger, errorMapper) {
             this.exclusiveExecutionSemaphore = new SemaphoreSlim(1, 1);
             this.resultCache = new ConcurrentDictionary<string, object?>();
         }
@@ -165,6 +167,7 @@ namespace Belay.Core.Execution {
         /// <returns>A collection of executed method names.</returns>
         public Task<IReadOnlyCollection<string>> GetExecutedMethodsAsync() {
             this.ThrowIfDisposed();
+
             // Since we don't track method names in this implementation, return an empty collection
             return Task.FromResult<IReadOnlyCollection<string>>(Array.Empty<string>());
         }

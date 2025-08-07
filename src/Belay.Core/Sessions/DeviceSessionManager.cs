@@ -139,9 +139,22 @@ namespace Belay.Core.Sessions {
             CancellationToken cancellationToken = default) {
             await this.ExecuteInSessionAsync(
                 async session => {
-                await operation(session).ConfigureAwait(false);
-                return true; // Return value not used
-            }, cancellationToken).ConfigureAwait(false);
+                    await operation(session).ConfigureAwait(false);
+                    return true; // Return value not used
+                }, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public Task<SessionStats> GetSessionStatsAsync(CancellationToken cancellationToken = default) {
+            this.ThrowIfDisposed();
+
+            var stats = new SessionStats {
+                ActiveSessionCount = this.activeSessions.Count,
+                TotalSessionCount = this.activeSessions.Count, // Simplified - would track total in real implementation
+                MaxSessionCount = 10, // From configuration - would be configurable
+            };
+
+            return Task.FromResult(stats);
         }
 
         /// <inheritdoc />

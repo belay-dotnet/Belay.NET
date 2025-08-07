@@ -16,7 +16,7 @@ public class DeviceTests {
         mockCommunication.SetupGet(x => x.State).Returns(DeviceConnectionState.Disconnected);
 
         // Act
-        using var device = new Device(mockCommunication.Object);
+        using var device = new Device(mockCommunication.Object, logger: null);
 
         // Assert
         device.State.Should().Be(DeviceConnectionState.Disconnected);
@@ -25,7 +25,7 @@ public class DeviceTests {
     [Test]
     public void Device_Constructor_WithNullCommunication_ShouldThrowArgumentNullException() {
         // Act & Assert
-        Action action = () => new Device(null!);
+        Action action = () => new Device(null!, logger: null);
         action.Should().Throw<ArgumentNullException>().WithParameterName("communication");
     }
 
@@ -74,7 +74,7 @@ public class DeviceTests {
     public async Task ExecuteAsync_DisposedDevice_ShouldThrowObjectDisposedException() {
         // Arrange
         var mockCommunication = new Mock<IDeviceCommunication>();
-        var device = new Device(mockCommunication.Object);
+        var device = new Device(mockCommunication.Object, logger: null);
         device.Dispose();
 
         // Act & Assert
@@ -89,7 +89,7 @@ public class DeviceTests {
     public async Task ExecuteAsync_InvalidCode_ShouldThrowArgumentException(string? code) {
         // Arrange
         var mockCommunication = new Mock<IDeviceCommunication>();
-        using var device = new Device(mockCommunication.Object);
+        using var device = new Device(mockCommunication.Object, logger: null);
 
         // Act & Assert
         await device.Invoking(d => d.ExecuteAsync(code!))
@@ -103,7 +103,7 @@ public class DeviceTests {
         mockCommunication.Setup(x => x.ExecuteAsync("print('test')", It.IsAny<CancellationToken>()))
             .ReturnsAsync("test");
 
-        using var device = new Device(mockCommunication.Object);
+        using var device = new Device(mockCommunication.Object, logger: null);
 
         // Act
         string result = await device.ExecuteAsync("print('test')");
@@ -116,10 +116,10 @@ public class DeviceTests {
     [Test]
     public async Task ConnectAsync_SerialCommunication_ShouldCallConnectAsync() {
         // Arrange
-        var mockSerial = new Mock<SerialDeviceCommunication>("COM3", 115200, 30000, null);
+        var mockSerial = new Mock<SerialDeviceCommunication>("COM3", 115200, 30000);
         mockSerial.Setup(x => x.ConnectAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
-        using var device = new Device(mockSerial.Object);
+        using var device = new Device(mockSerial.Object, logger: null);
 
         // Act
         await device.ConnectAsync();
@@ -131,10 +131,10 @@ public class DeviceTests {
     [Test]
     public async Task DisconnectAsync_SerialCommunication_ShouldCallDisconnectAsync() {
         // Arrange
-        var mockSerial = new Mock<SerialDeviceCommunication>("COM3", 115200, 30000, null);
+        var mockSerial = new Mock<SerialDeviceCommunication>("COM3", 115200, 30000);
         mockSerial.Setup(x => x.DisconnectAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
-        using var device = new Device(mockSerial.Object);
+        using var device = new Device(mockSerial.Object, logger: null);
 
         // Act
         await device.DisconnectAsync();
@@ -147,7 +147,7 @@ public class DeviceTests {
     public void Dispose_MultipleCallsToDispose_ShouldNotThrow() {
         // Arrange
         var mockCommunication = new Mock<IDeviceCommunication>();
-        var device = new Device(mockCommunication.Object);
+        var device = new Device(mockCommunication.Object, logger: null);
 
         // Act & Assert
         device.Dispose();

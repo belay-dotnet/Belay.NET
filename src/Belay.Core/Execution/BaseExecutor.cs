@@ -8,6 +8,7 @@ namespace Belay.Core.Execution {
     using System.Runtime.CompilerServices;
     using System.Threading;
     using System.Threading.Tasks;
+    using Belay.Core.Exceptions;
     using Belay.Core.Sessions;
     using Microsoft.Extensions.Logging;
 
@@ -31,15 +32,22 @@ namespace Belay.Core.Execution {
         protected ILogger Logger { get; }
 
         /// <summary>
+        /// Gets the error mapper for mapping exceptions.
+        /// </summary>
+        protected IErrorMapper? ErrorMapper { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="BaseExecutor"/> class.
         /// </summary>
         /// <param name="device">The device to execute Python code on.</param>
         /// <param name="sessionManager">The session manager for device coordination.</param>
         /// <param name="logger">The logger for diagnostic information.</param>
-        protected BaseExecutor(Device device, IDeviceSessionManager sessionManager, ILogger logger) {
+        /// <param name="errorMapper">Optional error mapper for exception handling.</param>
+        protected BaseExecutor(Device device, IDeviceSessionManager sessionManager, ILogger logger, IErrorMapper? errorMapper = null) {
             this.Device = device ?? throw new ArgumentNullException(nameof(device));
             this.SessionManager = sessionManager ?? throw new ArgumentNullException(nameof(sessionManager));
             this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.ErrorMapper = errorMapper;
         }
 
         /// <summary>
@@ -79,7 +87,15 @@ namespace Belay.Core.Execution {
         /// <returns>The result of the Python code execution.</returns>
         protected async Task<T> ExecuteOnDeviceAsync<T>(string pythonCode, CancellationToken cancellationToken = default) {
             this.Logger.LogDebug("Executing Python code on device: {Code}", pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
-            return await this.Device.ExecuteAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);
+
+            try {
+                return await this.Device.ExecuteAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (this.ErrorMapper != null) {
+                var mappedException = this.ErrorMapper.MapException(ex, $"ExecuteOnDevice({typeof(T).Name})");
+                mappedException.WithContext("python_code", pythonCode.Length > 200 ? $"{pythonCode[..200]}..." : pythonCode);
+                throw mappedException;
+            }
         }
 
         /// <summary>
@@ -90,7 +106,15 @@ namespace Belay.Core.Execution {
         /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         protected async Task ExecuteOnDeviceAsync(string pythonCode, CancellationToken cancellationToken = default) {
             this.Logger.LogDebug("Executing Python code on device: {Code}", pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
-            await this.Device.ExecuteAsync(pythonCode, cancellationToken).ConfigureAwait(false);
+
+            try {
+                await this.Device.ExecuteAsync(pythonCode, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (this.ErrorMapper != null) {
+                var mappedException = this.ErrorMapper.MapException(ex, "ExecuteOnDevice");
+                mappedException.WithContext("python_code", pythonCode.Length > 200 ? $"{pythonCode[..200]}..." : pythonCode);
+                throw mappedException;
+            }
         }
 
         /// <summary>
