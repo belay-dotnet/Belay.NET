@@ -20,7 +20,6 @@ using Belay.Core;
 using Belay.Core.Execution;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace Belay.Tests.Unit.Execution {
     /// <summary>
@@ -37,17 +36,17 @@ namespace Belay.Tests.Unit.Execution {
             _executor = new SetupExecutor(_mockDevice, _mockLogger);
         }
 
-        [Fact]
+        [Test]
         public void Constructor_WithNullDevice_ThrowsArgumentNullException() {
             Assert.Throws<ArgumentNullException>(() => new SetupExecutor(null!, _mockLogger));
         }
 
-        [Fact]
+        [Test]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException() {
             Assert.Throws<ArgumentNullException>(() => new SetupExecutor(_mockDevice, null!));
         }
 
-        [Fact]
+        [Test]
         public async Task ExecuteSetupAsync_WithSetupAttribute_ExecutesSuccessfully() {
             // Arrange
             var method = GetMethodWithSetupAttribute(nameof(TestSetupMethod));
@@ -64,7 +63,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockDevice.Received(2).ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task ExecuteSetupAsync_WithoutSetupAttribute_ThrowsInvalidOperationException() {
             // Arrange
             var method = GetMethodWithoutAttribute(nameof(TestMethodWithoutAttribute));
@@ -76,7 +75,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Contains("not decorated with [Setup] attribute", exception.Message);
         }
 
-        [Fact]
+        [Test]
         public async Task ExecuteSetupAsync_SameMethodTwice_ExecutesOnlyOnce() {
             // Arrange
             var method = GetMethodWithSetupAttribute(nameof(TestSetupMethod));
@@ -95,7 +94,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockDevice.Received(2).ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()); // Only called once
         }
 
-        [Fact]
+        [Test]
         public async Task ExecuteAllSetupMethodsAsync_WithMultipleSetupMethods_ExecutesInOrder() {
             // Arrange
             var type = typeof(SetupExecutorTests);
@@ -109,7 +108,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockDevice.Received().ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task DeployAsync_WithSetupMethod_CachesDeployedMethod() {
             // Arrange
             var method = GetMethodWithSetupAttribute(nameof(TestSetupMethod));
@@ -126,7 +125,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Equal(method.GetSignatureHash(), deployed1.SignatureHash);
         }
 
-        [Fact]
+        [Test]
         public async Task IsDeployedAsync_WithDeployedMethod_ReturnsTrue() {
             // Arrange
             var method = GetMethodWithSetupAttribute(nameof(TestSetupMethod));
@@ -141,7 +140,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.True(isDeployed);
         }
 
-        [Fact]
+        [Test]
         public async Task IsDeployedAsync_WithNotDeployedMethod_ReturnsFalse() {
             // Arrange
             var method = GetMethodWithSetupAttribute(nameof(TestSetupMethod));
@@ -153,7 +152,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.False(isDeployed);
         }
 
-        [Fact]
+        [Test]
         public async Task ClearCacheAsync_RemovesAllDeployedMethods() {
             // Arrange
             var method1 = GetMethodWithSetupAttribute(nameof(TestSetupMethod));
@@ -172,7 +171,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Empty(deployedMethods);
         }
 
-        [Fact]
+        [Test]
         public void ResetSetupState_ClearsExecutedSetupMethods() {
             // Arrange
             var method = GetMethodWithSetupAttribute(nameof(TestSetupMethod));
@@ -184,7 +183,7 @@ namespace Belay.Tests.Unit.Execution {
             // This is tested indirectly through the setup execution behavior
         }
 
-        [Fact]
+        [Test]
         public void GetExecutedSetupMethods_ReturnsExecutedMethods() {
             // Act
             var executedMethods = _executor.GetExecutedSetupMethods();
@@ -193,7 +192,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.NotNull(executedMethods);
         }
 
-        [Fact]
+        [Test]
         public async Task ExecuteSetupAsync_WithOrderAttribute_RespectsOrder() {
             // Arrange
             var method = GetMethodWithSetupAttribute(nameof(TestSetupMethodWithOrder));
@@ -206,18 +205,18 @@ namespace Belay.Tests.Unit.Execution {
 
         // Test methods with various attributes for testing
         [Setup]
-        [Fact]
+        [Test]
         public void TestSetupMethod() { }
 
         [Setup(Order = 1)]
-        [Fact]
+        [Test]
         public void TestSetupMethodWithOrder() { }
 
-        [Setup(Name = "CustomSetup")]
-        [Fact]
+        [Setup]
+        [Test]
         public void TestSetupMethodWithCustomName() { }
 
-        [Fact]
+        [Test]
         public void TestMethodWithoutAttribute() { }
 
         private MethodInfo GetMethodWithSetupAttribute(string methodName) {

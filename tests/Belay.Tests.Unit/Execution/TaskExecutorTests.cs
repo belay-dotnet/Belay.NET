@@ -21,7 +21,6 @@ using Belay.Core.Communication;
 using Belay.Core.Execution;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace Belay.Tests.Unit.Execution {
     /// <summary>
@@ -46,18 +45,18 @@ namespace Belay.Tests.Unit.Execution {
             _executor = _device.Task;
         }
 
-        [Fact]
+        [Test]
         public void Constructor_WithNullDevice_ThrowsArgumentNullException() {
             Assert.Throws<ArgumentNullException>(() => new TaskExecutor(null!, _mockLogger));
         }
 
-        [Fact]
+        [Test]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException() {
             var mockDevice = Substitute.For<Device>(Substitute.For<IDeviceCommunication>());
             Assert.Throws<ArgumentNullException>(() => new TaskExecutor(mockDevice, null!));
         }
 
-        [Fact]
+        [Test]
         public async Task ApplyPoliciesAndExecuteAsync_WithBasicCode_ExecutesSuccessfully() {
             // Arrange
             const string pythonCode = "print('Hello World')";
@@ -74,7 +73,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockCommunication.Received(1).ExecuteAsync<string>(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task ApplyPoliciesAndExecuteAsync_WithNullCode_ThrowsArgumentException() {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
@@ -83,7 +82,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Contains("Python code cannot be null or empty", exception.Message);
         }
 
-        [Fact]
+        [Test]
         public async Task ApplyPoliciesAndExecuteAsync_WithEmptyCode_ThrowsArgumentException() {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(
@@ -92,7 +91,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Contains("Python code cannot be null or empty", exception.Message);
         }
 
-        [Fact]
+        [Test]
         public async Task ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() {
             // Arrange
             const string pythonCode = "import time; time.sleep(2)";
@@ -107,7 +106,7 @@ namespace Belay.Tests.Unit.Execution {
                 () => _executor.ApplyPoliciesAndExecuteAsync<string>(pythonCode, cts.Token));
         }
 
-        [Fact]
+        [Test]
         public async Task ApplyPoliciesAndExecuteAsync_WithConcurrentCalls_HandlesExclusiveExecution() {
             // Arrange
             const string pythonCode = "result = 42";
@@ -136,7 +135,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.True(executionCount >= 3); // All executions should have occurred
         }
 
-        [Fact]
+        [Test]
         public void GetExecutedMethods_InitiallyEmpty() {
             // Act
             var executedMethods = _executor.GetExecutedMethods();
@@ -145,7 +144,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Empty(executedMethods);
         }
 
-        [Fact]
+        [Test]
         public async Task GetExecutedMethods_AfterExecution_ContainsMethod() {
             // Arrange
             const string pythonCode = "result = 42";
@@ -162,7 +161,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Contains(methodName, executedMethods);
         }
 
-        [Fact]
+        [Test]
         public void ClearCache_RemovesExecutedMethods() {
             // This test would need to be implemented based on the actual caching behavior
             // For now, we'll test the basic clearing functionality

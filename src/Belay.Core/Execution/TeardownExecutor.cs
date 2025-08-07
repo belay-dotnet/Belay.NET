@@ -88,12 +88,12 @@ namespace Belay.Core.Execution {
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         public Task ExecuteAllTeardownMethodsAsync(CancellationToken cancellationToken = default) {
-            Logger.LogInformation("Executing all teardown methods");
+            this.Logger.LogInformation("Executing all teardown methods");
 
             // Note: In a complete implementation, this would discover teardown methods
             // from the device instance and execute them in reverse order
             // For now, this is a placeholder that logs the intent
-            Logger.LogDebug("Teardown execution completed");
+            this.Logger.LogDebug("Teardown execution completed");
             return Task.CompletedTask;
         }
 

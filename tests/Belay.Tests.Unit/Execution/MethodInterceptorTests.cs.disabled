@@ -20,7 +20,6 @@ using Belay.Core;
 using Belay.Core.Execution;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace Belay.Tests.Unit.Execution {
     /// <summary>
@@ -52,19 +51,19 @@ namespace Belay.Tests.Unit.Execution {
                 _mockLogger);
         }
 
-        [Fact]
+        [Test]
         public void Constructor_WithNullDevice_ThrowsArgumentNullException() {
             Assert.Throws<ArgumentNullException>(() => new MethodInterceptor(
                 null!, _mockTaskExecutor, _mockSetupExecutor, _mockThreadExecutor, _mockTeardownExecutor, _mockLogger));
         }
 
-        [Fact]
+        [Test]
         public void Constructor_WithNullTaskExecutor_ThrowsArgumentNullException() {
             Assert.Throws<ArgumentNullException>(() => new MethodInterceptor(
                 _mockDevice, null!, _mockSetupExecutor, _mockThreadExecutor, _mockTeardownExecutor, _mockLogger));
         }
 
-        [Fact]
+        [Test]
         public async Task InterceptAsync_WithTaskAttribute_CallsTaskExecutor() {
             // Arrange
             var method = GetTaskMethod();
@@ -80,7 +79,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockTaskExecutor.Received(1).ExecuteTaskAsync<int>(method, parameters, Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task InterceptAsync_WithSetupAttribute_CallsSetupExecutor() {
             // Arrange
             var method = GetSetupMethod();
@@ -95,7 +94,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockSetupExecutor.Received(1).ExecuteSetupAsync<object>(method, parameters, Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task InterceptAsync_WithThreadAttribute_CallsThreadExecutor() {
             // Arrange
             var method = GetThreadMethod();
@@ -117,7 +116,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockThreadExecutor.Received(1).StartThreadAsync(method, parameters, Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task InterceptAsync_WithTeardownAttribute_CallsTeardownExecutor() {
             // Arrange
             var method = GetTeardownMethod();
@@ -132,7 +131,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockTeardownExecutor.Received(1).ExecuteTeardownAsync<object>(method, parameters, Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task InterceptAsync_WithoutBelayAttribute_ThrowsNotSupportedException() {
             // Arrange
             var method = GetMethodWithoutAttribute();
@@ -144,7 +143,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Contains("does not have a recognized Belay attribute", exception.Message);
         }
 
-        [Fact]
+        [Test]
         public void PrepareTypeForInterception_WithBelayAttributes_RegistersMethods() {
             // Act
             var count = _interceptor.PrepareTypeForInterception(typeof(MethodInterceptorTests));
@@ -156,7 +155,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Equal(4, interceptedMethods.Count);
         }
 
-        [Fact]
+        [Test]
         public void RegisterInterceptedMethod_WithMethod_AddsToCollection() {
             // Arrange
             var method = GetTaskMethod();
@@ -170,7 +169,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Single(interceptedMethods);
         }
 
-        [Fact]
+        [Test]
         public async Task ExecuteSetupMethodsAsync_CallsSetupExecutor() {
             // Arrange
             var type = typeof(MethodInterceptorTests);
@@ -182,7 +181,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockSetupExecutor.Received(1).ExecuteAllSetupMethodsAsync(type, null, Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task ExecuteTeardownMethodsAsync_CallsTeardownExecutor() {
             // Arrange
             var type = typeof(MethodInterceptorTests);
@@ -194,7 +193,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockTeardownExecutor.Received(1).ExecuteAllTeardownMethodsAsync(type, null, Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task StopAllBackgroundThreadsAsync_CallsThreadExecutor() {
             // Arrange
             _mockThreadExecutor.StopAllThreadsAsync(Arg.Any<CancellationToken>())
@@ -208,7 +207,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockThreadExecutor.Received(1).StopAllThreadsAsync(Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public void GetRunningThreads_CallsThreadExecutor() {
             // Arrange
             var threads = new RunningThread[0];
@@ -222,7 +221,7 @@ namespace Belay.Tests.Unit.Execution {
             _mockThreadExecutor.Received(1).GetRunningThreads();
         }
 
-        [Fact]
+        [Test]
         public async Task ResetAsync_CallsAllExecutorResetMethods() {
             // Act
             await _interceptor.ResetAsync();
@@ -241,15 +240,15 @@ namespace Belay.Tests.Unit.Execution {
         public int TestTaskMethod(int a, int b) => a + b;
 
         [Setup]
-        [Fact]
+        [Test]
         public void TestSetupMethod() { }
 
         [Thread]
-        [Fact]
+        [Test]
         public void TestThreadMethod() { }
 
         [Teardown]
-        [Fact]
+        [Test]
         public void TestTeardownMethod() { }
 
         public int TestMethodWithoutAttribute() => 42;

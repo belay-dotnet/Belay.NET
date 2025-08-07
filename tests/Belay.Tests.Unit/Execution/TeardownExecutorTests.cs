@@ -20,7 +20,6 @@ using Belay.Core;
 using Belay.Core.Execution;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace Belay.Tests.Unit.Execution {
     /// <summary>
@@ -37,18 +36,18 @@ namespace Belay.Tests.Unit.Execution {
             _executor = new TeardownExecutor(_mockDevice, _mockLogger);
         }
 
-        [Fact]
+        [Test]
         public void Constructor_WithNullDevice_ThrowsArgumentNullException() {
             Assert.Throws<ArgumentNullException>(() => new TeardownExecutor(null!, _mockLogger));
         }
 
-        [Fact]
+        [Test]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException() {
             Assert.Throws<ArgumentNullException>(() => new TeardownExecutor(_mockDevice, null!));
         }
 
-        [Fact]
-        public async Task ExecuteTeardownAsync_WithTeardownAttribute_ExecutesSuccessfully() {
+        [Test]
+        public async Task ApplyPoliciesAndExecuteAsync_WithTeardownAttribute_ExecutesSuccessfully() {
             // Arrange
             var method = GetMethodWithTeardownAttribute(nameof(TestTeardownMethod));
             _mockDevice.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -57,27 +56,27 @@ namespace Belay.Tests.Unit.Execution {
                 .Returns(42);
 
             // Act
-            var result = await _executor.ExecuteTeardownAsync<int>(method);
+            var result = await _executor.ApplyPoliciesAndExecuteAsync<int>(method.GetDeviceMethodName());
 
             // Assert
             Assert.Equal(42, result);
             await _mockDevice.Received(2).ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
 
-        [Fact]
-        public async Task ExecuteTeardownAsync_WithoutTeardownAttribute_ThrowsInvalidOperationException() {
+        [Test]
+        public async Task ApplyPoliciesAndExecuteAsync_WithoutTeardownAttribute_ThrowsInvalidOperationException() {
             // Arrange
             var method = GetMethodWithoutAttribute(nameof(TestMethodWithoutAttribute));
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _executor.ExecuteTeardownAsync<int>(method));
+                () => _executor.ApplyPoliciesAndExecuteAsync<int>(method));
 
             Assert.Contains("not decorated with [Teardown] attribute", exception.Message);
         }
 
-        [Fact]
-        public async Task ExecuteTeardownAsync_WithExecutionError_ReturnsDefaultAndDoesNotThrow() {
+        [Test]
+        public async Task ApplyPoliciesAndExecuteAsync_WithExecutionError_ReturnsDefaultAndDoesNotThrow() {
             // Arrange
             var method = GetMethodWithTeardownAttribute(nameof(TestTeardownMethod));
             _mockDevice.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -86,11 +85,11 @@ namespace Belay.Tests.Unit.Execution {
                 .Throws(new DeviceExecutionException("Test execution error"));
 
             // Act & Assert - Should not throw, should return default
-            var result = await _executor.ExecuteTeardownAsync<int>(method);
+            var result = await _executor.ApplyPoliciesAndExecuteAsync<int>(method);
             Assert.Equal(default(int), result);
         }
 
-        [Fact]
+        [Test]
         public async Task ExecuteAllTeardownMethodsAsync_WithMultipleTeardownMethods_ExecutesInReverseOrder() {
             // Arrange
             var type = typeof(TeardownExecutorTests);
@@ -104,7 +103,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockDevice.Received().ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task ExecuteAllTeardownMethodsAsync_WhenAlreadyInProgress_SkipsDuplicateExecution() {
             // Arrange
             var type = typeof(TeardownExecutorTests);
@@ -121,7 +120,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.False(_executor.IsTeardownInProgress());
         }
 
-        [Fact]
+        [Test]
         public void RegisterTeardownMethods_WithTeardownMethods_RegistersCorrectly() {
             // Arrange
             var type = typeof(TeardownExecutorTests);
@@ -134,7 +133,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.NotEmpty(registeredMethods);
         }
 
-        [Fact]
+        [Test]
         public void ClearRegisteredTeardownMethods_RemovesAllRegistrations() {
             // Arrange
             var type = typeof(TeardownExecutorTests);
@@ -148,7 +147,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Empty(registeredMethods);
         }
 
-        [Fact]
+        [Test]
         public async Task DeployAsync_WithTeardownMethod_CachesDeployedMethod() {
             // Arrange
             var method = GetMethodWithTeardownAttribute(nameof(TestTeardownMethod));
@@ -165,7 +164,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Equal(method.GetSignatureHash(), deployed1.SignatureHash);
         }
 
-        [Fact]
+        [Test]
         public async Task IsDeployedAsync_WithDeployedMethod_ReturnsTrue() {
             // Arrange
             var method = GetMethodWithTeardownAttribute(nameof(TestTeardownMethod));
@@ -180,7 +179,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.True(isDeployed);
         }
 
-        [Fact]
+        [Test]
         public async Task IsDeployedAsync_WithNotDeployedMethod_ReturnsFalse() {
             // Arrange
             var method = GetMethodWithTeardownAttribute(nameof(TestTeardownMethod));
@@ -192,13 +191,13 @@ namespace Belay.Tests.Unit.Execution {
             Assert.False(isDeployed);
         }
 
-        [Fact]
+        [Test]
         public void IsTeardownInProgress_InitiallyFalse() {
             // Act & Assert
             Assert.False(_executor.IsTeardownInProgress());
         }
 
-        [Fact]
+        [Test]
         public async Task ClearCacheAsync_RemovesAllDeployedMethods() {
             // Arrange
             var method1 = GetMethodWithTeardownAttribute(nameof(TestTeardownMethod));
@@ -214,22 +213,22 @@ namespace Belay.Tests.Unit.Execution {
 
             // Assert
             var deployedMethods = await _executor.GetDeployedMethodsAsync();
-            Assert.Empty(deployedMethods);
+            Assert.True(deployedMethods.Count == 0);
         }
 
-        [Fact]
-        public async Task ExecuteTeardownAsync_WithOrderAttribute_RespectsOrder() {
+        [Test]
+        public async Task ApplyPoliciesAndExecuteAsync_WithOrderAttribute_RespectsOrder() {
             // Arrange
             var method = GetMethodWithTeardownAttribute(nameof(TestTeardownMethodWithOrder));
             _mockDevice.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(Task.CompletedTask);
 
             // Act & Assert - Should not throw
-            await _executor.ExecuteTeardownAsync(method);
+            await _executor.ApplyPoliciesAndExecuteAsync<object>(method.GetDeviceMethodName());
         }
 
-        [Fact]
-        public async Task ExecuteTeardownAsync_WithBooleanReturnType_HandlesCorrectly() {
+        [Test]
+        public async Task ApplyPoliciesAndExecuteAsync_WithBooleanReturnType_HandlesCorrectly() {
             // Arrange
             var method = GetMethodWithTeardownAttribute(nameof(TestTeardownMethodReturningBool));
             _mockDevice.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -238,7 +237,7 @@ namespace Belay.Tests.Unit.Execution {
                 .Returns(true);
 
             // Act
-            var result = await _executor.ExecuteTeardownAsync<bool>(method);
+            var result = await _executor.ApplyPoliciesAndExecuteAsync<bool>(method.GetDeviceMethodName());
 
             // Assert
             Assert.True(result);
@@ -246,21 +245,21 @@ namespace Belay.Tests.Unit.Execution {
 
         // Test methods with various attributes for testing
         [Teardown]
-        [Fact]
+        [Test]
         public void TestTeardownMethod() { }
 
         [Teardown(Order = 1)]
-        [Fact]
+        [Test]
         public void TestTeardownMethodWithOrder() { }
 
         [Teardown]
         public bool TestTeardownMethodReturningBool() => true;
 
-        [Teardown(Name = "CustomTeardown")]
-        [Fact]
+        [Teardown]
+        [Test]
         public void TestTeardownMethodWithCustomName() { }
 
-        [Fact]
+        [Test]
         public void TestMethodWithoutAttribute() { }
 
         private MethodInfo GetMethodWithTeardownAttribute(string methodName) {

@@ -140,6 +140,63 @@ namespace Belay.Core.Execution {
         }
 
         /// <summary>
+        /// Checks the health of all running threads and updates their status.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        public async Task CheckThreadHealthAsync(CancellationToken cancellationToken = default) {
+            this.Logger.LogDebug("Checking health of {Count} threads", this.runningThreads.Count);
+
+            var healthCheckTasks = this.runningThreads.Values.Select(async thread => {
+                try {
+                    var healthCheckCode = $@"# Check thread {thread.MethodName} health
+import json
+import time
+
+thread_active = globals().get('{thread.MethodName}_active', False)
+thread_stop = globals().get('{thread.MethodName}_stop', True)
+last_heartbeat = globals().get('{thread.MethodName}_last_heartbeat', 0)
+current_time = time.ticks_ms()
+heartbeat_age = time.ticks_diff(current_time, last_heartbeat) if last_heartbeat > 0 else -1
+
+json.dumps({{
+    ""active"": thread_active and not thread_stop,
+    ""thread_id"": ""{thread.ThreadId}"",
+    ""heartbeat_age_ms"": heartbeat_age,
+    ""stopped"": thread_stop
+}})";
+
+                    var result = await this.Device.ExecuteAsync<string>(healthCheckCode, cancellationToken).ConfigureAwait(false);
+
+                    if (!string.IsNullOrEmpty(result)) {
+                        // Parse the health status (simplified - in production you'd use proper JSON parsing)
+                        var isActive = result.Contains("\"active\": true");
+                        var isStopped = result.Contains("\"stopped\": true");
+
+                        // Extract heartbeat age for monitoring (simplified parsing)
+                        var heartbeatMatch = System.Text.RegularExpressions.Regex.Match(result, @"""heartbeat_age_ms"":\s*(\d+)");
+                        if (heartbeatMatch.Success && int.TryParse(heartbeatMatch.Groups[1].Value, out var heartbeatAge)) {
+                            if (heartbeatAge > 10000) { // 10 seconds without heartbeat
+                                this.Logger.LogWarning("Thread {ThreadName} heartbeat is stale ({HeartbeatAge}ms old)", thread.MethodName, heartbeatAge);
+                            }
+                        }
+
+                        if ((!isActive || isStopped) && thread.IsRunning) {
+                            this.Logger.LogInformation("Thread {ThreadName} is no longer running", thread.MethodName);
+                            thread.IsRunning = false;
+                            this.runningThreads.TryRemove(thread.MethodName, out _);
+                        }
+                    }
+                }
+                catch (Exception ex) {
+                    this.Logger.LogError(ex, "Failed to check health of thread {ThreadName}", thread.MethodName);
+                }
+            });
+
+            await Task.WhenAll(healthCheckTasks).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Stops all running threads.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
@@ -147,17 +204,57 @@ namespace Belay.Core.Execution {
         public async Task StopAllThreadsAsync(CancellationToken cancellationToken = default) {
             this.Logger.LogInformation("Stopping all {Count} running threads", this.runningThreads.Count);
 
-            var threadNames = this.runningThreads.Keys.ToArray();
-            foreach (var threadName in threadNames) {
+            if (this.runningThreads.IsEmpty) {
+                this.Logger.LogDebug("No threads to stop");
+                return;
+            }
+
+            // First, send stop signals to all threads concurrently
+            var stopTasks = this.runningThreads.Keys.Select(async threadName => {
                 try {
-                    await this.StopThreadAsync(threadName, cancellationToken).ConfigureAwait(false);
+                    return await this.StopThreadAsync(threadName, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex) {
                     this.Logger.LogError(ex, "Failed to stop thread {ThreadName}", threadName);
+                    return false;
+                }
+            });
+
+            var stopResults = await Task.WhenAll(stopTasks).ConfigureAwait(false);
+            var stoppedCount = stopResults.Count(r => r);
+
+            this.Logger.LogInformation("Sent stop signals to {StoppedCount}/{TotalCount} threads", stoppedCount, stopResults.Length);
+
+            // Give threads time to stop gracefully
+            const int gracePeriodMs = 2000;
+            this.Logger.LogDebug("Waiting {GracePeriod}ms for threads to stop gracefully", gracePeriodMs);
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(gracePeriodMs);
+
+            try {
+                // Monitor for all threads to stop
+                while (!this.runningThreads.IsEmpty && !cts.Token.IsCancellationRequested) {
+                    await Task.Delay(100, cts.Token).ConfigureAwait(false);
+                    await this.CheckThreadHealthAsync(cts.Token).ConfigureAwait(false);
+                }
+            }
+            catch (OperationCanceledException) {
+                // Expected if grace period expired
+            }
+
+            if (!this.runningThreads.IsEmpty) {
+                this.Logger.LogWarning("{RemainingCount} threads did not stop gracefully", this.runningThreads.Count);
+
+                // Force cleanup of remaining threads
+                var remainingThreads = this.runningThreads.Keys.ToArray();
+                foreach (var threadName in remainingThreads) {
+                    this.Logger.LogWarning("Force-stopping thread {ThreadName}", threadName);
+                    this.runningThreads.TryRemove(threadName, out _);
                 }
             }
 
-            this.Logger.LogInformation("All threads stop commands sent");
+            this.Logger.LogInformation("Thread shutdown completed");
         }
 
         /// <summary>
@@ -200,7 +297,7 @@ namespace Belay.Core.Execution {
 
             try {
                 // Prepare the thread wrapper code that includes lifecycle management
-                var threadWrapperCode = GenerateThreadWrapperCode(pythonCode, threadName, threadAttribute);
+                var threadWrapperCode = GenerateThreadWrapperCode(pythonCode, threadName, threadAttribute, threadId);
 
                 // Execute the thread startup code
                 var result = await this.Device.ExecuteAsync<T>(threadWrapperCode, cancellationToken).ConfigureAwait(false);
@@ -220,7 +317,7 @@ namespace Belay.Core.Execution {
         /// <summary>
         /// Generates Python code that wraps the user's thread code with lifecycle management.
         /// </summary>
-        private static string GenerateThreadWrapperCode(string userCode, string threadName, ThreadAttribute threadAttribute) {
+        private static string GenerateThreadWrapperCode(string userCode, string threadName, ThreadAttribute threadAttribute, string threadId) {
             var maxRuntime = threadAttribute.MaxRuntimeMs?.ToString() ?? "None";
             var autoRestart = threadAttribute.AutoRestart.ToString().ToLower();
 
@@ -229,39 +326,95 @@ import time
 
 def {threadName}_wrapper():
     '''{threadName} thread wrapper with lifecycle management'''
+    thread_id = '{threadId}'
+    print(f'Thread {threadName} ({threadId}) starting')
+    
     try:
-        # Thread stop flag
+        # Thread control flags
         globals()['{threadName}_stop'] = False
+        globals()['{threadName}_active'] = True
+        globals()['{threadName}_last_heartbeat'] = time.ticks_ms()
         
         # Runtime tracking
         start_time = time.ticks_ms()
         max_runtime = {maxRuntime}
+        successful_runtime = 0
         
-        # Execute user code in a loop with stop check
+        # Main execution loop
+        iteration_count = 0
         while not globals().get('{threadName}_stop', False):
-            # Check runtime limit
-            if max_runtime and time.ticks_diff(time.ticks_ms(), start_time) > max_runtime:
-                print(f'Thread {threadName} exceeded max runtime, stopping')
-                break
+            try:
+                # Update heartbeat
+                globals()['{threadName}_last_heartbeat'] = time.ticks_ms()
                 
-            # Execute user code
-{IndentCode(userCode, 12)}
+                # Check runtime limit
+                current_time = time.ticks_ms()
+                elapsed = time.ticks_diff(current_time, start_time)
+                if max_runtime and elapsed > max_runtime:
+                    print(f'Thread {threadName} exceeded max runtime ({maxRuntime}ms), stopping')
+                    break
+                
+                # Execute user code
+{IndentCode(userCode, 16)}
+                
+                iteration_count += 1
+                successful_runtime = elapsed
+                
+                # Reset restart delay on successful execution
+                if iteration_count > 10:  # After 10 successful iterations
+                    globals()['{threadName}_restart_delay'] = 1
+                    
+            except Exception as user_ex:
+                print(f'Thread {threadName} user code error: ' + str(user_ex))
+                # Don't break the loop for user code errors - let auto-restart handle it
+                if not {autoRestart}:
+                    print(f'Thread {threadName} stopping due to error (no auto-restart)')
+                    break
+                else:
+                    # Brief pause before next iteration
+                    time.sleep(1)
             
-            # Brief yield to allow other threads
-            time.sleep_ms(1)
+            # Brief yield to prevent monopolizing the CPU
+            time.sleep_ms(10)
             
+            # Periodic stop check even if user code doesn't yield
+            if iteration_count % 100 == 0:
+                if globals().get('{threadName}_stop', False):
+                    print(f'Thread {threadName} received stop signal')
+                    break
+                    
     except Exception as e:
-        print(f'Thread {threadName} error: {{e}}')
+        print(f'Thread {threadName} wrapper error: ' + str(e))
         if {autoRestart}:
             print(f'Thread {threadName} will auto-restart')
-            # TODO: Implement auto-restart logic
+            # Implement exponential backoff for auto-restart
+            restart_delay = globals().get('{threadName}_restart_delay', 1)
+            restart_delay = min(restart_delay * 2, 60)  # Cap at 60 seconds
+            globals()['{threadName}_restart_delay'] = restart_delay
+            
+            print(f'Thread {threadName} restarting in ' + str(restart_delay) + ' seconds')
+            
+            # Sleep with periodic stop checks
+            sleep_end = time.ticks_ms() + (restart_delay * 1000)
+            while time.ticks_ms() < sleep_end:
+                if globals().get('{threadName}_stop', False):
+                    print(f'Thread {threadName} stop requested during restart delay')
+                    return
+                time.sleep_ms(100)
+            
+            # Check if we should still restart
+            if not globals().get('{threadName}_stop', False):
+                print(f'Thread {threadName} auto-restarting (attempt after ' + str(successful_runtime) + 'ms)')
+                _thread.start_new_thread({threadName}_wrapper, ())
     finally:
-        print(f'Thread {threadName} ended')
+        # Cleanup
+        globals()['{threadName}_active'] = False
         globals()['{threadName}_stop'] = True
+        print(f'Thread {threadName} ({threadId}) ended after ' + str(iteration_count) + ' iterations')
 
 # Start the thread
 _thread.start_new_thread({threadName}_wrapper, ())
-print(f'Thread {threadName} launched')";
+print(f'Thread {threadName} launched with ID {threadId}')";
         }
 
         /// <summary>

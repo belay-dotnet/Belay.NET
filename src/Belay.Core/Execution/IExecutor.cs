@@ -87,8 +87,7 @@ namespace Belay.Core.Execution {
         /// <param name="method">The method to check.</param>
         /// <returns>True if the method has the attribute, false otherwise.</returns>
         public static bool HasAttribute<T>(this MethodInfo method)
-            where T : Attribute
-        {
+            where T : Attribute {
             return method.GetCustomAttribute<T>() != null;
         }
 
@@ -99,8 +98,7 @@ namespace Belay.Core.Execution {
         /// <param name="method">The method to get the attribute from.</param>
         /// <returns>The attribute instance, or null if not found.</returns>
         public static T? GetAttribute<T>(this MethodInfo method)
-            where T : Attribute
-        {
+            where T : Attribute {
             return method.GetCustomAttribute<T>();
         }
 

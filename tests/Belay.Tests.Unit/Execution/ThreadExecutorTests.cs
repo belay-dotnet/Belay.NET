@@ -21,7 +21,6 @@ using Belay.Core;
 using Belay.Core.Execution;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace Belay.Tests.Unit.Execution {
     /// <summary>
@@ -38,17 +37,17 @@ namespace Belay.Tests.Unit.Execution {
             _executor = new ThreadExecutor(_mockDevice, _mockLogger);
         }
 
-        [Fact]
+        [Test]
         public void Constructor_WithNullDevice_ThrowsArgumentNullException() {
             Assert.Throws<ArgumentNullException>(() => new ThreadExecutor(null!, _mockLogger));
         }
 
-        [Fact]
+        [Test]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException() {
             Assert.Throws<ArgumentNullException>(() => new ThreadExecutor(_mockDevice, null!));
         }
 
-        [Fact]
+        [Test]
         public async Task StartThreadAsync_WithThreadAttribute_StartsSuccessfully() {
             // Arrange
             var method = GetMethodWithThreadAttribute(nameof(TestThreadMethod));
@@ -67,7 +66,7 @@ namespace Belay.Tests.Unit.Execution {
             await _mockDevice.Received(2).ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task StartThreadAsync_WithoutThreadAttribute_ThrowsInvalidOperationException() {
             // Arrange
             var method = GetMethodWithoutAttribute(nameof(TestMethodWithoutAttribute));
@@ -79,7 +78,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Contains("not decorated with [Thread] attribute", exception.Message);
         }
 
-        [Fact]
+        [Test]
         public async Task StartThreadAsync_WithCustomName_UsesCustomName() {
             // Arrange
             var method = GetMethodWithThreadAttribute(nameof(TestThreadMethodWithCustomName));
@@ -94,10 +93,10 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Contains("CustomThread", runningThread.DeviceMethodName);
         }
 
-        [Fact]
+        [Test]
         public async Task StartThreadAsync_WithDaemon_SetsDaemonProperty() {
             // Arrange
-            var method = GetMethodWithThreadAttribute(nameof(TestThreadMethodDaemon));
+            var method = GetMethodWithThreadAttribute(nameof(TestThreadMethodAutoRestart));
             _mockDevice.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(Task.CompletedTask);
 
@@ -106,10 +105,10 @@ namespace Belay.Tests.Unit.Execution {
 
             // Assert
             Assert.NotNull(runningThread);
-            Assert.True(runningThread.IsDaemon);
+            Assert.True(runningThread.AutoRestart);
         }
 
-        [Fact]
+        [Test]
         public async Task DeployAsync_WithThreadMethod_CachesDeployedMethod() {
             // Arrange
             var method = GetMethodWithThreadAttribute(nameof(TestThreadMethod));
@@ -126,7 +125,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Equal(method.GetSignatureHash(), deployed1.SignatureHash);
         }
 
-        [Fact]
+        [Test]
         public async Task IsDeployedAsync_WithDeployedMethod_ReturnsTrue() {
             // Arrange
             var method = GetMethodWithThreadAttribute(nameof(TestThreadMethod));
@@ -141,7 +140,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.True(isDeployed);
         }
 
-        [Fact]
+        [Test]
         public async Task IsDeployedAsync_WithNotDeployedMethod_ReturnsFalse() {
             // Arrange
             var method = GetMethodWithThreadAttribute(nameof(TestThreadMethod));
@@ -153,7 +152,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.False(isDeployed);
         }
 
-        [Fact]
+        [Test]
         public void GetRunningThreads_WithNoThreads_ReturnsEmpty() {
             // Act
             var runningThreads = _executor.GetRunningThreads();
@@ -162,7 +161,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Empty(runningThreads);
         }
 
-        [Fact]
+        [Test]
         public async Task GetRunningThreads_WithRunningThread_ReturnsThread() {
             // Arrange
             var method = GetMethodWithThreadAttribute(nameof(TestThreadMethod));
@@ -179,7 +178,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Equal(method, thread.Method);
         }
 
-        [Fact]
+        [Test]
         public async Task StopThreadAsync_WithRunningThread_StopsThread() {
             // Arrange
             var method = GetMethodWithThreadAttribute(nameof(TestThreadMethod));
@@ -196,7 +195,7 @@ namespace Belay.Tests.Unit.Execution {
                 Arg.Any<CancellationToken>());
         }
 
-        [Fact]
+        [Test]
         public async Task StopThreadAsync_WithNonExistentThread_ReturnsFalse() {
             // Act
             var result = await _executor.StopThreadAsync("non-existent-thread-id");
@@ -205,11 +204,11 @@ namespace Belay.Tests.Unit.Execution {
             Assert.False(result);
         }
 
-        [Fact]
+        [Test]
         public async Task StopAllThreadsAsync_WithMultipleThreads_StopsAll() {
             // Arrange
             var method1 = GetMethodWithThreadAttribute(nameof(TestThreadMethod));
-            var method2 = GetMethodWithThreadAttribute(nameof(TestThreadMethodDaemon));
+            var method2 = GetMethodWithThreadAttribute(nameof(TestThreadMethodAutoRestart));
             _mockDevice.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(Task.CompletedTask);
 
@@ -225,7 +224,7 @@ namespace Belay.Tests.Unit.Execution {
             Assert.Empty(runningThreads);
         }
 
-        [Fact]
+        [Test]
         public async Task GetThreadStatusAsync_WithRunningThread_ReturnsStatus() {
             // Arrange
             var method = GetMethodWithThreadAttribute(nameof(TestThreadMethod));
@@ -242,11 +241,11 @@ namespace Belay.Tests.Unit.Execution {
             Assert.True(isRunning);
         }
 
-        [Fact]
+        [Test]
         public async Task ClearCacheAsync_RemovesAllDeployedMethods() {
             // Arrange
             var method1 = GetMethodWithThreadAttribute(nameof(TestThreadMethod));
-            var method2 = GetMethodWithThreadAttribute(nameof(TestThreadMethodDaemon));
+            var method2 = GetMethodWithThreadAttribute(nameof(TestThreadMethodAutoRestart));
             _mockDevice.ExecuteAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
                 .Returns(Task.CompletedTask);
 
@@ -263,22 +262,22 @@ namespace Belay.Tests.Unit.Execution {
 
         // Test methods with various attributes for testing
         [Thread]
-        [Fact]
+        [Test]
         public void TestThreadMethod() { }
 
         [Thread(Name = "CustomThread")]
-        [Fact]
+        [Test]
         public void TestThreadMethodWithCustomName() { }
 
-        [Thread(Daemon = true)]
-        [Fact]
-        public void TestThreadMethodDaemon() { }
+        [Thread(AutoRestart = true)]
+        [Test]
+        public void TestThreadMethodAutoRestart() { }
 
-        [Thread(MaxInstances = 5)]
-        [Fact]
+        [Thread(AutoRestart = true)]
+        [Test]
         public void TestThreadMethodWithMaxInstances() { }
 
-        [Fact]
+        [Test]
         public void TestMethodWithoutAttribute() { }
 
         private MethodInfo GetMethodWithThreadAttribute(string methodName) {
