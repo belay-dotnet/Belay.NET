@@ -1,0 +1,337 @@
+using System.Diagnostics;
+using System.Text;
+using Belay.Core.Communication;
+using Belay.Core.Testing;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Xunit;
+using Xunit.Abstractions;
+
+namespace Belay.Tests.Integration;
+
+[Collection("MicroPython")]
+[Trait("Category", "Performance")]
+[Trait("Category", "UnixPort")]
+public class PerformanceBenchmarks : IDisposable {
+    private readonly SubprocessDeviceCommunication _device;
+    private readonly ITestOutputHelper _output;
+    private readonly ILogger<PerformanceBenchmarks> _logger;
+
+    public PerformanceBenchmarks(ITestOutputHelper output) {
+        _output = output;
+
+        var loggerFactory = LoggerFactory.Create(builder => {
+            builder.AddConsole()
+                   .SetMinimumLevel(LogLevel.Warning); // Less verbose for benchmarks
+        });
+
+        _logger = loggerFactory.CreateLogger<PerformanceBenchmarks>();
+
+        var micropythonPath = MicroPythonUnixPort.FindMicroPythonExecutable();
+        if (string.IsNullOrEmpty(micropythonPath)) {
+            MicroPythonUnixPort.BuildUnixPort();
+            micropythonPath = MicroPythonUnixPort.FindMicroPythonExecutable();
+        }
+
+        _device = new SubprocessDeviceCommunication(
+            micropythonPath!,
+            logger: loggerFactory.CreateLogger<SubprocessDeviceCommunication>());
+    }
+
+    [Fact]
+    public async Task Benchmark_Simple_Command_Execution() {
+        // Arrange
+        await _device.StartAsync();
+        const int iterations = 100;
+        var sw = new Stopwatch();
+
+        // Warm up
+        await _device.ExecuteAsync("1 + 1");
+
+        // Act
+        sw.Start();
+        for (int i = 0; i < iterations; i++) {
+            await _device.ExecuteAsync("1 + 1");
+        }
+        sw.Stop();
+
+        // Assert & Report
+        var avgMs = sw.ElapsedMilliseconds / (double)iterations;
+        _output.WriteLine($"Simple command execution: {avgMs:F2} ms average ({iterations} iterations)");
+        _output.WriteLine($"Throughput: {1000 / avgMs:F1} commands/second");
+
+        avgMs.Should().BeLessThan(50, "Simple commands should execute quickly");
+    }
+
+    [Fact]
+    public async Task Benchmark_Large_Data_Transfer() {
+        // Arrange
+        await _device.StartAsync();
+        var sw = new Stopwatch();
+
+        // Generate large data (1MB of text)
+        var largeData = new StringBuilder();
+        largeData.Append("data = '");
+        for (int i = 0; i < 1024 * 1024; i++) {
+            largeData.Append('A');
+        }
+        largeData.Append("'");
+        largeData.AppendLine();
+        largeData.Append("len(data)");
+
+        // Act
+        sw.Start();
+        var result = await _device.ExecuteAsync(largeData.ToString());
+        sw.Stop();
+
+        // Assert & Report
+        var mbps = (1.0 / sw.Elapsed.TotalSeconds);
+        _output.WriteLine($"Large data transfer (1MB): {sw.ElapsedMilliseconds} ms");
+        _output.WriteLine($"Transfer rate: {mbps:F2} MB/s");
+
+        result.Should().Contain("1048576"); // 1MB in bytes
+        sw.ElapsedMilliseconds.Should().BeLessThan(5000, "1MB should transfer in under 5 seconds");
+    }
+
+    [Fact]
+    public async Task Benchmark_Complex_Code_Execution() {
+        // Arrange
+        await _device.StartAsync();
+        var sw = new Stopwatch();
+
+        var complexCode = @"
+def fibonacci(n):
+    if n <= 1:
+        return n
+    a, b = 0, 1
+    for _ in range(2, n + 1):
+        a, b = b, a + b
+    return b
+
+# Calculate first 1000 Fibonacci numbers
+results = [fibonacci(i) for i in range(100)]
+sum(results)
+";
+
+        // Act
+        sw.Start();
+        var result = await _device.ExecuteAsync(complexCode);
+        sw.Stop();
+
+        // Assert & Report
+        _output.WriteLine($"Complex code execution: {sw.ElapsedMilliseconds} ms");
+
+        result.Should().NotBeNullOrWhiteSpace();
+        sw.ElapsedMilliseconds.Should().BeLessThan(1000, "Complex calculations should complete within 1 second");
+    }
+
+    [Fact]
+    public async Task Benchmark_Concurrent_Execution_Simulation() {
+        // Note: Real concurrent execution requires multiple devices
+        // This simulates rapid sequential execution
+
+        // Arrange
+        await _device.StartAsync();
+        const int iterations = 50;
+        var sw = new Stopwatch();
+        var tasks = new List<Task<string>>();
+
+        // Act
+        sw.Start();
+        for (int i = 0; i < iterations; i++) {
+            await _device.ExecuteAsync($"result_{i} = {i} * 2");
+        }
+
+        // Verify all variables exist
+        for (int i = 0; i < iterations; i++) {
+            var result = await _device.ExecuteAsync<int>($"result_{i}");
+            result.Should().Be(i * 2);
+        }
+        sw.Stop();
+
+        // Report
+        _output.WriteLine($"Sequential execution of {iterations} commands: {sw.ElapsedMilliseconds} ms");
+        _output.WriteLine($"Average per command: {sw.ElapsedMilliseconds / (double)(iterations * 2):F2} ms");
+    }
+
+    [Fact]
+    public async Task Benchmark_Memory_Allocation() {
+        // Arrange
+        await _device.StartAsync();
+        var sw = new Stopwatch();
+
+        // Act - Create and destroy large objects
+        sw.Start();
+        for (int i = 0; i < 10; i++) {
+            await _device.ExecuteAsync($@"
+import gc
+big_list = list(range(10000))
+del big_list
+gc.collect()
+");
+        }
+        sw.Stop();
+
+        // Get final memory stats
+        var memInfo = await _device.ExecuteAsync(@"
+import gc
+gc.collect()
+gc.mem_alloc()
+");
+
+        // Report
+        _output.WriteLine($"Memory allocation stress test: {sw.ElapsedMilliseconds} ms");
+        _output.WriteLine($"Final allocated memory: {memInfo} bytes");
+
+        sw.ElapsedMilliseconds.Should().BeLessThan(5000, "Memory operations should be efficient");
+    }
+
+    [Fact]
+    public async Task Benchmark_String_Operations() {
+        // Arrange
+        await _device.StartAsync();
+        var sw = new Stopwatch();
+
+        var stringCode = @"
+# String concatenation benchmark
+result = ''
+for i in range(1000):
+    result += str(i)
+len(result)
+";
+
+        // Act
+        sw.Start();
+        var result = await _device.ExecuteAsync(stringCode);
+        sw.Stop();
+
+        // Report
+        _output.WriteLine($"String operations (1000 concatenations): {sw.ElapsedMilliseconds} ms");
+
+        result.Should().NotBeNullOrWhiteSpace();
+        sw.ElapsedMilliseconds.Should().BeLessThan(500, "String operations should be reasonably fast");
+    }
+
+    [Fact]
+    public async Task Benchmark_List_Operations() {
+        // Arrange
+        await _device.StartAsync();
+        var sw = new Stopwatch();
+
+        var listCode = @"
+# List operations benchmark
+import time
+data = []
+for i in range(10000):
+    data.append(i)
+    
+# Sorting
+data.reverse()
+data.sort()
+
+# Filtering
+filtered = [x for x in data if x % 2 == 0]
+len(filtered)
+";
+
+        // Act
+        sw.Start();
+        var result = await _device.ExecuteAsync(listCode);
+        sw.Stop();
+
+        // Report
+        _output.WriteLine($"List operations (10k items): {sw.ElapsedMilliseconds} ms");
+
+        result.Should().Contain("5000"); // Half of 10k items are even
+        sw.ElapsedMilliseconds.Should().BeLessThan(1000, "List operations should be efficient");
+    }
+
+    [Fact]
+    public async Task Benchmark_Dictionary_Operations() {
+        // Arrange
+        await _device.StartAsync();
+        var sw = new Stopwatch();
+
+        var dictCode = @"
+# Dictionary operations benchmark
+data = {}
+for i in range(1000):
+    data[f'key_{i}'] = i * 2
+
+# Lookups
+total = 0
+for i in range(1000):
+    total += data.get(f'key_{i}', 0)
+    
+total
+";
+
+        // Act
+        sw.Start();
+        var result = await _device.ExecuteAsync(dictCode);
+        sw.Stop();
+
+        // Report
+        _output.WriteLine($"Dictionary operations (1k items): {sw.ElapsedMilliseconds} ms");
+
+        result.Should().NotBeNullOrWhiteSpace();
+        sw.ElapsedMilliseconds.Should().BeLessThan(500, "Dictionary operations should be fast");
+    }
+
+    [Fact]
+    public async Task Benchmark_Math_Operations() {
+        // Arrange
+        await _device.StartAsync();
+        var sw = new Stopwatch();
+
+        var mathCode = @"
+import math
+
+# Various math operations
+results = []
+for i in range(1, 101):
+    results.append(math.sqrt(i))
+    results.append(math.sin(i))
+    results.append(math.cos(i))
+    results.append(math.log(i))
+
+len(results)
+";
+
+        // Act
+        sw.Start();
+        var result = await _device.ExecuteAsync(mathCode);
+        sw.Stop();
+
+        // Report
+        _output.WriteLine($"Math operations (400 calculations): {sw.ElapsedMilliseconds} ms");
+
+        result.Should().Contain("400");
+        sw.ElapsedMilliseconds.Should().BeLessThan(500, "Math operations should be fast");
+    }
+
+    [Fact]
+    public async Task Benchmark_Reconnection_Speed() {
+        // Arrange & Act
+        var sw = new Stopwatch();
+
+        sw.Start();
+        await _device.StartAsync();
+        await _device.StopAsync();
+        await _device.StartAsync();
+        sw.Stop();
+
+        // Verify connection works
+        var result = await _device.ExecuteAsync("1 + 1");
+
+        // Report
+        _output.WriteLine($"Reconnection time: {sw.ElapsedMilliseconds} ms");
+
+        result.Should().Contain("2");
+        sw.ElapsedMilliseconds.Should().BeLessThan(2000, "Reconnection should be quick");
+    }
+
+    public void Dispose() {
+        _device?.Dispose();
+    }
+}

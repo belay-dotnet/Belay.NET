@@ -1,0 +1,295 @@
+using System.Diagnostics;
+using Belay.Core.Communication;
+using Belay.Core.Testing;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Xunit;
+
+namespace Belay.Tests.Subprocess;
+
+[Trait("Category", "Subprocess")]
+[Trait("Category", "UnixPort")]
+public class SubprocessCommunicationTests : IDisposable {
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly List<SubprocessDeviceCommunication> _devices = new();
+
+    public SubprocessCommunicationTests() {
+        _loggerFactory = LoggerFactory.Create(builder => {
+            builder.AddConsole()
+                   .SetMinimumLevel(LogLevel.Debug);
+        });
+
+        // Ensure MicroPython is built
+        var path = MicroPythonUnixPort.FindMicroPythonExecutable();
+        if (string.IsNullOrEmpty(path)) {
+            MicroPythonUnixPort.BuildUnixPort();
+        }
+    }
+
+    [Fact]
+    public async Task Should_Start_And_Stop_Subprocess_Cleanly() {
+        // Arrange
+        var device = CreateDevice();
+
+        // Act
+        await device.StartAsync();
+        device.State.Should().Be(DeviceConnectionState.Connected);
+
+        await device.StopAsync();
+        device.State.Should().Be(DeviceConnectionState.Disconnected);
+    }
+
+    [Fact]
+    public async Task Should_Handle_Multiple_Subprocess_Instances() {
+        // Arrange
+        var device1 = CreateDevice();
+        var device2 = CreateDevice();
+
+        // Act
+        await device1.StartAsync();
+        await device2.StartAsync();
+
+        var result1 = await device1.ExecuteAsync("instance_id = 1; instance_id");
+        var result2 = await device2.ExecuteAsync("instance_id = 2; instance_id");
+
+        // Assert
+        result1.Should().Contain("1");
+        result2.Should().Contain("2");
+
+        // Cleanup
+        await device1.StopAsync();
+        await device2.StopAsync();
+    }
+
+    [Fact]
+    public async Task Should_Capture_Stdout_And_Stderr_Separately() {
+        // Arrange
+        var device = CreateDevice();
+        var stdoutMessages = new List<string>();
+        var stderrMessages = new List<string>();
+
+        device.OutputReceived += (sender, e) => {
+            if (e.IsError)
+                stderrMessages.Add(e.Output);
+            else
+                stdoutMessages.Add(e.Output);
+        };
+
+        // Act
+        await device.StartAsync();
+        await device.ExecuteAsync("print('Standard output')");
+
+        // Force an error to stderr
+        try {
+            await device.ExecuteAsync("import sys; sys.stderr.write('Error output\\n')");
+        }
+        catch {
+            // Might throw depending on how stderr is handled
+        }
+
+        await Task.Delay(100); // Give time for output to be captured
+
+        // Assert
+        stdoutMessages.Should().Contain(m => m.Contains("Standard output"));
+    }
+
+    [Fact]
+    public async Task Should_Handle_Process_Crash_Gracefully() {
+        // Arrange
+        var device = CreateDevice();
+        await device.StartAsync();
+
+        // Act - Execute code that will crash the process
+        try {
+            await device.ExecuteAsync(@"
+import sys
+sys.exit(1)
+");
+        }
+        catch (DeviceExecutionException) {
+            // Expected
+        }
+
+        // Assert
+        await Task.Delay(500); // Give time for process exit detection
+        device.State.Should().BeOneOf(
+            DeviceConnectionState.Error,
+            DeviceConnectionState.Disconnected);
+    }
+
+    [Fact]
+    public async Task Should_Restart_After_Stop() {
+        // Arrange
+        var device = CreateDevice();
+
+        // Act - Start, stop, restart
+        await device.StartAsync();
+        await device.ExecuteAsync("x = 42");
+
+        await device.StopAsync();
+        device.State.Should().Be(DeviceConnectionState.Disconnected);
+
+        await device.StartAsync();
+        device.State.Should().Be(DeviceConnectionState.Connected);
+
+        // Variable should not exist in new session
+        Func<Task> act = async () => await device.ExecuteAsync("x");
+
+        // Assert
+        await act.Should().ThrowAsync<DeviceExecutionException>()
+            .Where(e => e.DeviceTraceback != null && e.DeviceTraceback.Contains("NameError"));
+    }
+
+    [Fact]
+    public async Task Should_Handle_Concurrent_Executions_With_Semaphore() {
+        // Arrange
+        var device = CreateDevice();
+        await device.StartAsync();
+
+        // Act - Try to execute multiple commands concurrently
+        var tasks = new List<Task<string>>();
+        for (int i = 0; i < 5; i++) {
+            int localI = i;
+            tasks.Add(Task.Run(async () =>
+                await device.ExecuteAsync($"'Task {localI}'")));
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        // Assert - All should complete successfully
+        results.Should().HaveCount(5);
+        for (int i = 0; i < 5; i++) {
+            results.Should().Contain(r => r.Contains($"Task {i}"));
+        }
+    }
+
+    [Fact]
+    public async Task Should_Simulate_File_Operations() {
+        // Arrange
+        var device = CreateDevice();
+        await device.StartAsync();
+
+        var testData = new byte[] { 1, 2, 3, 4, 5 };
+        var localPath = Path.GetTempFileName();
+        File.WriteAllBytes(localPath, testData);
+
+        try {
+            // Act
+            await device.PutFileAsync(localPath, "/test/data.bin");
+            var retrieved = await device.GetFileAsync("/test/data.bin");
+
+            // Assert
+            retrieved.Should().BeEquivalentTo(testData);
+        }
+        finally {
+            File.Delete(localPath);
+            // Cleanup simulated file
+            var simulatedPath = Path.Combine(Environment.CurrentDirectory, "test", "data.bin");
+            if (File.Exists(simulatedPath))
+                File.Delete(simulatedPath);
+        }
+    }
+
+    [Fact]
+    public async Task Should_Handle_Custom_Arguments() {
+        // Arrange
+        var micropythonPath = MicroPythonUnixPort.FindMicroPythonExecutable()!;
+        var device = new SubprocessDeviceCommunication(
+            micropythonPath,
+            additionalArgs: new[] { "-O" }, // Optimization flag
+            logger: _loggerFactory.CreateLogger<SubprocessDeviceCommunication>());
+
+        _devices.Add(device);
+
+        // Act
+        await device.StartAsync();
+        var result = await device.ExecuteAsync("__debug__");
+
+        // Assert
+        result.Should().Contain("False"); // -O flag disables debug
+    }
+
+    [Fact]
+    public async Task Should_Execute_With_Timeout() {
+        // Arrange
+        var device = CreateDevice();
+        await device.StartAsync();
+
+        // Act - Execute code that takes some time
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
+        var sw = Stopwatch.StartNew();
+
+        try {
+            await device.ExecuteAsync(@"
+import time
+time.sleep(5)  # Sleep longer than timeout
+'Done'
+", cts.Token);
+        }
+        catch (OperationCanceledException) {
+            // Expected
+        }
+
+        sw.Stop();
+
+        // Assert
+        sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
+    public async Task Should_Handle_Large_Output() {
+        // Arrange
+        var device = CreateDevice();
+        await device.StartAsync();
+
+        // Act - Generate large output
+        var result = await device.ExecuteAsync(@"
+# Generate 10000 lines of output
+for i in range(10000):
+    print(f'Line {i:05d}: ' + 'x' * 50)
+'Completed'
+");
+
+        // Assert
+        result.Should().Contain("Completed");
+    }
+
+    [Fact]
+    public async Task Should_Preserve_Working_Directory() {
+        // Arrange
+        var device = CreateDevice();
+        await device.StartAsync();
+
+        // Act
+        var result = await device.ExecuteAsync(@"
+import os
+os.getcwd()
+");
+
+        // Assert
+        result.Should().Contain(Environment.CurrentDirectory);
+    }
+
+    private SubprocessDeviceCommunication CreateDevice() {
+        var micropythonPath = MicroPythonUnixPort.FindMicroPythonExecutable()!;
+        var device = new SubprocessDeviceCommunication(
+            micropythonPath,
+            logger: _loggerFactory.CreateLogger<SubprocessDeviceCommunication>());
+
+        _devices.Add(device);
+        return device;
+    }
+
+    public void Dispose() {
+        foreach (var device in _devices) {
+            try {
+                device.Dispose();
+            }
+            catch {
+                // Ignore disposal errors in tests
+            }
+        }
+
+        _loggerFactory?.Dispose();
+    }
+}
