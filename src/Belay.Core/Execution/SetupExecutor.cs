@@ -144,6 +144,15 @@ namespace Belay.Core.Execution {
         }
 
         /// <summary>
+        /// Validates that a method can be handled by this executor.
+        /// </summary>
+        /// <param name="method">The method to validate.</param>
+        /// <returns>True if the method has a [Setup] attribute, false otherwise.</returns>
+        public override bool CanHandle(System.Reflection.MethodInfo method) {
+            return method?.HasAttribute<SetupAttribute>() == true;
+        }
+
+        /// <summary>
         /// Disposes of the executor resources.
         /// </summary>
         public void Dispose() {

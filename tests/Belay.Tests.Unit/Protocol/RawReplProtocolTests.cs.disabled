@@ -1,8 +1,6 @@
-using Belay.Core.Protocol;
-using Microsoft.Extensions.Logging;
-using Moq;
-using NUnit.Framework;
-
+// Copyright (c) 2024 Belay.NET Contributors
+// Licensed under the Apache License, Version 2.0.
+// See the LICENSE file in the project root for more information.
 namespace Belay.Tests.Unit.Protocol;
 
 [TestFixture]

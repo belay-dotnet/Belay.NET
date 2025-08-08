@@ -1,6 +1,8 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
+using Belay.Core.Communication;
+
 namespace Belay.Core.Sessions {
     /// <summary>
     /// Represents the possible states of a device session manager.
@@ -44,16 +46,18 @@ namespace Belay.Core.Sessions {
         /// <summary>
         /// Creates a new session for device operations.
         /// </summary>
+        /// <param name="communication">The device communication instance for this session.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>A new device session.</returns>
-        Task<IDeviceSession> CreateSessionAsync(CancellationToken cancellationToken = default);
+        Task<IDeviceSession> CreateSessionAsync(IDeviceCommunication communication, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the current session or creates a new one if none exists.
         /// </summary>
+        /// <param name="communication">The device communication instance for this session.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>The current or a new device session.</returns>
-        Task<IDeviceSession> GetOrCreateSessionAsync(CancellationToken cancellationToken = default);
+        Task<IDeviceSession> GetOrCreateSessionAsync(IDeviceCommunication communication, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Ends the specified session and cleans up its resources.
@@ -67,20 +71,24 @@ namespace Belay.Core.Sessions {
         /// Executes an operation within a session context, creating one if necessary.
         /// </summary>
         /// <typeparam name="T">The return type of the operation.</typeparam>
+        /// <param name="communication">The device communication instance for this session.</param>
         /// <param name="operation">The operation to execute within the session.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>The result of the operation.</returns>
         Task<T> ExecuteInSessionAsync<T>(
+            IDeviceCommunication communication,
             Func<IDeviceSession, Task<T>> operation,
             CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes an operation within a session context, creating one if necessary.
         /// </summary>
+        /// <param name="communication">The device communication instance for this session.</param>
         /// <param name="operation">The operation to execute within the session.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         Task ExecuteInSessionAsync(
+            IDeviceCommunication communication,
             Func<IDeviceSession, Task> operation,
             CancellationToken cancellationToken = default);
 

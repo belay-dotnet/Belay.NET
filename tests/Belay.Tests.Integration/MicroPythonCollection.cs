@@ -1,7 +1,9 @@
+// Copyright (c) 2024 Belay.NET Contributors
+// Licensed under the Apache License, Version 2.0.
+// See the LICENSE file in the project root for more information.
+using System;
 using Belay.Core.Testing;
 using Xunit;
-
-namespace Belay.Tests.Integration;
 
 /// <summary>
 /// Collection fixture for MicroPython tests to ensure the unix port is built once

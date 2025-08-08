@@ -467,6 +467,15 @@ print(f'Thread {threadName} launched with ID {threadId}')";
         }
 
         /// <summary>
+        /// Validates that a method can be handled by this executor.
+        /// </summary>
+        /// <param name="method">The method to validate.</param>
+        /// <returns>True if the method has a [Thread] attribute, false otherwise.</returns>
+        public override bool CanHandle(System.Reflection.MethodInfo method) {
+            return method?.HasAttribute<ThreadAttribute>() == true;
+        }
+
+        /// <summary>
         /// Disposes of the executor resources.
         /// </summary>
         public void Dispose() {

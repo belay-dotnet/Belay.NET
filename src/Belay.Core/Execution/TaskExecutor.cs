@@ -78,25 +78,27 @@ namespace Belay.Core.Execution {
             try {
                 // Apply timeout from attribute if specified
                 using var timeoutCts = CreateTimeoutCts(taskAttribute.TimeoutMs);
-                var effectiveCancellationToken = CombineCancellationTokens(cancellationToken, timeoutCts);
+                var effectiveCancellationToken = CombineCancellationTokens(cancellationToken, timeoutCts, out var linkedCts);
+                
+                using (linkedCts) {
+                    // Handle exclusive execution
+                    T result;
+                    if (taskAttribute.Exclusive) {
+                        result = await this.ExecuteExclusiveAsync<T>(pythonCode, effectiveCancellationToken, method?.Name ?? callingMethod).ConfigureAwait(false);
+                    }
+                    else {
+                        result = await this.ExecuteOnDeviceAsync<T>(pythonCode, effectiveCancellationToken).ConfigureAwait(false);
+                    }
 
-                // Handle exclusive execution
-                T result;
-                if (taskAttribute.Exclusive) {
-                    result = await this.ExecuteExclusiveAsync<T>(pythonCode, effectiveCancellationToken, method?.Name ?? callingMethod).ConfigureAwait(false);
-                }
-                else {
-                    result = await this.ExecuteOnDeviceAsync<T>(pythonCode, effectiveCancellationToken).ConfigureAwait(false);
-                }
+                    // Cache result if caching is enabled
+                    if (taskAttribute.Cache && cacheKey != null) {
+                        this.methodCache.Set(cacheKey, result, expiresAfter: null);
+                        this.Logger.LogDebug("Cached result for method {MethodName}", method?.Name ?? callingMethod);
+                    }
 
-                // Cache result if caching is enabled
-                if (taskAttribute.Cache && cacheKey != null) {
-                    this.methodCache.Set(cacheKey, result, expiresAfter: null);
-                    this.Logger.LogDebug("Cached result for method {MethodName}", method?.Name ?? callingMethod);
+                    this.Logger.LogDebug("[Task] method {MethodName} completed successfully", method?.Name ?? callingMethod);
+                    return result;
                 }
-
-                this.Logger.LogDebug("[Task] method {MethodName} completed successfully", method?.Name ?? callingMethod);
-                return result;
             }
             catch (OperationCanceledException) when (taskAttribute.TimeoutMs.HasValue) {
                 var methodName = method?.Name ?? callingMethod;
@@ -128,12 +130,12 @@ namespace Belay.Core.Execution {
         }
 
         /// <summary>
-        /// Checks if a method has the [Task] attribute.
+        /// Validates that a method can be handled by this executor.
         /// </summary>
-        /// <param name="method">The method to check.</param>
-        /// <returns>True if the method has the [Task] attribute.</returns>
-        public bool CanHandle(MethodInfo method) {
-            return method.HasAttribute<TaskAttribute>();
+        /// <param name="method">The method to validate.</param>
+        /// <returns>True if the method has a [Task] attribute, false otherwise.</returns>
+        public override bool CanHandle(MethodInfo method) {
+            return method?.HasAttribute<TaskAttribute>() == true;
         }
 
         /// <summary>

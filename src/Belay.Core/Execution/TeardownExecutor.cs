@@ -200,6 +200,15 @@ except Exception as e:
         }
 
         /// <summary>
+        /// Validates that a method can be handled by this executor.
+        /// </summary>
+        /// <param name="method">The method to validate.</param>
+        /// <returns>True if the method has a [Teardown] attribute, false otherwise.</returns>
+        public override bool CanHandle(System.Reflection.MethodInfo method) {
+            return method?.HasAttribute<TeardownAttribute>() == true;
+        }
+
+        /// <summary>
         /// Disposes of the executor resources.
         /// </summary>
         public void Dispose() {

@@ -18,23 +18,24 @@ public static class DiUsageExample {
     /// Example of setting up Belay.NET with dependency injection in a console application.
     /// Note: In a real application you would add logging and use a proper hosting framework.
     /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
     public static async Task RunConsoleExample() {
         var services = new ServiceCollection();
-        
+
         // Add Belay.NET services with programmatic configuration
         services.AddBelay(config => {
             config.Device.DefaultConnectionTimeoutMs = 5000;
             config.Communication.Serial.DefaultBaudRate = 115200;
         });
-        
+
         // Add health checks
         services.AddBelayHealthChecks(options => {
             options.AddDeviceCheck("test_device", "subprocess:micropython");
         });
-        
-        // Add your application services  
+
+        // Add your application services
         services.AddScoped<IMyDeviceService, MyDeviceService>();
-        
+
         // Build service provider
         var serviceProvider = services.BuildServiceProvider();
 
@@ -93,35 +94,34 @@ public static class DiUsageExample {
             IDeviceFactory deviceFactory,
             IExecutorFactory executorFactory,
             ILogger<MyDeviceService> logger) {
-            _deviceFactory = deviceFactory;
-            _executorFactory = executorFactory;
-            _logger = logger;
+            this._deviceFactory = deviceFactory;
+            this._executorFactory = executorFactory;
+            this._logger = logger;
         }
 
         /// <inheritdoc/>
         public async Task RunDeviceOperationsAsync() {
-            _logger.LogInformation("Starting device operations");
+            this._logger.LogInformation("Starting device operations");
 
             // Create a device using the factory
-            using var device = _deviceFactory.CreateSubprocessDevice("micropython");
-            
+            using var device = this._deviceFactory.CreateSubprocessDevice("micropython");
             try {
                 await device.ConnectAsync();
-                
+
                 // Execute some Python code
                 var result = await device.ExecuteAsync<int>("2 + 3");
-                _logger.LogInformation("Calculation result: {Result}", result);
+                this._logger.LogInformation("Calculation result: {Result}", result);
 
                 // Create executors using the factory
-                using var taskExecutor = _executorFactory.CreateTaskExecutor(device);
-                
+                using var taskExecutor = this._executorFactory.CreateTaskExecutor(device);
+
                 // Use executor for more complex operations
                 var complexResult = await taskExecutor.ApplyPoliciesAndExecuteAsync<string>(
                     "import sys; sys.version");
-                _logger.LogInformation("Python version: {Version}", complexResult);
+                this._logger.LogInformation("Python version: {Version}", complexResult);
             }
             catch (Exception ex) {
-                _logger.LogError(ex, "Error during device operations");
+                this._logger.LogError(ex, "Error during device operations");
             }
             finally {
                 await device.DisconnectAsync();

@@ -17,7 +17,6 @@ internal class DeviceFactory : IDeviceFactory {
     private readonly ICommunicatorFactory _communicatorFactory;
     private readonly IDeviceSessionManager _sessionManager;
     private readonly ILogger<Device> _logger;
-    private readonly IOptions<BelayConfiguration> _configuration;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeviceFactory"/> class.
@@ -25,33 +24,30 @@ internal class DeviceFactory : IDeviceFactory {
     /// <param name="communicatorFactory">The communicator factory.</param>
     /// <param name="sessionManager">The session manager.</param>
     /// <param name="logger">The logger for device instances.</param>
-    /// <param name="configuration">The configuration options.</param>
     public DeviceFactory(
         ICommunicatorFactory communicatorFactory,
         IDeviceSessionManager sessionManager,
-        ILogger<Device> logger,
-        IOptions<BelayConfiguration> configuration) {
-        _communicatorFactory = communicatorFactory;
-        _sessionManager = sessionManager;
-        _logger = logger;
-        _configuration = configuration;
+        ILogger<Device> logger) {
+        this._communicatorFactory = communicatorFactory;
+        this._sessionManager = sessionManager;
+        this._logger = logger;
     }
 
     /// <inheritdoc/>
     public Device CreateDevice(IDeviceCommunication communicator) {
-        return new Device(communicator, _sessionManager, _logger);
+        return new Device(communicator, this._sessionManager, this._logger);
     }
 
     /// <inheritdoc/>
     public Device CreateSerialDevice(string portName, int? baudRate = null) {
-        var communicator = _communicatorFactory.CreateSerialCommunicator(portName, baudRate);
-        return CreateDevice(communicator);
+        var communicator = this._communicatorFactory.CreateSerialCommunicator(portName, baudRate);
+        return this.CreateDevice(communicator);
     }
 
     /// <inheritdoc/>
     public Device CreateSubprocessDevice(string executablePath, string[]? arguments = null) {
-        var communicator = _communicatorFactory.CreateSubprocessCommunicator(executablePath, arguments);
-        return CreateDevice(communicator);
+        var communicator = this._communicatorFactory.CreateSubprocessCommunicator(executablePath, arguments);
+        return this.CreateDevice(communicator);
     }
 }
 
@@ -73,22 +69,22 @@ internal class CommunicatorFactory : ICommunicatorFactory {
         ILogger<SerialDeviceCommunication> serialLogger,
         ILogger<SubprocessDeviceCommunication> subprocessLogger,
         IOptions<BelayConfiguration> configuration) {
-        _serialLogger = serialLogger;
-        _subprocessLogger = subprocessLogger;
-        _configuration = configuration;
+        this._serialLogger = serialLogger;
+        this._subprocessLogger = subprocessLogger;
+        this._configuration = configuration;
     }
 
     /// <inheritdoc/>
     public IDeviceCommunication CreateSerialCommunicator(string portName, int? baudRate = null) {
-        var effectiveBaudRate = baudRate ?? _configuration.Value.Communication.Serial.DefaultBaudRate;
-        var timeout = _configuration.Value.Communication.Serial.ReadTimeoutMs;
+        var effectiveBaudRate = baudRate ?? this._configuration.Value.Communication.Serial.DefaultBaudRate;
+        var timeout = this._configuration.Value.Communication.Serial.ReadTimeoutMs;
 
-        return new SerialDeviceCommunication(portName, effectiveBaudRate, timeout, _serialLogger);
+        return new SerialDeviceCommunication(portName, effectiveBaudRate, timeout, this._serialLogger);
     }
 
     /// <inheritdoc/>
     public IDeviceCommunication CreateSubprocessCommunicator(string executablePath, string[]? arguments = null) {
-        return new SubprocessDeviceCommunication(executablePath, arguments ?? Array.Empty<string>(), _subprocessLogger);
+        return new SubprocessDeviceCommunication(executablePath, arguments ?? Array.Empty<string>(), this._subprocessLogger);
     }
 }
 
@@ -119,31 +115,31 @@ internal class ExecutorFactory : IExecutorFactory {
         ILogger<Belay.Core.Execution.TeardownExecutor> teardownLogger,
         ILogger<Belay.Core.Execution.ThreadExecutor> threadLogger,
         Belay.Core.Exceptions.IErrorMapper? errorMapper = null) {
-        _sessionManager = sessionManager;
-        _taskLogger = taskLogger;
-        _setupLogger = setupLogger;
-        _teardownLogger = teardownLogger;
-        _threadLogger = threadLogger;
-        _errorMapper = errorMapper;
+        this._sessionManager = sessionManager;
+        this._taskLogger = taskLogger;
+        this._setupLogger = setupLogger;
+        this._teardownLogger = teardownLogger;
+        this._threadLogger = threadLogger;
+        this._errorMapper = errorMapper;
     }
 
     /// <inheritdoc/>
     public Belay.Core.Execution.TaskExecutor CreateTaskExecutor(Device device) {
-        return new Belay.Core.Execution.TaskExecutor(device, _sessionManager, _taskLogger, _errorMapper);
+        return new Belay.Core.Execution.TaskExecutor(device, this._sessionManager, this._taskLogger, this._errorMapper);
     }
 
     /// <inheritdoc/>
     public Belay.Core.Execution.SetupExecutor CreateSetupExecutor(Device device) {
-        return new Belay.Core.Execution.SetupExecutor(device, _sessionManager, _setupLogger);
+        return new Belay.Core.Execution.SetupExecutor(device, this._sessionManager, this._setupLogger);
     }
 
     /// <inheritdoc/>
     public Belay.Core.Execution.TeardownExecutor CreateTeardownExecutor(Device device) {
-        return new Belay.Core.Execution.TeardownExecutor(device, _sessionManager, _teardownLogger);
+        return new Belay.Core.Execution.TeardownExecutor(device, this._sessionManager, this._teardownLogger);
     }
 
     /// <inheritdoc/>
     public Belay.Core.Execution.ThreadExecutor CreateThreadExecutor(Device device) {
-        return new Belay.Core.Execution.ThreadExecutor(device, _sessionManager, _threadLogger);
+        return new Belay.Core.Execution.ThreadExecutor(device, this._sessionManager, this._threadLogger);
     }
 }

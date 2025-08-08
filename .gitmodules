@@ -3,4 +3,4 @@
 	url = https://github.com/micropython/micropython.git
 [submodule "docs"]
 	path = docs
-	url = https://github.com/belay-dotnet/belay-dotnet.github.io.git
+	url = ../belay-dotnet.github.io.git

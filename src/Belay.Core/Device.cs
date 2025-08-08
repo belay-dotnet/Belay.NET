@@ -64,7 +64,6 @@ public class Device : IDisposable {
 
         // Use injected session manager or create a default one
         this.sessionManager = sessionManager ?? new DeviceSessionManager(
-            this.communication,
             executorLoggerFactory);
 
         // Use injected cache or create a default one
@@ -93,6 +92,12 @@ public class Device : IDisposable {
     /// Gets the current connection state of the device.
     /// </summary>
     public DeviceConnectionState State => this.communication.State;
+
+    /// <summary>
+    /// Gets the communication interface for this device.
+    /// Internal use for executors and session management.
+    /// </summary>
+    internal IDeviceCommunication Communication => this.communication;
 
     /// <summary>
     /// Gets the task executor for methods decorated with [Task] attribute.
@@ -401,6 +406,74 @@ public class Device : IDisposable {
         }
 
         return FromConnectionString(devices[0].ConnectionString, loggerFactory);
+    }
+
+    /// <summary>
+    /// Executes a method with automatic executor selection based on attributes.
+    /// This is the main entry point for the attribute-based programming model.
+    /// </summary>
+    /// <typeparam name="T">The expected return type.</typeparam>
+    /// <param name="method">The method to execute.</param>
+    /// <param name="instance">The instance to invoke the method on (null for static methods).</param>
+    /// <param name="parameters">The parameters to pass to the method.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the execution.</param>
+    /// <returns>The result of the method execution.</returns>
+    public async Task<T> ExecuteMethodAsync<T>(System.Reflection.MethodInfo method, object? instance = null, object?[]? parameters = null, CancellationToken cancellationToken = default) {
+        if (method == null) {
+            throw new ArgumentNullException(nameof(method));
+        }
+
+        if (this.disposed) {
+            throw new ObjectDisposedException(nameof(Device));
+        }
+
+        // Find the appropriate executor for this method
+        var executor = GetExecutorForMethod(method);
+        if (executor == null) {
+            throw new InvalidOperationException($"No suitable executor found for method '{method.Name}'. Ensure the method has a supported attribute ([Task], [Setup], [Thread], or [Teardown]).");
+        }
+
+        this.logger.LogDebug("Executing method {MethodName} using {ExecutorType}", method.Name, executor.GetType().Name);
+
+        return await executor.ExecuteAsync<T>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Executes a method without returning a value with automatic executor selection based on attributes.
+    /// </summary>
+    /// <param name="method">The method to execute.</param>
+    /// <param name="instance">The instance to invoke the method on (null for static methods).</param>
+    /// <param name="parameters">The parameters to pass to the method.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the execution.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task ExecuteMethodAsync(System.Reflection.MethodInfo method, object? instance = null, object?[]? parameters = null, CancellationToken cancellationToken = default) {
+        await this.ExecuteMethodAsync<object>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets the appropriate executor for a method based on its attributes.
+    /// </summary>
+    /// <param name="method">The method to get an executor for.</param>
+    /// <returns>The executor that can handle the method, or null if none found.</returns>
+    private Execution.IExecutor? GetExecutorForMethod(System.Reflection.MethodInfo method) {
+        // Check executors in order of priority
+        if (this.Task.CanHandle(method)) {
+            return this.Task;
+        }
+        
+        if (this.Setup.CanHandle(method)) {
+            return this.Setup;
+        }
+        
+        if (this.Thread.CanHandle(method)) {
+            return this.Thread;
+        }
+        
+        if (this.Teardown.CanHandle(method)) {
+            return this.Teardown;
+        }
+
+        return null;
     }
 
     /// <summary>

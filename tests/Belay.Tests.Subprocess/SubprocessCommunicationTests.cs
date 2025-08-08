@@ -1,8 +1,6 @@
-using System.Diagnostics;
-using Belay.Core.Communication;
-using Belay.Core.Testing;
-using FluentAssertions;
-using Microsoft.Extensions.Logging;
+// Copyright (c) 2024 Belay.NET Contributors
+// Licensed under the Apache License, Version 2.0.
+// See the LICENSE file in the project root for more information.
 using Xunit;
 
 namespace Belay.Tests.Subprocess;

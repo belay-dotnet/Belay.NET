@@ -117,8 +117,8 @@ namespace Belay.Sync {
             var fileName = GetFileName(path);
             var lastDot = fileName.LastIndexOf('.');
 
-            if (lastDot <= 0) // No extension or starts with dot (hidden file)
-{
+            if (lastDot <= 0)
+            {
                 return fileName;
             }
 
@@ -134,8 +134,8 @@ namespace Belay.Sync {
             var fileName = GetFileName(path);
             var lastDot = fileName.LastIndexOf('.');
 
-            if (lastDot <= 0) // No extension or starts with dot (hidden file)
-{
+            if (lastDot <= 0)
+            {
                 return string.Empty;
             }
 

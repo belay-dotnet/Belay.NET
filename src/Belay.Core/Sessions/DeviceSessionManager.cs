@@ -10,7 +10,6 @@ namespace Belay.Core.Sessions {
     /// Manages device sessions and provides session coordination.
     /// </summary>
     public sealed class DeviceSessionManager : IDeviceSessionManager {
-        private readonly IDeviceCommunication communication;
         private readonly ILoggerFactory loggerFactory;
         private readonly ILogger<DeviceSessionManager> logger;
         private readonly ConcurrentDictionary<string, DeviceSession> activeSessions = new();
@@ -23,10 +22,8 @@ namespace Belay.Core.Sessions {
         /// <summary>
         /// Initializes a new instance of the <see cref="DeviceSessionManager"/> class.
         /// </summary>
-        /// <param name="communication">The device communication instance.</param>
         /// <param name="loggerFactory">The logger factory for creating loggers.</param>
-        public DeviceSessionManager(IDeviceCommunication communication, ILoggerFactory loggerFactory) {
-            this.communication = communication ?? throw new ArgumentNullException(nameof(communication));
+        public DeviceSessionManager(ILoggerFactory loggerFactory) {
             this.loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
             this.logger = loggerFactory.CreateLogger<DeviceSessionManager>();
 
@@ -40,7 +37,7 @@ namespace Belay.Core.Sessions {
         public DeviceSessionState State => this.state;
 
         /// <inheritdoc />
-        public async Task<IDeviceSession> CreateSessionAsync(CancellationToken cancellationToken = default) {
+        public async Task<IDeviceSession> CreateSessionAsync(IDeviceCommunication communication, CancellationToken cancellationToken = default) {
             this.ThrowIfDisposed();
 
             if (this.state != DeviceSessionState.Active) {
@@ -52,9 +49,9 @@ namespace Belay.Core.Sessions {
                 var sessionId = this.GenerateSessionId();
                 var session = new DeviceSession(
                     sessionId,
-                    this.communication,
+                    communication,
                     this.loggerFactory,
-                    await GetDeviceInfoAsync(cancellationToken).ConfigureAwait(false));
+                    await GetDeviceInfoAsync(communication, cancellationToken).ConfigureAwait(false));
 
                 this.activeSessions.TryAdd(sessionId, session);
                 this.currentSessionId = sessionId;
@@ -68,7 +65,7 @@ namespace Belay.Core.Sessions {
         }
 
         /// <inheritdoc />
-        public async Task<IDeviceSession> GetOrCreateSessionAsync(CancellationToken cancellationToken = default) {
+        public async Task<IDeviceSession> GetOrCreateSessionAsync(IDeviceCommunication communication, CancellationToken cancellationToken = default) {
             this.ThrowIfDisposed();
 
             // Check if we have a current active session
@@ -80,7 +77,7 @@ namespace Belay.Core.Sessions {
             }
 
             // Create a new session
-            return await this.CreateSessionAsync(cancellationToken).ConfigureAwait(false);
+            return await this.CreateSessionAsync(communication, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -114,6 +111,7 @@ namespace Belay.Core.Sessions {
 
         /// <inheritdoc />
         public async Task<T> ExecuteInSessionAsync<T>(
+            IDeviceCommunication communication,
             Func<IDeviceSession, Task<T>> operation,
             CancellationToken cancellationToken = default) {
             if (operation == null) {
@@ -122,7 +120,7 @@ namespace Belay.Core.Sessions {
 
             this.ThrowIfDisposed();
 
-            var session = await this.GetOrCreateSessionAsync(cancellationToken).ConfigureAwait(false);
+            var session = await this.GetOrCreateSessionAsync(communication, cancellationToken).ConfigureAwait(false);
 
             try {
                 return await operation(session).ConfigureAwait(false);
@@ -135,9 +133,11 @@ namespace Belay.Core.Sessions {
 
         /// <inheritdoc />
         public async Task ExecuteInSessionAsync(
+            IDeviceCommunication communication,
             Func<IDeviceSession, Task> operation,
             CancellationToken cancellationToken = default) {
             await this.ExecuteInSessionAsync(
+                communication,
                 async session => {
                     await operation(session).ConfigureAwait(false);
                     return true; // Return value not used
@@ -195,11 +195,11 @@ namespace Belay.Core.Sessions {
             return $"session_{timestamp}_{random}";
         }
 
-        private Task<IDeviceInfo?> GetDeviceInfoAsync(CancellationToken cancellationToken = default) {
+        private Task<IDeviceInfo?> GetDeviceInfoAsync(IDeviceCommunication communication, CancellationToken cancellationToken = default) {
             try {
                 // Attempt to gather device information
                 // This is a simplified implementation - in practice you might query the device
-                if (this.communication.State != DeviceConnectionState.Connected) {
+                if (communication.State != DeviceConnectionState.Connected) {
                     return Task.FromResult<IDeviceInfo?>(null);
                 }
 
