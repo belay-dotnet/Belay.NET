@@ -22,6 +22,9 @@ This file provides guidance to Claude Code when working on the Belay.NET project
 - Used for subprocess-based testing without physical hardware
 - **Important**: When working within the micropython submodule directory, reference `./CLAUDE_micropython.md` for MicroPython-specific development guidance
 
+### Documentation Submodule
+- The ./docs submodule _is_ the belay-dotnet.github.io repository so all updates to the docs website should be made directly there, comitted and pushed.
+
 ### Architecture Principles
 - **Async-First**: All device communication uses Task-based async patterns
 - **Strong Typing**: Generic return types with compile-time safety
@@ -29,236 +32,122 @@ This file provides guidance to Claude Code when working on the Belay.NET project
 - **Cross-Platform**: .NET 6+ for Windows/Linux/macOS compatibility
 - **Enterprise Ready**: Structured logging, configuration, health checks
 
-## Project Structure
+## Documentation Requirements
 
-```
-Belay.NET/
-├── src/
-│   ├── Belay.Core/                    # Core device communication and management
-│   ├── Belay.Attributes/              # Attributes for method decoration
-│   ├── Belay.Proxy/                   # Dynamic proxy object system
-│   ├── Belay.Sync/                    # File synchronization system
-│   ├── Belay.PackageManager/          # NuGet-style package management
-│   ├── Belay.CLI/                     # Command-line interface
-│   └── Belay.Extensions/              # Extensions for DI and configuration
-├── plan/                              # Implementation planning documents
-├── samples/                           # Usage examples and demos
-├── tests/                            # Unit and integration tests
-├── docs/                             # Documentation
-└── micropython/                      # Submodule for reference and testing
-```
+### Documentation-Driven Development
+Per Issue 006-003 (Documentation Completion Strategy), all feature development MUST include documentation updates:
 
-## Implementation Planning
+1. **Identify Documentation Impact**: Before implementing any feature, identify all documentation pages that need updates
+2. **Update Stub Pages**: Complete any related stub documentation pages as part of the same issue/PR
+3. **Validate Examples**: Ensure all code examples in documentation compile and run correctly
+4. **No New Stubs**: Avoid creating new stub pages unless absolutely necessary
 
-All implementation work is planned using structured documents in the `./plan/` folder:
+### Documentation in Definition of Done
+Every issue's Definition of Done must include:
+- [ ] API documentation comments complete and accurate
+- [ ] Related stub pages identified and updated
+- [ ] Code samples validated and working
+- [ ] Breaking changes documented if applicable
 
-- **`epic-*.md`**: High-level feature epics with business requirements
-- **`issue-*.md`**: Detailed implementation issues with technical specifications  
-- **`milestone-*.md`**: Release milestones and delivery planning
+### Documentation-Issue Mapping
+Key documentation pages tied to specific issues:
+- `error-handling.md` → Issue 002-105
+- `sensor-reading.md`, `aspnet-core.md`, `background-services.md` → Issue 002-106
+- `multiple-devices.md` → Issue 002-107
+- `custom-attributes.md` → Issue 002-109
+- Hardware documentation → Hardware validation phase
 
-### Current Planning Status
-- ✅ Technical specification completed
-- ✅ Architecture design completed  
-- ✅ Core foundation implementation completed
-- ✅ Unit test coverage achieved
-- 🔄 Hardware validation testing phase
-- ⏳ Advanced features development pending
+## Documentation Placeholder Tracking
 
-## Development Commands
+### Finding Placeholder Pages
+Use this command to identify all placeholder pages that need completion:
 
-### Testing with MicroPython Unix Port
 ```bash
-# Build micropython unix port for testing
-cd micropython/ports/unix
-make submodules
-make
+# Find all placeholder pages with "Documentation in Progress" warning
+grep -r "Documentation in Progress" docs/ --include="*.md" -l
 
-# Run tests against unix port
-dotnet test --filter "Category=UnixPort"
+# Get detailed status of each placeholder page  
+grep -r -A2 -B1 "Documentation in Progress" docs/ --include="*.md"
+
+# Count remaining placeholder pages
+grep -r "Documentation in Progress" docs/ --include="*.md" -l | wc -l
+
+# Find specific completion expectations
+grep -r "Expected completion" docs/ --include="*.md" -A1 -B1
 ```
 
-### Hardware Testing
+### Current Placeholder Status
+**Last Updated**: 2025-08-08
+
+**Total Placeholder Pages**: 17
+
+**Examples Placeholder Pages (6):**
+- `docs/examples/sensor-reading.md` → Issue 002-106
+- `docs/examples/error-handling.md` → Issue 002-105  
+- `docs/examples/aspnet-core.md` → Issue 002-106
+- `docs/examples/background-services.md` → Issue 002-106
+- `docs/examples/multiple-devices.md` → Issue 002-107
+- `docs/examples/custom-attributes.md` → Issue 002-109
+
+**Hardware Placeholder Pages (8):**
+- `docs/hardware/compatibility.md` → Hardware validation phase
+- `docs/hardware/connections.md` → Issue 002-106
+- `docs/hardware/raspberry-pi-pico.md` → Hardware validation phase
+- `docs/hardware/esp32.md` → Hardware validation phase
+- `docs/hardware/pyboard.md` → Hardware validation phase
+- `docs/hardware/circuitpython.md` → CircuitPython validation testing
+- `docs/hardware/troubleshooting-connections.md` → Hardware validation phase
+- `docs/hardware/troubleshooting-performance.md` → Issue 002-106
+
+**Articles Placeholder Pages (3):**
+- `docs/articles/device-programming.md` → Issue 002-106
+- `docs/articles/attributes-reference.md` → Issue 002-106
+- `docs/articles/hardware-testing.md` → Hardware validation phase
+
+**Guide Placeholder Pages (2):**
+- `docs/guide/configuration.md` → Issue 002-106
+- `docs/guide/testing.md` → Issue 002-110
+
+### Placeholder Completion Checklist
+When completing a placeholder page:
+
+1. **Remove the warning block**:
+   ```markdown
+   ::: warning Documentation in Progress
+   This documentation is currently being developed...
+   :::
+   ```
+
+2. **Replace "Coming Soon" section** with actual content
+
+3. **Update code examples** from placeholder to working examples
+
+4. **Verify all internal links** work correctly
+
+5. **Test code examples** compile and execute
+
+6. **Update this tracking section** in CLAUDE.md
+
+### Quality Gates
+- **Issue Completion**: Cannot close issue until linked documentation pages are complete
+- **Release Gates**: Cannot release milestone with placeholder pages
+- **PR Review**: Must verify documentation completion in code reviews
+- **CI/CD**: Automated checks for placeholder content before deployment
+
+### Documentation Debt Metrics
+Track progress with these commands:
+
 ```bash
-# Run all hardware validation tests (requires physical devices)
-dotnet test --filter "Category=Hardware" --logger console
+# Calculate completion percentage
+TOTAL=17
+CURRENT=$(grep -r "Documentation in Progress" docs/ --include="*.md" -l | wc -l)
+COMPLETED=$((TOTAL - CURRENT))
+PERCENTAGE=$((COMPLETED * 100 / TOTAL))
+echo "Documentation completion: $COMPLETED/$TOTAL ($PERCENTAGE%)"
 
-# Run hardware tests for specific device type
-dotnet test --filter "Category=Hardware&Category=RaspberryPi" --logger console
+# Find oldest placeholders (by creation date)
+find docs/ -name "*.md" -exec grep -l "Documentation in Progress" {} \; | xargs ls -lt
 
-# Run performance benchmarks
-dotnet test --filter "Category=Performance" --logger console
+# Identify high-priority placeholders
+grep -r "URGENT\|CRITICAL\|High Priority" docs/ --include="*.md" -l
 ```
-
-### Code Quality
-```bash
-# Format code
-dotnet format
-
-# Run analyzers
-dotnet build --verbosity normal
-
-# Run security analysis
-dotnet list package --vulnerable
-```
-
-### Documentation
-```bash
-# Generate API docs
-dotnet build -c Release
-docfx docs/docfx.json
-```
-
-## Communication Protocols
-
-### Raw REPL Implementation Requirements
-1. **State Management**: Track Normal/Raw/RawPaste states
-2. **Flow Control**: Handle window size and control bytes properly
-3. **Error Handling**: Map device errors to host exceptions with line numbers
-4. **Timeouts**: Implement appropriate timeouts for each protocol phase
-5. **Reconnection**: Support device reconnection with state restoration
-
-### Connection Types Priority
-1. **Serial/USB**: Primary connection method for development boards
-2. **Subprocess**: Essential for testing without physical hardware
-3. **WebREPL**: Secondary for wireless development (MicroPython only)
-
-## Code Patterns and Conventions
-
-### Async Patterns
-```csharp
-// Always use ConfigureAwait(false) in library code
-await SomeAsync().ConfigureAwait(false);
-
-// Support cancellation tokens throughout
-public async Task<T> ExecuteAsync<T>(string code, CancellationToken cancellationToken = default)
-```
-
-### Error Handling
-```csharp
-// Custom exceptions for different error types
-throw new DeviceConnectionException("Failed to connect to device", innerException);
-throw new DeviceExecutionException("Code execution failed on device", deviceStackTrace);
-```
-
-### Logging
-```csharp
-// Use structured logging with Microsoft.Extensions.Logging
-_logger.LogDebug("Executing code on device: {Code}", code);
-_logger.LogError(ex, "Device communication failed for port {Port}", portName);
-```
-
-## Testing Strategy
-
-### Test Categories
-- **Unit Tests**: Component isolation with mocks
-- **Integration Tests**: Real device communication (requires hardware)
-- **Unix Port Tests**: Testing against micropython subprocess
-- **Performance Tests**: Throughput and latency measurements
-
-### Test Hardware Requirements
-- Raspberry Pi Pico (MicroPython + CircuitPython)
-- ESP32 development board
-- STM32-based pyboard (optional)
-
-## Release Planning
-
-### Phase 1: Core Foundation
-- Device communication layer with raw REPL support
-- Basic task execution and attribute system
-- Subprocess communication for testing
-- Unit test coverage
-
-### Phase 2: Advanced Features  
-- File synchronization system
-- Proxy object implementation
-- Package management foundation
-- Integration test suite
-
-### Phase 3: Enterprise Features
-- ASP.NET Core integration
-- WPF/WinUI examples
-- Performance optimization
-- Documentation and samples
-
-## Contributing Guidelines
-
-1. **Plan First**: All features must have corresponding planning documents
-2. **Test Coverage**: Maintain >80% code coverage
-3. **Documentation**: Update CLAUDE.md and planning docs during implementation
-4. **Performance**: Profile communication protocols and optimize hot paths
-5. **Compatibility**: Ensure cross-platform functionality
-
-## Development Workflow
-
-### Agent-Based Development Process
-
-Development follows a structured workflow using specialized agents to ensure quality and alignment with project goals:
-
-#### 1. Sprint Planning Phase
-- **Consult Architecture Agent**: Use the `project-architect-scrum-master` agent to determine the next sprint of work
-- **Create Tickets**: Each sprint consists of multiple implementation tickets with clear acceptance criteria
-- **Prioritize Backlog**: Ensure tickets align with current milestone objectives and technical dependencies
-
-#### 2. Implementation Phase (Per Ticket)
-- **Plan Implementation**: Break down ticket requirements into discrete tasks
-- **Write Code**: Implement features following established patterns and conventions
-- **Unit Testing**: Create comprehensive unit tests for new functionality
-
-#### 3. Quality Assurance Phase
-- **Build & Test**: Use the `build-test-commit-engineer` agent to:
-  - Run all linting and static analysis checks
-  - Compile all affected code
-  - Execute unit tests and relevant integration tests
-- **Issue Resolution**: If issues are reported:
-  - Consult the `project-architect-scrum-master` agent to ensure fixes meet overall project needs
-  - Make necessary corrections
-  - Re-run build-test cycle until all checks pass
-
-#### 4. Code Review Phase
-- **Critical Review**: MUST use the `principal-code-reviewer` agent for final sign-off on all changes
-- **Review Feedback**: If issues are reported by the code reviewer:
-  - Consult the `project-architect-scrum-master` agent for architectural guidance
-  - Address all review feedback
-  - Repeat the build-test-commit cycle
-  - Re-submit for code review until approved
-
-#### 5. Commit Phase
-- **Final Commit**: Once approved by the code reviewer, use the `build-test-commit-engineer` agent to:
-  - Perform final validation
-  - Commit changes to git with appropriate commit message
-  - Ensure commit follows project conventions
-
-### Agent Responsibilities
-
-- **`project-architect-scrum-master`**: Sprint planning, architectural decisions, issue prioritization, design guidance
-- **`build-test-commit-engineer`**: Code compilation, testing, linting, static analysis, git operations
-- **`principal-code-reviewer`**: Critical technical review, architecture alignment validation, quality assurance
-
-### Workflow Rules
-
-1. **No Bypassing**: All implementation work MUST follow this workflow - no shortcuts
-2. **Agent Consultation**: Each phase requires consultation with the appropriate specialized agent
-3. **Quality Gates**: Code cannot proceed to the next phase without passing all quality checks
-4. **Documentation Updates**: Update planning documents and CLAUDE.md as implementation progresses
-5. **Iterative Improvement**: Use feedback from each phase to improve subsequent implementations
-
-### Hardware Testing Workflow
-After completing the foundation implementation with all unit tests passing, the project transitions to hardware validation:
-
-1. **Hardware Setup**: Install required firmware on test devices (see [Hardware Testing Guide](./docs/hardware-testing-guide.md))
-2. **Platform Testing**: Validate implementation on Windows, Linux, and macOS with real hardware
-3. **Protocol Validation**: Test Raw REPL protocol implementation with MicroPython and CircuitPython devices
-4. **Performance Benchmarking**: Measure communication latency and throughput
-5. **Reliability Testing**: Validate error handling, reconnection logic, and edge cases
-6. **Integration Validation**: Ensure all implemented features work correctly with physical devices
-
-### Test Failure Resolution
-- Whenever there are test failures, ensure they are fixed by improving the core implementation and/or the test implementation the best meet the functional needs of the project, check with the planning subagent for clarification if needed.
-
-## References
-
-- [MicroPython REPL Documentation](https://docs.micropython.org/en/latest/reference/repl.html)
-- [Original Python Belay Library](https://github.com/BrianPugh/belay)
-- [Technical Specification](./belay_technical_specification.md)
-- [Architecture Plan](./belay_csharp_architecture.md)
-- [Hardware Testing Guide](./docs/hardware-testing-guide.md)
