@@ -1,6 +1,8 @@
-// Copyright (c) 2024 Belay.NET Contributors
-// Licensed under the Apache License, Version 2.0.
-// See the LICENSE file in the project root for more information.
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Belay.Core.Communication;
+
 using System.IO.Ports;
 using System.Text;
 using System.Text.Json;
@@ -54,6 +56,11 @@ public class SerialDeviceCommunication : IDeviceCommunication {
     /// Gets current connection state of the device.
     /// </summary>
     public DeviceConnectionState State { get; private set; }
+
+    /// <summary>
+    /// Gets the serial port name used for device communication.
+    /// </summary>
+    public string PortName => this.serialPort.PortName;
 
     /// <summary>
     /// Event raised when output is received from the device

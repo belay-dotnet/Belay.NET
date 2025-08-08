@@ -1,10 +1,13 @@
-// Copyright (c) 2024 Belay.NET Contributors
-// Licensed under the Apache License, Version 2.0.
-// See the LICENSE file in the project root for more information.
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Belay.Core;
+
 using Belay.Core.Communication;
 using Belay.Core.Discovery;
 using Belay.Core.Execution;
 using Belay.Core.Sessions;
+using Belay.Core.Caching;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -15,6 +18,7 @@ public class Device : IDisposable {
     private readonly IDeviceCommunication communication;
     private readonly ILogger<Device> logger;
     private readonly IDeviceSessionManager sessionManager;
+    private readonly IMethodDeploymentCache methodCache;
     private readonly Lazy<TaskExecutor> taskExecutor;
     private readonly Lazy<SetupExecutor> setupExecutor;
     private readonly Lazy<ThreadExecutor> threadExecutor;
@@ -47,7 +51,8 @@ public class Device : IDisposable {
     /// <param name="sessionManager">The session manager for device coordination.</param>
     /// <param name="logger">Logger for device operations.</param>
     /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
-    public Device(IDeviceCommunication communication, IDeviceSessionManager? sessionManager, ILogger<Device> logger, ILoggerFactory? loggerFactory = null) {
+    /// <param name="methodCache">Optional method deployment cache for performance optimization.</param>
+    public Device(IDeviceCommunication communication, IDeviceSessionManager? sessionManager, ILogger<Device> logger, ILoggerFactory? loggerFactory = null, IMethodDeploymentCache? methodCache = null) {
         this.communication = communication ?? throw new ArgumentNullException(nameof(communication));
         this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Device>.Instance;
 
@@ -62,8 +67,13 @@ public class Device : IDisposable {
             this.communication,
             executorLoggerFactory);
 
-        // Initialize executors lazily with session management support
-        this.taskExecutor = new Lazy<TaskExecutor>(() => new TaskExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<TaskExecutor>()));
+        // Use injected cache or create a default one
+        this.methodCache = methodCache ?? new MethodDeploymentCache(
+            new MethodCacheConfiguration(),
+            executorLoggerFactory.CreateLogger<MethodDeploymentCache>());
+
+        // Initialize executors lazily with session management and caching support
+        this.taskExecutor = new Lazy<TaskExecutor>(() => new TaskExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<TaskExecutor>(), cache: this.methodCache));
         this.setupExecutor = new Lazy<SetupExecutor>(() => new SetupExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<SetupExecutor>()));
         this.threadExecutor = new Lazy<ThreadExecutor>(() => new ThreadExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<ThreadExecutor>()));
         this.teardownExecutor = new Lazy<TeardownExecutor>(() => new TeardownExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<TeardownExecutor>()));
@@ -393,6 +403,24 @@ public class Device : IDisposable {
         return FromConnectionString(devices[0].ConnectionString, loggerFactory);
     }
 
+    /// <summary>
+    /// Gets device identification information for cache key generation.
+    /// </summary>
+    /// <returns>A tuple containing device identifier and firmware version.</returns>
+    internal (string DeviceId, string FirmwareVersion) GetDeviceIdentification() {
+        var deviceId = this.communication switch {
+            SerialDeviceCommunication serial => $"serial:{serial.PortName}",
+            SubprocessDeviceCommunication subprocess => "subprocess:micropython",
+            _ => $"unknown:{this.communication.GetType().Name}"
+        };
+
+        // TODO: Get actual firmware version from device using sys.implementation or uos.uname()
+        // For now, use a placeholder that will be enhanced when device info is available
+        var firmwareVersion = "unknown";
+
+        return (deviceId, firmwareVersion);
+    }
+
     /// <inheritdoc/>
     public void Dispose() {
         if (this.disposed) {
@@ -401,6 +429,7 @@ public class Device : IDisposable {
 
         // Dispose session manager first to clean up resources
         this.sessionManager?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        this.methodCache?.Dispose();
         this.communication?.Dispose();
         this.disposed = true;
     }

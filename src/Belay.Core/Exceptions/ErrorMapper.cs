@@ -1,6 +1,8 @@
-// Copyright (c) 2024 Belay.NET Contributors
-// Licensed under the Apache License, Version 2.0.
-// See the LICENSE file in the project root for more information.
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Belay.Core.Exceptions;
+
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;

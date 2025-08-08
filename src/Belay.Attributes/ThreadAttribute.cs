@@ -1,6 +1,8 @@
-// Copyright (c) 2024 Belay.NET Contributors
-// Licensed under the Apache License, Version 2.0.
-// See the LICENSE file in the project root for more information.
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
+
+namespace Belay.Attributes;
+
 /// <summary>
 /// Marks a method to be executed as a background thread on the MicroPython device.
 /// Methods decorated with this attribute run asynchronously on the device without
