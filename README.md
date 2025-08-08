@@ -1,3 +1,6 @@
+<div align="center">
+  <img src="belay_net_logo.svg" alt="Belay.NET Logo" width="200" height="200">
+  
 # Belay.NET
 
 **Control MicroPython devices from .NET with zero friction.**
@@ -137,8 +140,8 @@ await device.ExecuteAsync("import temperature; temp = temperature.read()");
 
 ## Community & Support
 
-- 💬 **[GitHub Discussions](https://github.com/belay-dotnet/belay/discussions)** - Ask questions and share ideas
-- 🐛 **[Issue Tracker](https://github.com/belay-dotnet/belay/issues)** - Report bugs and request features
+- 💬 **[GitHub Discussions](https://github.com/belay-dotnet/Belay.NET/discussions)** - Ask questions and share ideas
+- 🐛 **[Issue Tracker](https://github.com/belay-dotnet/Belay.NET/issues)** - Report bugs and request features
 - 📚 **[Stack Overflow](https://stackoverflow.com/questions/tagged/belay.net)** - Get help from the community
 
 ## License
@@ -194,7 +197,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Quick Setup
 ```bash
 # Clone with submodules
-git clone --recurse-submodules https://github.com/belay-dotnet/belay
+git clone --recurse-submodules https://github.com/belay-dotnet/Belay.NET
 cd belay
 
 # Build the solution
