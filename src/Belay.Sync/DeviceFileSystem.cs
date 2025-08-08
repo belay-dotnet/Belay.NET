@@ -1,8 +1,6 @@
-// Copyright (c) Belay.NET. All rights reserved.
-// Licensed under the MIT License.
-
-namespace Belay.Sync {
-    using System;
+// Copyright (c) 2024 Belay.NET Contributors
+// Licensed under the Apache License, Version 2.0.
+// See the LICENSE file in the project root for more information.
     using System.Collections.Generic;
     using System.IO;
     using System.Security.Cryptography;
@@ -59,21 +57,23 @@ namespace Belay.Sync {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
             this.logger.LogDebug("Getting file info for: {Path}", normalizedPath);
 
-            var code = $$"""
-                import os
-                try:
-                    stat = os.stat('{normalizedPath.Replace("'", "\\'")}')
-                    is_dir = (stat[0] & 0x4000) != 0  # S_IFDIR
-                    size = stat[6] if not is_dir else None
-                    # Try to get modified time (may not be supported)
-                    try:
-                        mtime = stat[8] if len(stat) > 8 else None
-                    except:
-                        mtime = None
-                    print($"{{\"path\": \"{normalizedPath.Replace("'", "\\'")}\", \"is_directory\": {is_dir}, \"size\": {size}, \"modified\": {mtime}}}")
-                except OSError:
-                    print("null")
-                """;
+            var escapedPath = normalizedPath.Replace("'", "\\'");
+            var code = $@"
+import os
+import json
+try:
+    stat = os.stat('{escapedPath}')
+    is_dir = (stat[0] & 0x4000) != 0  # S_IFDIR
+    size = stat[6] if not is_dir else None
+    try:
+        mtime = stat[8] if len(stat) > 8 else None
+    except:
+        mtime = None
+    result = {{""path"": ""{escapedPath}"", ""is_directory"": is_dir, ""size"": size, ""modified"": mtime}}
+    print(json.dumps(result))
+except OSError:
+    print(""null"")
+";
 
             try {
                 var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
@@ -161,17 +161,18 @@ namespace Belay.Sync {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
             this.logger.LogDebug("Deleting file: {Path}", normalizedPath);
 
-            var code = $"""
-                import os
-                try:
-                    os.remove('{normalizedPath.Replace("'", "\\'")}')
-                    print("success")
-                except OSError as e:
-                    if e.errno == 2:  # ENOENT
-                        print("not_found")
-                    else:
-                        print(f"error: {{e}}")
-                """;
+            var escapedPath = normalizedPath.Replace("'", "\\'");
+            var code = $@"
+import os
+try:
+    os.remove('{escapedPath}')
+    print('success')
+except OSError as e:
+    if e.errno == 2:  # ENOENT
+        print('not_found')
+    else:
+        print(f'error: {{{{e}}}}')
+";
 
             try {
                 var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
@@ -197,32 +198,33 @@ namespace Belay.Sync {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
             this.logger.LogDebug("Creating directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
 
+            var escapedPath = normalizedPath.Replace("'", "\\'");
             var code = recursive
-                ? $"""
-                    import os
-                    def makedirs(path):
-                        parts = path.strip('/').split('/')
-                        current = ''
-                        for part in parts:
-                            current = current + '/' + part
-                            try:
-                                os.mkdir(current)
-                            except OSError:
-                                pass  # Directory might already exist
-                    makedirs('{normalizedPath.Replace("'", "\\'")}')
-                    print("success")
-                    """
-                : $"""
-                    import os
-                    try:
-                        os.mkdir('{normalizedPath.Replace("'", "\\'")}')
-                        print("success")
-                    except OSError as e:
-                        if e.errno == 17:  # EEXIST
-                            print("exists")
-                        else:
-                            print(f"error: {{e}}")
-                    """;
+                ? $@"
+import os
+def makedirs(path):
+    parts = path.strip('/').split('/')
+    current = ''
+    for part in parts:
+        current = current + '/' + part
+        try:
+            os.mkdir(current)
+        except OSError:
+            pass  # Directory might already exist
+makedirs('{escapedPath}')
+print('success')
+"
+                : $@"
+import os
+try:
+    os.mkdir('{escapedPath}')
+    print('success')
+except OSError as e:
+    if e.errno == 17:  # EEXIST
+        print('exists')
+    else:
+        print(f'error: {{{{e}}}}')
+";
 
             try {
                 var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
@@ -245,40 +247,41 @@ namespace Belay.Sync {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
             this.logger.LogDebug("Deleting directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
 
+            var escapedPath = normalizedPath.Replace("'", "\\'");
             var code = recursive
-                ? $"""
-                    import os
-                    def rmtree(path):
-                        try:
-                            for entry in os.listdir(path):
-                                entry_path = path + '/' + entry
-                                try:
-                                    stat = os.stat(entry_path)
-                                    if (stat[0] & 0x4000) != 0:  # Directory
-                                        rmtree(entry_path)
-                                    else:
-                                        os.remove(entry_path)
-                                except OSError:
-                                    pass
-                            os.rmdir(path)
-                            print("success")
-                        except OSError as e:
-                            print(f"error: {{e}}")
-                    rmtree('{normalizedPath.Replace("'", "\\'")}')
-                    """
-                : $"""
-                    import os
-                    try:
-                        os.rmdir('{normalizedPath.Replace("'", "\\'")}')
-                        print("success")
-                    except OSError as e:
-                        if e.errno == 2:  # ENOENT
-                            print("not_found")
-                        elif e.errno == 66 or e.errno == 39:  # ENOTEMPTY
-                            print("not_empty")
-                        else:
-                            print(f"error: {{e}}")
-                    """;
+                ? $@"
+import os
+def rmtree(path):
+    try:
+        for entry in os.listdir(path):
+            entry_path = path + '/' + entry
+            try:
+                stat = os.stat(entry_path)
+                if (stat[0] & 0x4000) != 0:  # Directory
+                    rmtree(entry_path)
+                else:
+                    os.remove(entry_path)
+            except OSError:
+                pass
+        os.rmdir(path)
+        print('success')
+    except OSError as e:
+        print(f'error: {{{{e}}}}')
+rmtree('{escapedPath}')
+"
+                : $@"
+import os
+try:
+    os.rmdir('{escapedPath}')
+    print('success')
+except OSError as e:
+    if e.errno == 2:  # ENOENT
+        print('not_found')
+    elif e.errno == 66 or e.errno == 39:  # ENOTEMPTY
+        print('not_empty')
+    else:
+        print(f'error: {{{{e}}}}')
+";
 
             try {
                 var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
@@ -319,7 +322,7 @@ namespace Belay.Sync {
             // This is more reliable than trying to implement hash algorithms on the device
             var content = await this.ReadFileAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
 
-            using var hashAlgorithm = algorithm.ToLowerInvariant() switch {
+            using HashAlgorithm hashAlgorithm = algorithm.ToLowerInvariant() switch {
                 "md5" => MD5.Create(),
                 "sha1" => SHA1.Create(),
                 "sha256" => SHA256.Create(),
@@ -332,67 +335,70 @@ namespace Belay.Sync {
         }
 
         private static string GenerateListCode(string path) {
-            return $"""
-                import os
-                import json
-                try:
-                    entries = []
-                    for name in os.listdir('{path.Replace("'", "\\'")}'):
-                        entry_path = '{path.Replace("'", "\\'")}' + ('/' if '{path}' != '/' else '') + name
-                        try:
-                            stat = os.stat(entry_path)
-                            is_dir = (stat[0] & 0x4000) != 0
-                            size = None if is_dir else stat[6]
-                            mtime = stat[8] if len(stat) > 8 else None
-                            entries.append({"path": entry_path, "is_directory": is_dir, "size": size, "modified": mtime})
-                        except OSError:
-                            pass
-                    print(json.dumps(entries))
-                except OSError:
-                    print("[]")
-                """;
+            var escapedPath = path.Replace("'", "\\'");
+            return $@"
+import os
+import json
+try:
+    entries = []
+    for name in os.listdir('{escapedPath}'):
+        entry_path = '{escapedPath}' + ('/' if '{path}' != '/' else '') + name
+        try:
+            stat = os.stat(entry_path)
+            is_dir = (stat[0] & 0x4000) != 0
+            size = None if is_dir else stat[6]
+            mtime = stat[8] if len(stat) > 8 else None
+            entries.append({{""path"": entry_path, ""is_directory"": is_dir, ""size"": size, ""modified"": mtime}})
+        except OSError:
+            pass
+    print(json.dumps(entries))
+except OSError:
+    print('[]')
+";
         }
 
         private static string GenerateRecursiveListCode(string path) {
-            return $"""
-                import os
-                import json
-                def list_recursive(base_path, current_path=""):
-                    entries = []
-                    full_path = base_path + current_path
-                    try:
-                        for name in os.listdir(full_path):
-                            entry_path = full_path + ('/' if full_path != '/' else '') + name
-                            try:
-                                stat = os.stat(entry_path)
-                                is_dir = (stat[0] & 0x4000) != 0
-                                size = None if is_dir else stat[6]
-                                mtime = stat[8] if len(stat) > 8 else None
-                                entries.append({"path": entry_path, "is_directory": is_dir, "size": size, "modified": mtime})
-                                if is_dir:
-                                    entries.extend(list_recursive(base_path, current_path + ('/' if current_path else '') + name))
-                            except OSError:
-                                pass
-                    except OSError:
-                        pass
-                    return entries
-                print(json.dumps(list_recursive('{path.Replace("'", "\\'")}'')))
-                """;
+            var escapedPath = path.Replace("'", "\\'");
+            return $@"
+import os
+import json
+def list_recursive(base_path, current_path=""""):
+    entries = []
+    full_path = base_path + current_path
+    try:
+        for name in os.listdir(full_path):
+            entry_path = full_path + ('/' if full_path != '/' else '') + name
+            try:
+                stat = os.stat(entry_path)
+                is_dir = (stat[0] & 0x4000) != 0
+                size = None if is_dir else stat[6]
+                mtime = stat[8] if len(stat) > 8 else None
+                entries.append({{""path"": entry_path, ""is_directory"": is_dir, ""size"": size, ""modified"": mtime}})
+                if is_dir:
+                    entries.extend(list_recursive(base_path, current_path + ('/' if current_path else '') + name))
+            except OSError:
+                pass
+    except OSError:
+        pass
+    return entries
+print(json.dumps(list_recursive('{escapedPath}')))
+";
         }
 
         private async Task<byte[]> ReadFileDirectAsync(string path, CancellationToken cancellationToken) {
-            var code = $"""
-                import binascii
-                try:
-                    with open('{path.Replace("'", "\\'")}', 'rb') as f:
-                        data = f.read()
-                        print(binascii.hexlify(data).decode())
-                except OSError as e:
-                    if e.errno == 2:  # ENOENT
-                        print("not_found")
-                    else:
-                        print(f"error: {{e}}")
-                """;
+            var escapedPath = path.Replace("'", "\\'");
+            var code = $@"
+import binascii
+try:
+    with open('{escapedPath}', 'rb') as f:
+        data = f.read()
+        print(binascii.hexlify(data).decode())
+except OSError as e:
+    if e.errno == 2:  # ENOENT
+        print('not_found')
+    else:
+        print(f'error: {{{{e}}}}')
+";
 
             var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
             var trimmed = result.Trim();
@@ -414,16 +420,17 @@ namespace Belay.Sync {
 
             while (offset < fileSize) {
                 var currentChunkSize = Math.Min(chunkSize, (int)(fileSize - offset));
-                var code = $"""
-                    import binascii
-                    try:
-                        with open('{path.Replace("'", "\\'")}', 'rb') as f:
-                            f.seek({offset})
-                            data = f.read({currentChunkSize})
-                            print(binascii.hexlify(data).decode())
-                    except OSError as e:
-                        print(f"error: {{e}}")
-                    """;
+                var escapedPath = path.Replace("'", "\\'");
+                var code = $@"
+import binascii
+try:
+    with open('{escapedPath}', 'rb') as f:
+        f.seek({offset})
+        data = f.read({currentChunkSize})
+        print(binascii.hexlify(data).decode())
+except OSError as e:
+    print(f'error: {{{{e}}}}')
+";
 
                 var chunkResult = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 var trimmed = chunkResult.Trim();
@@ -442,16 +449,17 @@ namespace Belay.Sync {
 
         private async Task WriteFileDirectAsync(string path, byte[] content, CancellationToken cancellationToken) {
             var hexData = Convert.ToHexString(content);
-            var code = $"""
-                import binascii
-                try:
-                    data = binascii.unhexlify('{hexData}')
-                    with open('{path.Replace("'", "\\'")}', 'wb') as f:
-                        f.write(data)
-                    print("success")
-                except OSError as e:
-                    print(f"error: {{e}}")
-                """;
+            var escapedPath = path.Replace("'", "\\'");
+            var code = $@"
+import binascii
+try:
+    data = binascii.unhexlify('{hexData}')
+    with open('{escapedPath}', 'wb') as f:
+        f.write(data)
+    print('success')
+except OSError as e:
+    print(f'error: {{{{e}}}}')
+";
 
             var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
             var trimmed = result.Trim();
@@ -465,14 +473,15 @@ namespace Belay.Sync {
             const int chunkSize = 4096; // 4KB chunks
 
             // First, create/truncate the file
-            var initCode = $"""
-                try:
-                    with open('{path.Replace("'", "\\'")}', 'wb') as f:
-                        pass  # Just create/truncate the file
-                    print("success")
-                except OSError as e:
-                    print(f"error: {{e}}")
-                """;
+            var escapedPath = path.Replace("'", "\\'");
+            var initCode = $@"
+try:
+    with open('{escapedPath}', 'wb') as f:
+        pass  # Just create/truncate the file
+    print('success')
+except OSError as e:
+    print(f'error: {{{{e}}}}')
+";
 
             var initResult = await this.device.ExecuteAsync<string>(initCode, cancellationToken).ConfigureAwait(false);
             if (initResult.Trim().StartsWith("error:")) {
@@ -486,16 +495,16 @@ namespace Belay.Sync {
                 Array.Copy(content, offset, chunk, 0, currentChunkSize);
                 var hexData = Convert.ToHexString(chunk);
 
-                var chunkCode = $"""
-                    import binascii
-                    try:
-                        data = binascii.unhexlify('{hexData}')
-                        with open('{path.Replace("'", "\\'")}', 'ab') as f:
-                            f.write(data)
-                        print("success")
-                    except OSError as e:
-                        print(f"error: {{e}}")
-                    """;
+                var chunkCode = $@"
+import binascii
+try:
+    data = binascii.unhexlify('{hexData}')
+    with open('{escapedPath}', 'ab') as f:
+        f.write(data)
+    print('success')
+except OSError as e:
+    print(f'error: {{{{e}}}}')
+";
 
                 var chunkResult = await this.device.ExecuteAsync<string>(chunkCode, cancellationToken).ConfigureAwait(false);
                 var trimmed = chunkResult.Trim();
@@ -511,7 +520,8 @@ namespace Belay.Sync {
                 var entries = JsonSerializer.Deserialize<JsonElement[]>(jsonResult.Trim());
                 var result = new List<DeviceFileInfo>();
 
-                foreach (var entry in entries) {
+                if (entries != null) {
+                    foreach (var entry in entries) {
                     var path = entry.GetProperty("path").GetString() ?? string.Empty;
                     var isDirectory = entry.GetProperty("is_directory").GetBoolean();
 
@@ -532,6 +542,7 @@ namespace Belay.Sync {
                         Size = size,
                         LastModified = modified,
                     });
+                    }
                 }
 
                 return result;

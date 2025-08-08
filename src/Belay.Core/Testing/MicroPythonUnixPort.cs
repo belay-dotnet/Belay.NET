@@ -1,8 +1,6 @@
-// Copyright (c) Belay.NET. All rights reserved.
-// Licensed under the MIT License.
-
-namespace Belay.Core.Testing;
-
+// Copyright (c) 2024 Belay.NET Contributors
+// Licensed under the Apache License, Version 2.0.
+// See the LICENSE file in the project root for more information.
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
