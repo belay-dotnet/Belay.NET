@@ -53,10 +53,9 @@ public static class ServiceCollectionExtensions {
     /// <param name="sectionName">The configuration section name (defaults to "Belay").</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddBelay(
-        this IServiceCollection services, 
-        IConfiguration configuration, 
+        this IServiceCollection services,
+        IConfiguration configuration,
         string sectionName = "Belay") {
-        
         // Bind configuration
         services.Configure<BelayConfiguration>(configuration.GetSection(sectionName));
 
@@ -107,7 +106,6 @@ public static class ServiceCollectionExtensions {
     public static IServiceCollection AddBelayHealthChecks(
         this IServiceCollection services,
         Action<BelayHealthCheckOptions>? configureHealthChecks = null) {
-
         var options = new BelayHealthCheckOptions();
         configureHealthChecks?.Invoke(options);
 
@@ -192,10 +190,10 @@ public class BelayHealthCheckOptions {
     /// <param name="timeoutSeconds">The timeout in seconds (default 10).</param>
     /// <returns>The options instance for chaining.</returns>
     public BelayHealthCheckOptions AddDeviceCheck(string name, string portOrPath, int timeoutSeconds = 10) {
-        DeviceHealthChecks.Add(new DeviceHealthCheckConfiguration {
+        this.DeviceHealthChecks.Add(new DeviceHealthCheckConfiguration {
             Name = name,
             PortOrPath = portOrPath,
-            TimeoutSeconds = timeoutSeconds
+            TimeoutSeconds = timeoutSeconds,
         });
         return this;
     }
