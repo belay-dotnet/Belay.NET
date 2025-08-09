@@ -18,6 +18,19 @@ namespace Belay.Core.Sessions {
         private volatile DeviceSessionState state = DeviceSessionState.Active;
         private volatile string? currentSessionId;
         private volatile bool disposed = false;
+        private IDeviceCapabilities? deviceCapabilities;
+        private int totalSessionsCreated = 0;
+        private int maxConcurrentSessions = 0;
+
+        /// <summary>
+        /// Occurs when the session manager state changes.
+        /// </summary>
+        public event EventHandler<DeviceSessionStateChangedEventArgs>? StateChanged;
+
+        /// <summary>
+        /// Occurs when device capabilities are detected or updated.
+        /// </summary>
+        public event EventHandler<DeviceCapabilitiesChangedEventArgs>? CapabilitiesChanged;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DeviceSessionManager"/> class.
@@ -37,6 +50,9 @@ namespace Belay.Core.Sessions {
         public DeviceSessionState State => this.state;
 
         /// <inheritdoc />
+        public IDeviceCapabilities? Capabilities => this.deviceCapabilities;
+
+        /// <inheritdoc />
         public async Task<IDeviceSession> CreateSessionAsync(IDeviceCommunication communication, CancellationToken cancellationToken = default) {
             this.ThrowIfDisposed();
 
@@ -47,14 +63,23 @@ namespace Belay.Core.Sessions {
             await this.sessionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try {
                 var sessionId = this.GenerateSessionId();
+
+                // Initialize device capabilities if not already done
+                if (this.deviceCapabilities == null && communication.State == DeviceConnectionState.Connected) {
+                    await this.InitializeDeviceCapabilitiesAsync(communication, cancellationToken).ConfigureAwait(false);
+                }
+
                 var session = new DeviceSession(
                     sessionId,
                     communication,
                     this.loggerFactory,
-                    await GetDeviceInfoAsync(communication, cancellationToken).ConfigureAwait(false));
+                    await GetDeviceInfoAsync(communication, cancellationToken).ConfigureAwait(false),
+                    this.deviceCapabilities);
 
                 this.activeSessions.TryAdd(sessionId, session);
                 this.currentSessionId = sessionId;
+                this.totalSessionsCreated++;
+                this.maxConcurrentSessions = Math.Max(this.maxConcurrentSessions, this.activeSessions.Count);
 
                 this.logger.LogInformation("Created session {SessionId}", sessionId);
                 return session;
@@ -150,8 +175,8 @@ namespace Belay.Core.Sessions {
 
             var stats = new SessionStats {
                 ActiveSessionCount = this.activeSessions.Count,
-                TotalSessionCount = this.activeSessions.Count, // Simplified - would track total in real implementation
-                MaxSessionCount = 10, // From configuration - would be configurable
+                TotalSessionCount = this.totalSessionsCreated,
+                MaxSessionCount = this.maxConcurrentSessions,
             };
 
             return Task.FromResult(stats);
@@ -195,7 +220,27 @@ namespace Belay.Core.Sessions {
             return $"session_{timestamp}_{random}";
         }
 
-        private Task<IDeviceInfo?> GetDeviceInfoAsync(IDeviceCommunication communication, CancellationToken cancellationToken = default) {
+        private async Task InitializeDeviceCapabilitiesAsync(IDeviceCommunication communication, CancellationToken cancellationToken) {
+            try {
+                var capabilities = new DeviceCapabilities(communication, this.loggerFactory.CreateLogger<DeviceCapabilities>());
+                await capabilities.RefreshCapabilitiesAsync(cancellationToken).ConfigureAwait(false);
+
+                var oldCapabilities = this.deviceCapabilities;
+                this.deviceCapabilities = capabilities;
+
+                this.CapabilitiesChanged?.Invoke(this, new DeviceCapabilitiesChangedEventArgs(oldCapabilities, capabilities));
+
+                this.logger.LogInformation(
+                    "Device capabilities initialized - Type: {DeviceType}, Features: {Features}",
+                    capabilities.DeviceType,
+                    capabilities.SupportedFeatures);
+            }
+            catch (Exception ex) {
+                this.logger.LogWarning(ex, "Failed to initialize device capabilities");
+            }
+        }
+
+        private Task<IDeviceInfo?> GetDeviceInfoAsync(IDeviceCommunication communication ) {
             try {
                 // Attempt to gather device information
                 // This is a simplified implementation - in practice you might query the device
@@ -203,14 +248,14 @@ namespace Belay.Core.Sessions {
                     return Task.FromResult<IDeviceInfo?>(null);
                 }
 
-                // Basic device info that could be expanded with actual device queries
+                // Use capabilities information if available
                 var deviceInfo = new DeviceInfo {
-                    Platform = "micropython", // Would be determined by querying device
-                    Version = "unknown",
+                    Platform = this.deviceCapabilities?.DeviceType ?? "micropython",
+                    Version = this.deviceCapabilities?.FirmwareVersion ?? "unknown",
                     Hardware = null,
-                    UniqueId = null,
-                    SupportsThreading = true, // Assume MicroPython supports threading
-                    SupportsFileSystem = true, // Assume file system support
+                    UniqueId = this.deviceCapabilities?.UniqueDeviceId,
+                    SupportsThreading = this.deviceCapabilities?.SupportsFeature(DeviceFeature.Threading) ?? true,
+                    SupportsFileSystem = this.deviceCapabilities?.SupportsFeature(DeviceFeature.FileSystem) ?? true,
                     AvailableMemory = null,
                 };
 

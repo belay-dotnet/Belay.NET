@@ -19,11 +19,13 @@ namespace Belay.Core.Sessions {
         /// <param name="communication">The device communication instance.</param>
         /// <param name="loggerFactory">The logger factory for creating loggers.</param>
         /// <param name="deviceInfo">Optional device information.</param>
+        /// <param name="capabilities">Optional device capabilities.</param>
         public DeviceSession(
             string sessionId,
             IDeviceCommunication communication,
             ILoggerFactory loggerFactory,
-            IDeviceInfo? deviceInfo = null) {
+            IDeviceInfo? deviceInfo = null,
+            IDeviceCapabilities? capabilities = null) {
             if (string.IsNullOrWhiteSpace(sessionId)) {
                 throw new ArgumentException("Session ID cannot be null or whitespace", nameof(sessionId));
             }
@@ -46,6 +48,14 @@ namespace Belay.Core.Sessions {
             this.ExecutorContext = new ExecutorContext(sessionId, loggerFactory.CreateLogger<ExecutorContext>());
             this.DeviceContext = new DeviceContext(sessionId, communication, loggerFactory.CreateLogger<DeviceContext>(), deviceInfo);
 
+            // Initialize file system context based on capabilities
+            var fsCapabilities = FileSystemCapabilities.BasicFileOperations | FileSystemCapabilities.DirectoryOperations;
+            if (capabilities?.SupportsFeature(DeviceFeature.FileSystem) == true) {
+                fsCapabilities |= FileSystemCapabilities.FileMetadata;
+            }
+
+            this.FileSystemContext = new FileSystemContext(sessionId, fsCapabilities);
+
             this.logger.LogDebug("Created device session {SessionId}", sessionId);
         }
 
@@ -66,6 +76,11 @@ namespace Belay.Core.Sessions {
 
         /// <inheritdoc />
         public IDeviceContext DeviceContext { get; }
+
+        /// <summary>
+        /// Gets the file system context for session-aware file operations.
+        /// </summary>
+        public IFileSystemContext FileSystemContext { get; }
 
         /// <inheritdoc />
         public bool IsActive => !this.disposed;

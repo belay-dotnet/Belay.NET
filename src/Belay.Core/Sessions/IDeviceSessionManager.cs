@@ -1,9 +1,9 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
-using Belay.Core.Communication;
-
 namespace Belay.Core.Sessions {
+    using Belay.Core.Communication;
+
     /// <summary>
     /// Represents the possible states of a device session manager.
     /// </summary>
@@ -30,6 +30,56 @@ namespace Belay.Core.Sessions {
     }
 
     /// <summary>
+    /// Event arguments for device session state changes.
+    /// </summary>
+    public class DeviceSessionStateChangedEventArgs : EventArgs {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DeviceSessionStateChangedEventArgs"/> class.
+        /// </summary>
+        /// <param name="oldState">The previous state.</param>
+        /// <param name="newState">The new state.</param>
+        public DeviceSessionStateChangedEventArgs(DeviceSessionState oldState, DeviceSessionState newState) {
+            this.OldState = oldState;
+            this.NewState = newState;
+        }
+
+        /// <summary>
+        /// Gets the previous state.
+        /// </summary>
+        public DeviceSessionState OldState { get; }
+
+        /// <summary>
+        /// Gets the new state.
+        /// </summary>
+        public DeviceSessionState NewState { get; }
+    }
+
+    /// <summary>
+    /// Event arguments for device capabilities changes.
+    /// </summary>
+    public class DeviceCapabilitiesChangedEventArgs : EventArgs {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DeviceCapabilitiesChangedEventArgs"/> class.
+        /// </summary>
+        /// <param name="oldCapabilities">The previous capabilities.</param>
+        /// <param name="newCapabilities">The new capabilities.</param>
+        public DeviceCapabilitiesChangedEventArgs(IDeviceCapabilities? oldCapabilities, IDeviceCapabilities? newCapabilities) {
+            this.OldCapabilities = oldCapabilities;
+            this.NewCapabilities = newCapabilities;
+        }
+
+        /// <summary>
+        /// Gets the previous capabilities.
+        /// </summary>
+        public IDeviceCapabilities? OldCapabilities { get; }
+
+        /// <summary>
+        /// Gets the new capabilities.
+        /// </summary>
+        public IDeviceCapabilities? NewCapabilities { get; }
+    }
+
+    /// <summary>
     /// Manages device sessions and provides session coordination.
     /// </summary>
     public interface IDeviceSessionManager : IAsyncDisposable {
@@ -42,6 +92,11 @@ namespace Belay.Core.Sessions {
         /// Gets the current state of the session manager.
         /// </summary>
         DeviceSessionState State { get; }
+
+        /// <summary>
+        /// Gets the device capabilities if they have been detected.
+        /// </summary>
+        IDeviceCapabilities? Capabilities { get; }
 
         /// <summary>
         /// Creates a new session for device operations.

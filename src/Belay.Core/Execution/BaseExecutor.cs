@@ -28,6 +28,11 @@ namespace Belay.Core.Execution {
         protected IDeviceSessionManager SessionManager { get; }
 
         /// <summary>
+        /// Gets the current device session if available.
+        /// </summary>
+        protected IDeviceSession? CurrentSession { get; private set; }
+
+        /// <summary>
         /// Gets logger for diagnostic information.
         /// </summary>
         protected ILogger Logger { get; }
@@ -78,7 +83,7 @@ namespace Belay.Core.Execution {
             if (string.IsNullOrWhiteSpace(pythonCode)) {
                 throw new ArgumentException("Python code cannot be null or empty", nameof(pythonCode));
             }
-            
+
             await this.ApplyPoliciesAndExecuteAsync<object>(pythonCode, cancellationToken, callingMethod).ConfigureAwait(false);
         }
 
@@ -91,16 +96,32 @@ namespace Belay.Core.Execution {
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>The result of the Python code execution.</returns>
         protected async Task<T> ExecuteOnDeviceAsync<T>(string pythonCode, CancellationToken cancellationToken = default) {
-            this.Logger.LogDebug("Executing Python code on device: {Code}", pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
+            return await this.SessionManager.ExecuteInSessionAsync(
+                this.Device.Communication,
+                async session => {
+                    // Store current session for access by other methods
+                    this.CurrentSession = session;
 
-            try {
-                return await this.Device.ExecuteAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (this.ErrorMapper != null) {
-                var mappedException = this.ErrorMapper.MapException(ex, $"ExecuteOnDevice({typeof(T).Name})");
-                mappedException.WithContext("python_code", pythonCode.Length > 200 ? $"{pythonCode[..200]}..." : pythonCode);
-                throw mappedException;
-            }
+                    try {
+                        this.Logger.LogDebug(
+                            "Executing Python code in session {SessionId}: {Code}",
+                            session.SessionId,
+                            pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
+
+                        // Check if we can optimize execution using session context
+                        var result = await this.ExecuteWithSessionOptimizationAsync<T>(session, pythonCode, cancellationToken).ConfigureAwait(false);
+
+                        this.Logger.LogDebug(
+                            "Python code execution completed in session {SessionId}",
+                            session.SessionId);
+
+                        return result;
+                    }
+                    finally {
+                        this.CurrentSession = null;
+                    }
+                },
+                cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -110,16 +131,7 @@ namespace Belay.Core.Execution {
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
         protected async Task ExecuteOnDeviceAsync(string pythonCode, CancellationToken cancellationToken = default) {
-            this.Logger.LogDebug("Executing Python code on device: {Code}", pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
-
-            try {
-                await this.Device.ExecuteAsync(pythonCode, cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (this.ErrorMapper != null) {
-                var mappedException = this.ErrorMapper.MapException(ex, "ExecuteOnDevice");
-                mappedException.WithContext("python_code", pythonCode.Length > 200 ? $"{pythonCode[..200]}..." : pythonCode);
-                throw mappedException;
-            }
+            await this.ExecuteOnDeviceAsync<object>(pythonCode, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -216,7 +228,7 @@ namespace Belay.Core.Execution {
         /// <returns>A combined cancellation token.</returns>
         protected static CancellationToken CombineCancellationTokens(CancellationToken cancellationToken, CancellationTokenSource? timeoutCts, out CancellationTokenSource? linkedCts) {
             linkedCts = null;
-            
+
             if (timeoutCts == null) {
                 return cancellationToken;
             }
@@ -248,7 +260,6 @@ namespace Belay.Core.Execution {
             }
         }
 
-        #region IExecutor Implementation
 
         /// <summary>
         /// Executes a method with attribute-specific policies applied.
@@ -265,9 +276,10 @@ namespace Belay.Core.Execution {
             }
 
             // Generate Python code for the method invocation
-            var pythonCode = GeneratePythonMethodCall(method, instance, parameters);
-            
-            this.Logger.LogDebug("Executing method {MethodName} as Python code: {Code}", 
+            var pythonCode = this.GeneratePythonMethodCall(method, instance, parameters);
+
+            this.Logger.LogDebug(
+                "Executing method {MethodName} as Python code: {Code}",
                 method.Name, pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
 
             // Execute using the policy-based system
@@ -298,7 +310,7 @@ namespace Belay.Core.Execution {
         /// This method handles three patterns:
         /// 1. Methods that return Python code strings (most common)
         /// 2. Methods with PythonCodeAttribute containing embedded code
-        /// 3. Simple expression methods that can be transpiled
+        /// 3. Simple expression methods that can be transpiled.
         /// </summary>
         /// <param name="method">The method to generate code for.</param>
         /// <param name="instance">The instance to invoke on.</param>
@@ -306,19 +318,19 @@ namespace Belay.Core.Execution {
         /// <returns>Python code that represents the method execution.</returns>
         protected virtual string GeneratePythonMethodCall(MethodInfo method, object? instance, object?[]? parameters) {
             // Strategy 1: Check if method has embedded Python code attribute
-            var pythonCode = GetEmbeddedPythonCode(method, parameters);
+            var pythonCode = this.GetEmbeddedPythonCode(method, parameters);
             if (pythonCode != null) {
                 return pythonCode;
             }
 
             // Strategy 2: Try to invoke the method if it returns a string (Python code)
-            pythonCode = TryInvokeMethodForPythonCode(method, instance, parameters);
+            pythonCode = this.TryInvokeMethodForPythonCode(method, instance, parameters);
             if (pythonCode != null) {
                 return pythonCode;
             }
 
             // Strategy 3: Generate a device method call (assumes method is already deployed)
-            pythonCode = GenerateDeviceMethodCall(method, parameters);
+            pythonCode = this.GenerateDeviceMethodCall(method, parameters);
             if (pythonCode != null) {
                 return pythonCode;
             }
@@ -344,9 +356,9 @@ namespace Belay.Core.Execution {
             }
 
             var pythonParams = new List<string>();
-            
+
             foreach (var param in parameters) {
-                pythonParams.Add(ConvertToPythonValue(param));
+                pythonParams.Add(this.ConvertToPythonValue(param));
             }
 
             return string.Join(", ", pythonParams);
@@ -359,9 +371,9 @@ namespace Belay.Core.Execution {
         /// <param name="value">The value to convert.</param>
         /// <returns>Python representation of the value.</returns>
         protected virtual string ConvertToPythonValue(object? value) {
-            return ConvertToPythonValueWithCircularCheck(value, new HashSet<object>(ReferenceEqualityComparer.Instance));
+            return this.ConvertToPythonValueWithCircularCheck(value, new HashSet<object>(ReferenceEqualityComparer.Instance));
         }
-        
+
         /// <summary>
         /// Converts a .NET value to its Python string representation with circular reference protection.
         /// </summary>
@@ -377,38 +389,42 @@ namespace Belay.Core.Execution {
                 float f => f.ToString("G", System.Globalization.CultureInfo.InvariantCulture),
                 double d => d.ToString("G", System.Globalization.CultureInfo.InvariantCulture),
                 decimal dec => dec.ToString("G", System.Globalization.CultureInfo.InvariantCulture),
-                string s => ConvertStringToPython(s),
+                string s => this.ConvertStringToPython(s),
                 DateTime dt => $"'{dt:yyyy-MM-ddTHH:mm:ss}'",
-                byte[] bytes => ConvertBytesToPython(bytes),
-                System.Collections.IList list => ConvertListToPythonWithCircularCheck(list, visitedObjects),
-                System.Collections.IDictionary dict => ConvertDictionaryToPythonWithCircularCheck(dict, visitedObjects),
-                Enum enumValue => ConvertEnumToPython(enumValue),
-                _ when IsSimpleType(value.GetType()) => $"'{value}'",
-                _ => ConvertComplexObjectToPython(value)
+                byte[] bytes => this.ConvertBytesToPython(bytes),
+                System.Collections.IList list => this.ConvertListToPythonWithCircularCheck(list, visitedObjects),
+                System.Collections.IDictionary dict => this.ConvertDictionaryToPythonWithCircularCheck(dict, visitedObjects),
+                Enum enumValue => this.ConvertEnumToPython(enumValue),
+                _ when this.IsSimpleType(value.GetType()) => $"'{value}'",
+                _ => this.ConvertComplexObjectToPython(value),
             };
         }
 
         /// <summary>
         /// Converts a string to Python string literal with proper escaping.
         /// </summary>
+        /// <returns></returns>
         protected virtual string ConvertStringToPython(string str) {
-            if (str == null) return "None";
-            
+            if (str == null) {
+                return "None";
+            }
+
             // Handle common escape sequences
             var escaped = str
-                .Replace("\\", "\\\\")  // Backslash first
-                .Replace("'", "\\'")    // Single quotes
-                .Replace("\"", "\\\"")  // Double quotes  
-                .Replace("\n", "\\n")   // Newline
-                .Replace("\r", "\\r")   // Carriage return
+                .Replace("\\", "\\\\") // Backslash first
+                .Replace("'", "\\'") // Single quotes
+                .Replace("\"", "\\\"") // Double quotes
+                .Replace("\n", "\\n") // Newline
+                .Replace("\r", "\\r") // Carriage return
                 .Replace("\t", "\\t");  // Tab
-                
+
             return $"'{escaped}'";
         }
 
         /// <summary>
         /// Converts a byte array to Python bytes literal.
         /// </summary>
+        /// <returns></returns>
         protected virtual string ConvertBytesToPython(byte[] bytes) {
             var hex = Convert.ToHexString(bytes);
             return $"bytes.fromhex('{hex}')";
@@ -417,22 +433,24 @@ namespace Belay.Core.Execution {
         /// <summary>
         /// Converts a list/array to Python list literal.
         /// </summary>
+        /// <returns></returns>
         protected virtual string ConvertListToPython(System.Collections.IList list) {
-            return ConvertListToPythonWithCircularCheck(list, new HashSet<object>(ReferenceEqualityComparer.Instance));
+            return this.ConvertListToPythonWithCircularCheck(list, new HashSet<object>(ReferenceEqualityComparer.Instance));
         }
-        
+
         private string ConvertListToPythonWithCircularCheck(System.Collections.IList list, HashSet<object> visitedObjects) {
             if (visitedObjects.Contains(list)) {
                 throw new InvalidOperationException("Circular reference detected in collection. Cannot convert to Python.");
             }
-            
+
             visitedObjects.Add(list);
-            
+
             try {
                 var items = new List<string>();
                 foreach (var item in list) {
-                    items.Add(ConvertToPythonValueWithCircularCheck(item, visitedObjects));
+                    items.Add(this.ConvertToPythonValueWithCircularCheck(item, visitedObjects));
                 }
+
                 return $"[{string.Join(", ", items)}]";
             }
             finally {
@@ -443,24 +461,26 @@ namespace Belay.Core.Execution {
         /// <summary>
         /// Converts a dictionary to Python dict literal.
         /// </summary>
+        /// <returns></returns>
         protected virtual string ConvertDictionaryToPython(System.Collections.IDictionary dict) {
-            return ConvertDictionaryToPythonWithCircularCheck(dict, new HashSet<object>(ReferenceEqualityComparer.Instance));
+            return this.ConvertDictionaryToPythonWithCircularCheck(dict, new HashSet<object>(ReferenceEqualityComparer.Instance));
         }
-        
+
         private string ConvertDictionaryToPythonWithCircularCheck(System.Collections.IDictionary dict, HashSet<object> visitedObjects) {
             if (visitedObjects.Contains(dict)) {
                 throw new InvalidOperationException("Circular reference detected in dictionary. Cannot convert to Python.");
             }
-            
+
             visitedObjects.Add(dict);
-            
+
             try {
                 var pairs = new List<string>();
                 foreach (System.Collections.DictionaryEntry entry in dict) {
-                    var key = ConvertToPythonValueWithCircularCheck(entry.Key, visitedObjects);
-                    var value = ConvertToPythonValueWithCircularCheck(entry.Value, visitedObjects);
+                    var key = this.ConvertToPythonValueWithCircularCheck(entry.Key, visitedObjects);
+                    var value = this.ConvertToPythonValueWithCircularCheck(entry.Value, visitedObjects);
                     pairs.Add($"{key}: {value}");
                 }
+
                 return $"{{{string.Join(", ", pairs)}}}";
             }
             finally {
@@ -471,29 +491,33 @@ namespace Belay.Core.Execution {
         /// <summary>
         /// Converts an enum to Python representation.
         /// </summary>
+        /// <returns></returns>
         protected virtual string ConvertEnumToPython(Enum enumValue) {
             // Convert to underlying integer value
             var underlyingValue = Convert.ChangeType(enumValue, enumValue.GetTypeCode());
-            return ConvertToPythonValue(underlyingValue);
+            return this.ConvertToPythonValue(underlyingValue);
         }
 
         /// <summary>
         /// Converts complex objects to Python representation.
         /// Uses JSON serialization as fallback for complex types.
         /// </summary>
+        /// <returns></returns>
         protected virtual string ConvertComplexObjectToPython(object? value) {
-            if (value == null) return "None";
+            if (value == null) {
+                return "None";
+            }
 
             try {
                 // Attempt to serialize to JSON and parse as Python dict
                 var json = System.Text.Json.JsonSerializer.Serialize(value);
-                
+
                 // Convert JSON to Python dict syntax
                 var pythonDict = json
                     .Replace("true", "True")
                     .Replace("false", "False")
                     .Replace("null", "None");
-                    
+
                 return pythonDict;
             }
             catch (Exception ex) {
@@ -543,11 +567,11 @@ namespace Belay.Core.Execution {
 
                 // Attempt to invoke the method to get Python code
                 var result = method.Invoke(instance, parameters);
-                
+
                 if (result is string pythonCode) {
                     return pythonCode;
                 }
-                
+
                 if (result is Task<string> stringTask) {
                     // For async methods, we'd need to await, but this gets complex
                     // For now, skip async methods in this strategy
@@ -573,12 +597,11 @@ namespace Belay.Core.Execution {
         protected virtual string? GenerateDeviceMethodCall(MethodInfo method, object?[]? parameters) {
             // TODO: Strategy 3 is temporarily disabled until method deployment infrastructure is implemented
             // Generating calls to non-existent functions would cause runtime failures
-            // 
+            //
             // When implemented, this should:
             // 1. Check if method is actually deployed to the device
             // 2. Generate appropriate function call only if deployment confirmed
             // 3. Handle deployment cache invalidation
-            
             return null; // Disabled - would generate calls to non-existent functions
         }
 
@@ -594,10 +617,9 @@ namespace Belay.Core.Execution {
             // 2. Method name suggests device operation (starts with Get, Set, Read, Write, etc.)
             // 3. Method parameters are simple types
             // 4. Method doesn't use complex .NET features
-
-            if (!method.HasAttribute<TaskAttribute>() && 
-                !method.HasAttribute<SetupAttribute>() && 
-                !method.HasAttribute<ThreadAttribute>() && 
+            if (!method.HasAttribute<TaskAttribute>() &&
+                !method.HasAttribute<SetupAttribute>() &&
+                !method.HasAttribute<ThreadAttribute>() &&
                 !method.HasAttribute<TeardownAttribute>()) {
                 return false;
             }
@@ -605,13 +627,13 @@ namespace Belay.Core.Execution {
             // Check if parameters are simple types that can be marshaled
             var parameters = method.GetParameters();
             foreach (var param in parameters) {
-                if (!IsSimpleType(param.ParameterType)) {
+                if (!this.IsSimpleType(param.ParameterType)) {
                     return false;
                 }
             }
 
             // Check if return type is deployable
-            if (!IsSimpleType(method.ReturnType) && method.ReturnType != typeof(void) && method.ReturnType != typeof(Task)) {
+            if (!this.IsSimpleType(method.ReturnType) && method.ReturnType != typeof(void) && method.ReturnType != typeof(Task)) {
                 return false;
             }
 
@@ -629,13 +651,74 @@ namespace Belay.Core.Execution {
                 type = Nullable.GetUnderlyingType(type)!;
             }
 
-            return type.IsPrimitive || 
-                   type == typeof(string) || 
-                   type == typeof(decimal) || 
+            return type.IsPrimitive ||
+                   type == typeof(string) ||
+                   type == typeof(decimal) ||
                    type == typeof(DateTime) ||
                    type.IsEnum;
         }
 
-        #endregion
+        /// <summary>
+        /// Executes Python code with session-based optimizations.
+        /// </summary>
+        /// <typeparam name="T">The expected return type.</typeparam>
+        /// <param name="session">The current device session.</param>
+        /// <param name="pythonCode">The Python code to execute.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>The result of the Python code execution.</returns>
+        protected virtual async Task<T> ExecuteWithSessionOptimizationAsync<T>(IDeviceSession session, string pythonCode, CancellationToken cancellationToken) {
+            try {
+                // Check if device capabilities can inform execution optimization
+                var capabilities = this.SessionManager.Capabilities;
+                if (capabilities != null) {
+                    // Optimize based on device performance tier
+                    if (capabilities.PerformanceProfile.PerformanceTier == DevicePerformanceTier.Low) {
+                        // For low-end devices, add small delay to prevent overwhelming
+                        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    // Log performance context
+                    this.Logger.LogTrace(
+                        "Executing on {DeviceType} (Tier: {Tier}, Features: {Features})",
+                        capabilities.DeviceType,
+                        capabilities.PerformanceProfile.PerformanceTier,
+                        capabilities.SupportedFeatures);
+                }
+
+                // Execute the Python code
+                return await this.Device.ExecuteAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (this.ErrorMapper != null) {
+                var mappedException = this.ErrorMapper.MapException(ex, $"ExecuteWithSessionOptimization({typeof(T).Name})");
+                mappedException.WithContext("python_code", pythonCode.Length > 200 ? $"{pythonCode[..200]}..." : pythonCode);
+                mappedException.WithContext("session_id", session.SessionId);
+                throw mappedException;
+            }
+        }
+
+        /// <summary>
+        /// Registers a session resource for automatic cleanup.
+        /// </summary>
+        /// <param name="resource">The resource to register.</param>
+        /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        protected virtual async Task RegisterSessionResourceAsync(ISessionResource resource, CancellationToken cancellationToken = default) {
+            if (resource == null) {
+                throw new ArgumentNullException(nameof(resource));
+            }
+
+            var session = this.CurrentSession;
+            if (session != null) {
+                await session.Resources.RegisterResourceAsync(resource, cancellationToken).ConfigureAwait(false);
+                this.Logger.LogDebug(
+                    "Registered session resource {ResourceId} of type {ResourceType}",
+                    resource.ResourceId, resource.ResourceType);
+            }
+            else {
+                this.Logger.LogWarning(
+                    "No current session available to register resource {ResourceId}",
+                    resource.ResourceId);
+            }
+        }
     }
 }
