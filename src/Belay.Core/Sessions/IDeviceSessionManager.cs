@@ -119,7 +119,7 @@ namespace Belay.Core.Sessions {
         /// </summary>
         /// <param name="sessionId">The identifier of the session to end.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task EndSessionAsync(string sessionId, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace Belay.Core.Sessions {
         /// <param name="communication">The device communication instance for this session.</param>
         /// <param name="operation">The operation to execute within the session.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task ExecuteInSessionAsync(
             IDeviceCommunication communication,
             Func<IDeviceSession, Task> operation,

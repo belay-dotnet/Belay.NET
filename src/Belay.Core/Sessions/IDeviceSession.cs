@@ -38,6 +38,11 @@ namespace Belay.Core.Sessions {
         IDeviceContext DeviceContext { get; }
 
         /// <summary>
+        /// Gets the file system context for session-aware file operations.
+        /// </summary>
+        IFileSystemContext FileSystemContext { get; }
+
+        /// <summary>
         /// Gets a value indicating whether this session is still active.
         /// </summary>
         bool IsActive { get; }

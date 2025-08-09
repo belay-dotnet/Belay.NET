@@ -15,7 +15,7 @@ namespace Belay.Core.Sessions {
         private readonly ConcurrentDictionary<string, DeviceSession> activeSessions = new();
         private readonly SemaphoreSlim sessionLock = new(1, 1);
 
-        private volatile DeviceSessionState state = DeviceSessionState.Active;
+        private volatile DeviceSessionState state = DeviceSessionState.Inactive;
         private volatile string? currentSessionId;
         private volatile bool disposed = false;
         private IDeviceCapabilities? deviceCapabilities;
@@ -54,7 +54,16 @@ namespace Belay.Core.Sessions {
 
         /// <inheritdoc />
         public async Task<IDeviceSession> CreateSessionAsync(IDeviceCommunication communication, CancellationToken cancellationToken = default) {
+            if (communication == null) {
+                throw new ArgumentNullException(nameof(communication));
+            }
+
             this.ThrowIfDisposed();
+
+            // Ensure we're in active state when creating sessions
+            if (this.state == DeviceSessionState.Inactive) {
+                this.state = DeviceSessionState.Active;
+            }
 
             if (this.state != DeviceSessionState.Active) {
                 throw new InvalidOperationException($"Cannot create session when manager state is {this.state}");
@@ -188,7 +197,6 @@ namespace Belay.Core.Sessions {
                 return;
             }
 
-            this.disposed = true;
             this.state = DeviceSessionState.Shutdown;
 
             this.logger.LogInformation(
@@ -196,20 +204,42 @@ namespace Belay.Core.Sessions {
                 this.activeSessions.Count);
 
             try {
-                // End all active sessions
+                // End all active sessions before marking as disposed
                 var sessionIds = this.activeSessions.Keys.ToArray();
-                var endTasks = sessionIds.Select(sessionId =>
-                    this.EndSessionAsync(sessionId, CancellationToken.None));
+                var cleanupTasks = new List<Task>();
 
-                await Task.WhenAll(endTasks).ConfigureAwait(false);
+                foreach (var sessionId in sessionIds) {
+                    if (this.activeSessions.TryRemove(sessionId, out var session)) {
+                        cleanupTasks.Add(this.CleanupSessionAsync(session, sessionId));
+                    }
+                }
+
+                await Task.WhenAll(cleanupTasks).ConfigureAwait(false);
             }
             catch (Exception ex) {
                 this.logger.LogError(ex, "Error during session manager disposal");
             }
             finally {
+                this.disposed = true;
                 this.sessionLock.Dispose();
                 this.state = DeviceSessionState.Disposed;
                 this.logger.LogDebug("Session manager disposed");
+            }
+        }
+
+        private async Task CleanupSessionAsync(DeviceSession session, string sessionId) {
+            try {
+                await session.DisposeAsync().ConfigureAwait(false);
+                this.logger.LogInformation("Cleaned up session {SessionId} during disposal", sessionId);
+            }
+            catch (Exception ex) {
+                this.logger.LogError(ex, "Error cleaning up session {SessionId} during disposal", sessionId);
+            }
+            finally {
+                // Clear current session if it was the one being cleaned up
+                if (this.currentSessionId == sessionId) {
+                    this.currentSessionId = null;
+                }
             }
         }
 
@@ -240,7 +270,7 @@ namespace Belay.Core.Sessions {
             }
         }
 
-        private Task<IDeviceInfo?> GetDeviceInfoAsync(IDeviceCommunication communication ) {
+        private Task<IDeviceInfo?> GetDeviceInfoAsync(IDeviceCommunication communication, CancellationToken cancellationToken = default) {
             try {
                 // Attempt to gather device information
                 // This is a simplified implementation - in practice you might query the device

@@ -16,6 +16,7 @@ using Belay.Core.Communication;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Belay.Tests.Integration.Hardware {
     /// <summary>
@@ -33,7 +34,7 @@ namespace Belay.Tests.Integration.Hardware {
         public DeviceCommunicationTests(ITestOutputHelper output) {
             _output = output;
             _loggerFactory = LoggerFactory.Create(builder => {
-                builder.AddXUnit(output).SetMinimumLevel(LogLevel.Debug);
+                builder.AddConsole().SetMinimumLevel(LogLevel.Debug);
             });
 
             // Device path should be configurable via environment variable
@@ -62,7 +63,7 @@ namespace Belay.Tests.Integration.Hardware {
             Skip.IfNot(File.Exists(_devicePath), $"ESP32 device not found at {_devicePath}");
 
             Assert.NotNull(_device);
-            Assert.Equal(DeviceState.Connected, _device.State);
+            Assert.Equal(DeviceConnectionState.Connected, _device.State);
             _output.WriteLine($"Successfully connected to {_devicePath}");
             return Task.CompletedTask;
         }

@@ -3,11 +3,11 @@
 
 namespace Belay.Core;
 
+using Belay.Core.Caching;
 using Belay.Core.Communication;
 using Belay.Core.Discovery;
 using Belay.Core.Execution;
 using Belay.Core.Sessions;
-using Belay.Core.Caching;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -428,7 +428,7 @@ public class Device : IDisposable {
         }
 
         // Find the appropriate executor for this method
-        var executor = GetExecutorForMethod(method);
+        var executor = this.GetExecutorForMethod(method);
         if (executor == null) {
             throw new InvalidOperationException($"No suitable executor found for method '{method.Name}'. Ensure the method has a supported attribute ([Task], [Setup], [Thread], or [Teardown]).");
         }
@@ -460,15 +460,15 @@ public class Device : IDisposable {
         if (this.Task.CanHandle(method)) {
             return this.Task;
         }
-        
+
         if (this.Setup.CanHandle(method)) {
             return this.Setup;
         }
-        
+
         if (this.Thread.CanHandle(method)) {
             return this.Thread;
         }
-        
+
         if (this.Teardown.CanHandle(method)) {
             return this.Teardown;
         }
@@ -484,7 +484,7 @@ public class Device : IDisposable {
         var deviceId = this.communication switch {
             SerialDeviceCommunication serial => $"serial:{serial.PortName}",
             SubprocessDeviceCommunication subprocess => "subprocess:micropython",
-            _ => $"unknown:{this.communication.GetType().Name}"
+            _ => $"unknown:{this.communication.GetType().Name}",
         };
 
         // TODO: Get actual firmware version from device using sys.implementation or uos.uname()

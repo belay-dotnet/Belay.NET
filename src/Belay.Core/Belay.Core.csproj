@@ -10,6 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Belay.Tests.Unit" />
+    <InternalsVisibleTo Include="Belay.Tests.Integration" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Belay.Attributes\Belay.Attributes.csproj" />
   </ItemGroup>
 

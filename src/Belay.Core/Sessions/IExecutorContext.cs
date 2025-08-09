@@ -16,14 +16,14 @@ namespace Belay.Core.Sessions {
         /// </summary>
         /// <param name="executorType">The type of executor being registered.</param>
         /// <param name="executorInstance">The executor instance being registered.</param>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task RegisterExecutorAsync(Type executorType, object executorInstance);
 
         /// <summary>
         /// Unregisters an executor from the session.
         /// </summary>
         /// <param name="executorType">The type of executor being unregistered.</param>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         Task UnregisterExecutorAsync(Type executorType);
 
         /// <summary>

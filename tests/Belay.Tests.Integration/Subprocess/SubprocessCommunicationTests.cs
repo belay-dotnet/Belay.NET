@@ -16,6 +16,7 @@ using Belay.Core.Communication;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace Belay.Tests.Integration.Subprocess {
     /// <summary>
@@ -33,7 +34,7 @@ namespace Belay.Tests.Integration.Subprocess {
         public SubprocessCommunicationTests(ITestOutputHelper output) {
             _output = output;
             _loggerFactory = LoggerFactory.Create(builder => {
-                builder.AddXUnit(output).SetMinimumLevel(LogLevel.Debug);
+                builder.AddConsole().SetMinimumLevel(LogLevel.Debug);
             });
 
             // MicroPython path should be configurable via environment variable
@@ -46,12 +47,13 @@ namespace Belay.Tests.Integration.Subprocess {
 
             var logger = _loggerFactory.CreateLogger<SubprocessDeviceCommunication>();
             _device = new SubprocessDeviceCommunication(_micropythonPath, logger: logger);
-            await _device.ConnectAsync();
+            
+            // Wait a moment for the process to start up
+            await Task.Delay(500);
         }
 
         public async Task DisposeAsync() {
             if (_device != null) {
-                await _device.DisconnectAsync();
                 _device.Dispose();
             }
             _loggerFactory.Dispose();
@@ -62,7 +64,7 @@ namespace Belay.Tests.Integration.Subprocess {
             Skip.IfNot(File.Exists(_micropythonPath), $"MicroPython Unix port not found at {_micropythonPath}");
 
             Assert.NotNull(_device);
-            Assert.Equal(DeviceState.Connected, _device.State);
+            Assert.Equal(DeviceConnectionState.Connected, _device.State);
             _output.WriteLine($"Successfully connected to subprocess: {_micropythonPath}");
             return Task.CompletedTask;
         }

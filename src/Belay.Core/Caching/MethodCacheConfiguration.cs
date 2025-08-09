@@ -1,62 +1,53 @@
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
 
-using System;
+namespace Belay.Core.Caching {
+    using System;
 
-namespace Belay.Core.Caching
-{
     /// <summary>
     /// Configuration options for method deployment caching behavior.
     /// </summary>
-    public sealed class MethodCacheConfiguration
-    {
+    public sealed class MethodCacheConfiguration {
         /// <summary>
-        /// Maximum number of cache entries allowed.
+        /// Gets or sets maximum number of cache entries allowed.
         /// </summary>
         public int MaxCacheSize { get; set; } = 1000;
 
         /// <summary>
-        /// Default time-to-live for cache entries.
+        /// Gets or sets default time-to-live for cache entries.
         /// </summary>
         public TimeSpan DefaultExpiration { get; set; } = TimeSpan.FromMinutes(30);
 
         /// <summary>
-        /// Enables automatic cache entry eviction when max size is reached.
+        /// Gets or sets a value indicating whether enables automatic cache entry eviction when max size is reached.
         /// </summary>
         public bool AutoEvictOnMaxSize { get; set; } = true;
 
         /// <summary>
-        /// Enables periodic cache cleanup to remove expired entries.
+        /// Gets or sets a value indicating whether enables periodic cache cleanup to remove expired entries.
         /// </summary>
         public bool EnablePeriodicCleanup { get; set; } = true;
 
         /// <summary>
-        /// Interval for periodic cache cleanup.
+        /// Gets or sets interval for periodic cache cleanup.
         /// </summary>
         public TimeSpan CleanupInterval { get; set; } = TimeSpan.FromMinutes(15);
 
         /// <summary>
         /// Validates the configuration settings.
         /// </summary>
-        public void Validate()
-        {
-            if (MaxCacheSize <= 0)
-                throw new ArgumentException("Max cache size must be greater than zero.", nameof(MaxCacheSize));
+        public void Validate() {
+            if (this.MaxCacheSize <= 0) {
+                throw new ArgumentException("Max cache size must be greater than zero.", nameof(this.MaxCacheSize));
+            }
 
-            if (DefaultExpiration <= TimeSpan.Zero)
-                throw new ArgumentException("Default expiration must be a positive timespan.", nameof(DefaultExpiration));
+            if (this.DefaultExpiration <= TimeSpan.Zero) {
+                throw new ArgumentException("Default expiration must be a positive timespan.", nameof(this.DefaultExpiration));
+            }
 
-            if (EnablePeriodicCleanup && CleanupInterval <= TimeSpan.Zero)
-                throw new ArgumentException("Cleanup interval must be a positive timespan.", nameof(CleanupInterval));
+            if (this.EnablePeriodicCleanup && this.CleanupInterval <= TimeSpan.Zero) {
+                throw new ArgumentException("Cleanup interval must be a positive timespan.", nameof(this.CleanupInterval));
+            }
         }
     }
 }

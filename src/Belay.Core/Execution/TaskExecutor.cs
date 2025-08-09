@@ -79,7 +79,7 @@ namespace Belay.Core.Execution {
                 // Apply timeout from attribute if specified
                 using var timeoutCts = CreateTimeoutCts(taskAttribute.TimeoutMs);
                 var effectiveCancellationToken = CombineCancellationTokens(cancellationToken, timeoutCts, out var linkedCts);
-                
+
                 using (linkedCts) {
                     // Handle exclusive execution
                     T result;
@@ -186,10 +186,10 @@ namespace Belay.Core.Execution {
         private MethodCacheKey GenerateCacheKey(string pythonCode, string methodName) {
             // Get device-specific identification information
             var (deviceId, firmwareVersion) = this.Device.GetDeviceIdentification();
-            
+
             // Create a signature from the Python code and method name
             var methodSignature = $"{methodName}:{pythonCode.GetHashCode():X8}";
-            
+
             return new MethodCacheKey(deviceId, firmwareVersion, methodSignature);
         }
 

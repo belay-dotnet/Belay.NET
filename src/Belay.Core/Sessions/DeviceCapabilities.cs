@@ -10,7 +10,7 @@ namespace Belay.Core.Sessions {
     /// <summary>
     /// Detects and tracks device capabilities and features.
     /// </summary>
-    internal sealed class DeviceCapabilities : IDeviceCapabilities {
+    public sealed class DeviceCapabilities : IDeviceCapabilities {
         private readonly IDeviceCommunication communication;
         private readonly ILogger<DeviceCapabilities> logger;
         private readonly SemaphoreSlim detectionLock = new(1, 1);

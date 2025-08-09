@@ -53,7 +53,7 @@ public class ExecutorFrameworkTests {
     public async Task ExecuteMethodAsync_WithSetupAttribute_UsesSetupExecutor() {
         // Arrange
         var method = typeof(TestMethods).GetMethod(nameof(TestMethods.SetupMethod))!;
-        this.mockCommunication.Setup(x => x.ExecuteAsync<object>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+        this.mockCommunication.Setup(x => x.ExecuteAsync<object?>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ReturnsAsync((object?)null);
 
         // Act
@@ -66,7 +66,7 @@ public class ExecutorFrameworkTests {
     public async Task ExecuteMethodAsync_WithThreadAttribute_UsesThreadExecutor() {
         // Arrange
         var method = typeof(TestMethods).GetMethod(nameof(TestMethods.ThreadMethod))!;
-        this.mockCommunication.Setup(x => x.ExecuteAsync<object>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+        this.mockCommunication.Setup(x => x.ExecuteAsync<object?>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ReturnsAsync((object?)null);
 
         // Act
@@ -79,7 +79,7 @@ public class ExecutorFrameworkTests {
     public async Task ExecuteMethodAsync_WithTeardownAttribute_UsesTeardownExecutor() {
         // Arrange
         var method = typeof(TestMethods).GetMethod(nameof(TestMethods.TeardownMethod))!;
-        this.mockCommunication.Setup(x => x.ExecuteAsync<object>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+        this.mockCommunication.Setup(x => x.ExecuteAsync<object?>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ReturnsAsync((object?)null);
 
         // Act
