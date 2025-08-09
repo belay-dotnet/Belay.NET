@@ -31,6 +31,16 @@
      showguides="true" />
   <defs
      id="defs1" />
+  <!-- White rounded rectangle background for dark themes -->
+  <rect
+     width="100%"
+     height="100%"
+     x="0"
+     y="0"
+     rx="17.5%"
+     ry="17.5%"
+     fill="#ffffff"
+     id="background" />
   <path
      d="m 538,579 v 28 c 0.12121,-0.0352 29,-0.0668 29,-0.0668 V 579 Z"
      fill="#000000"
