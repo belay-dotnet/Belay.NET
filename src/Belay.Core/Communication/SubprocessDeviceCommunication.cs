@@ -107,7 +107,7 @@ public class SubprocessDeviceCommunication : IDeviceCommunication {
             this.stdout = this.micropythonProcess.StandardOutput;
             this.stderr = this.micropythonProcess.StandardError;
 
-            // Create duplex stream for raw REPL protocol - use base streams directly to avoid buffering
+            // Create duplex stream for basic REPL protocol (MVP fallback)
             var duplexStream = new DuplexStream(
                 this.micropythonProcess.StandardInput.BaseStream,
                 this.micropythonProcess.StandardOutput.BaseStream);
@@ -363,10 +363,13 @@ public class SubprocessDeviceCommunication : IDeviceCommunication {
                 throw new InvalidOperationException("Protocol not initialized");
             }
 
-            this.logger.LogDebug("Testing subprocess Raw REPL entry");
-            await this.replProtocol.EnterRawModeAsync(cancellationToken);
-            await this.replProtocol.ExitRawModeAsync(cancellationToken);
-            this.logger.LogDebug("MicroPython subprocess Raw REPL test successful");
+            this.logger.LogDebug("Testing subprocess adaptive REPL protocol");
+            // Test basic execution to verify the adaptive protocol is working
+            var testResponse = await this.replProtocol.ExecuteCodeAsync("1+1", useRawPasteMode: true, cancellationToken);
+            if (!testResponse.IsSuccess) {
+                throw new InvalidOperationException($"Adaptive REPL protocol test failed: {testResponse.ErrorOutput}");
+            }
+            this.logger.LogDebug("MicroPython subprocess adaptive REPL protocol test successful");
             return;
         }
         catch (Exception ex) {

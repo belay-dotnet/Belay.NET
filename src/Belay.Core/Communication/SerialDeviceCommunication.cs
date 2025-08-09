@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 public class SerialDeviceCommunication : IDeviceCommunication {
     private readonly SerialPort serialPort;
-    private RawReplProtocol? replProtocol;
+    private AdaptiveRawReplProtocol? replProtocol;
     private readonly SemaphoreSlim executionSemaphore;
     private readonly CancellationTokenSource cancellationTokenSource;
     private readonly ILogger<SerialDeviceCommunication> logger;
@@ -95,15 +95,17 @@ public class SerialDeviceCommunication : IDeviceCommunication {
             // Open serial port
             this.serialPort.Open();
 
-            // Create raw REPL protocol now that port is open
-            this.replProtocol = new RawReplProtocol(
+            // Create adaptive raw REPL protocol now that port is open
+            var config = new RawReplConfiguration();
+            this.replProtocol = new AdaptiveRawReplProtocol(
                 this.serialPort.BaseStream,
-                Microsoft.Extensions.Logging.Abstractions.NullLogger<RawReplProtocol>.Instance);
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<AdaptiveRawReplProtocol>.Instance,
+                config);
 
             // Wait for device to be ready (may need soft reset)
             await this.WaitForDeviceReadyAsync(cancellationToken);
 
-            // Initialize raw REPL protocol
+            // Initialize and auto-detect protocol capabilities
             await this.replProtocol.InitializeAsync(cancellationToken);
 
             this.SetState(DeviceConnectionState.Connected, "Successfully connected");
@@ -136,10 +138,8 @@ public class SerialDeviceCommunication : IDeviceCommunication {
 
         try {
             if (this.serialPort.IsOpen) {
-                // Try to exit raw mode gracefully
-                if (this.replProtocol != null) {
-                    await this.replProtocol.ExitRawModeAsync(cancellationToken);
-                }
+                // Adaptive protocol handles raw mode internally, no need to explicitly exit
+                // Raw mode cleanup is handled by the protocol's disposal
 
                 this.serialPort.Close();
             }
@@ -178,7 +178,7 @@ public class SerialDeviceCommunication : IDeviceCommunication {
                 throw new InvalidOperationException("Device not connected. Call ConnectAsync() first.");
             }
 
-            RawReplResponse response = await this.replProtocol.ExecuteCodeAsync(code, useRawPasteMode: true, cancellationToken);
+            RawReplResponse response = await this.replProtocol.ExecuteCodeAsync(code, cancellationToken);
 
             if (!response.IsSuccess) {
                 var exception = new DeviceExecutionException("Code execution failed on device") {
@@ -414,7 +414,7 @@ except OSError:
         foreach (string? command in this.commandHistory.ToList()) {
             try {
                 if (this.replProtocol != null) {
-                    await this.replProtocol.ExecuteCodeAsync(command, useRawPasteMode: true, cancellationToken);
+                    await this.replProtocol.ExecuteCodeAsync(command, cancellationToken);
                 }
             }
             catch (Exception ex) {

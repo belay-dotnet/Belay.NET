@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>BasicTaskExample</RootNamespace>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <NoWarn>$(NoWarn);SA1513;SA1028;SA1210;SA1101;SA1516;SA1518;S3903;SA0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Belay.Core/Belay.Core.csproj" />
+    <ProjectReference Include="../../src/Belay.Attributes/Belay.Attributes.csproj" />
+  </ItemGroup>
+
+</Project>
