@@ -43,17 +43,24 @@ namespace Belay.Core.Execution {
         protected IErrorMapper? ErrorMapper { get; }
 
         /// <summary>
+        /// Gets the execution context service for secure method context access.
+        /// </summary>
+        protected IExecutionContextService ExecutionContextService { get; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="BaseExecutor"/> class.
         /// </summary>
         /// <param name="device">The device to execute Python code on.</param>
         /// <param name="sessionManager">The session manager for device coordination.</param>
         /// <param name="logger">The logger for diagnostic information.</param>
         /// <param name="errorMapper">Optional error mapper for exception handling.</param>
-        protected BaseExecutor(Device device, IDeviceSessionManager sessionManager, ILogger logger, IErrorMapper? errorMapper = null) {
+        /// <param name="executionContextService">Optional execution context service (creates default if null).</param>
+        protected BaseExecutor(Device device, IDeviceSessionManager sessionManager, ILogger logger, IErrorMapper? errorMapper = null, IExecutionContextService? executionContextService = null) {
             this.Device = device ?? throw new ArgumentNullException(nameof(device));
             this.SessionManager = sessionManager ?? throw new ArgumentNullException(nameof(sessionManager));
             this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.ErrorMapper = errorMapper;
+            this.ExecutionContextService = executionContextService ?? new ExecutionContextService();
         }
 
         /// <summary>
@@ -168,24 +175,28 @@ namespace Belay.Core.Execution {
         }
 
         /// <summary>
-        /// Gets the calling method information from the stack frame.
+        /// Gets the current method execution context (secure replacement for stack frame inspection).
         /// </summary>
-        /// <param name="skipFrames">Number of frames to skip (default is 2 to skip this method and the caller).</param>
-        /// <returns>The calling method information, or null if not available.</returns>
-        protected MethodInfo? GetCallingMethod(int skipFrames = 2) {
-            try {
-                var stackTrace = new System.Diagnostics.StackTrace();
-                if (stackTrace.FrameCount <= skipFrames) {
-                    return null;
-                }
+        /// <returns>The current method execution context, or null if not available.</returns>
+        protected IMethodExecutionContext? GetCurrentMethodContext() {
+            return this.ExecutionContextService.Current;
+        }
 
-                var frame = stackTrace.GetFrame(skipFrames);
-                return frame?.GetMethod() as MethodInfo;
-            }
-            catch {
-                // Stack trace inspection failed - return null
-                return null;
-            }
+        /// <summary>
+        /// Gets the calling method information from the execution context.
+        /// SECURITY NOTE: This is a secure replacement for stack frame reflection.
+        /// </summary>
+        /// <param name="skipFrames">Deprecated parameter - kept for compatibility but ignored.</param>
+        /// <returns>The calling method information, or null if not available.</returns>
+        [Obsolete("Use GetCurrentMethodContext() instead. Stack frame inspection is a security risk.", error: false)]
+        protected MethodInfo? GetCallingMethod(int skipFrames = 2) {
+            // Log warning about deprecated method usage
+            this.Logger.LogWarning(
+                "GetCallingMethod() is deprecated and insecure. Use GetCurrentMethodContext() instead. " +
+                "Stack frame inspection is being phased out for security reasons.");
+
+            // Return method from secure context instead of stack inspection
+            return this.GetCurrentMethodContext()?.Method;
         }
 
         /// <summary>

@@ -19,6 +19,7 @@ public class Device : IDisposable {
     private readonly ILogger<Device> logger;
     private readonly IDeviceSessionManager sessionManager;
     private readonly IMethodDeploymentCache methodCache;
+    private readonly IExecutionContextService executionContextService;
     private readonly Lazy<TaskExecutor> taskExecutor;
     private readonly Lazy<SetupExecutor> setupExecutor;
     private readonly Lazy<ThreadExecutor> threadExecutor;
@@ -52,7 +53,8 @@ public class Device : IDisposable {
     /// <param name="logger">Logger for device operations.</param>
     /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
     /// <param name="methodCache">Optional method deployment cache for performance optimization.</param>
-    public Device(IDeviceCommunication communication, IDeviceSessionManager? sessionManager, ILogger<Device> logger, ILoggerFactory? loggerFactory = null, IMethodDeploymentCache? methodCache = null) {
+    /// <param name="executionContextService">Optional execution context service for secure method detection.</param>
+    public Device(IDeviceCommunication communication, IDeviceSessionManager? sessionManager, ILogger<Device> logger, ILoggerFactory? loggerFactory = null, IMethodDeploymentCache? methodCache = null, IExecutionContextService? executionContextService = null) {
         this.communication = communication ?? throw new ArgumentNullException(nameof(communication));
         this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Device>.Instance;
 
@@ -71,11 +73,15 @@ public class Device : IDisposable {
             new MethodCacheConfiguration(),
             executorLoggerFactory.CreateLogger<MethodDeploymentCache>());
 
-        // Initialize executors lazily with session management and caching support
-        this.taskExecutor = new Lazy<TaskExecutor>(() => new TaskExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<TaskExecutor>(), cache: this.methodCache));
-        this.setupExecutor = new Lazy<SetupExecutor>(() => new SetupExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<SetupExecutor>()));
-        this.threadExecutor = new Lazy<ThreadExecutor>(() => new ThreadExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<ThreadExecutor>()));
-        this.teardownExecutor = new Lazy<TeardownExecutor>(() => new TeardownExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<TeardownExecutor>()));
+        // Use injected execution context service or create a default one
+        this.executionContextService = executionContextService ?? new ExecutionContextService();
+
+        // Initialize executors lazily with session management, caching, execution context, and transaction support
+        var transactionManager = new Belay.Core.Transactions.TransactionManager(executorLoggerFactory.CreateLogger<Belay.Core.Transactions.TransactionManager>());
+        this.taskExecutor = new Lazy<TaskExecutor>(() => new TaskExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<TaskExecutor>(), cache: this.methodCache, executionContextService: this.executionContextService, transactionManager: transactionManager));
+        this.setupExecutor = new Lazy<SetupExecutor>(() => new SetupExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<SetupExecutor>(), executionContextService: this.executionContextService));
+        this.threadExecutor = new Lazy<ThreadExecutor>(() => new ThreadExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<ThreadExecutor>(), executionContextService: this.executionContextService));
+        this.teardownExecutor = new Lazy<TeardownExecutor>(() => new TeardownExecutor(this, this.sessionManager, executorLoggerFactory.CreateLogger<TeardownExecutor>(), executionContextService: this.executionContextService));
     }
 
     /// <summary>
@@ -123,6 +129,7 @@ public class Device : IDisposable {
     /// Gets the session manager for advanced session coordination scenarios.
     /// </summary>
     public IDeviceSessionManager Sessions => this.sessionManager;
+
 
     /// <summary>
     /// Connect to the MicroPython device.
@@ -209,21 +216,21 @@ public class Device : IDisposable {
 
         this.logger.LogDebug("Executing code: {Code}", code.Trim());
 
-        // Check if we're being called from an attributed method and route through appropriate executor
-        var callingMethod = this.GetCallingMethod();
-        if (callingMethod?.HasAttribute<Belay.Attributes.TaskAttribute>() == true) {
+        // Check if we have an execution context with an attributed method and route through appropriate executor
+        var executionContext = this.executionContextService.Current;
+        if (executionContext?.TaskAttribute != null) {
             return await this.taskExecutor.Value.ApplyPoliciesAndExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
         }
 
-        if (callingMethod?.HasAttribute<Belay.Attributes.SetupAttribute>() == true) {
+        if (executionContext?.SetupAttribute != null) {
             return await this.setupExecutor.Value.ApplyPoliciesAndExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
         }
 
-        if (callingMethod?.HasAttribute<Belay.Attributes.ThreadAttribute>() == true) {
+        if (executionContext?.ThreadAttribute != null) {
             return await this.threadExecutor.Value.ApplyPoliciesAndExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
         }
 
-        if (callingMethod?.HasAttribute<Belay.Attributes.TeardownAttribute>() == true) {
+        if (executionContext?.TeardownAttribute != null) {
             return await this.teardownExecutor.Value.ApplyPoliciesAndExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
         }
 
@@ -265,21 +272,21 @@ public class Device : IDisposable {
             throw new ArgumentException("Code cannot be null or empty", nameof(code));
         }
 
-        // Check if we're being called from an attributed method and route through appropriate executor
-        var callingMethod = this.GetCallingMethod();
-        if (callingMethod?.HasAttribute<Belay.Attributes.TaskAttribute>() == true) {
+        // Check if we have an execution context with an attributed method and route through appropriate executor
+        var executionContext = this.executionContextService.Current;
+        if (executionContext?.TaskAttribute != null) {
             return await this.taskExecutor.Value.ApplyPoliciesAndExecuteAsync<T>(code, cancellationToken).ConfigureAwait(false);
         }
 
-        if (callingMethod?.HasAttribute<Belay.Attributes.SetupAttribute>() == true) {
+        if (executionContext?.SetupAttribute != null) {
             return await this.setupExecutor.Value.ApplyPoliciesAndExecuteAsync<T>(code, cancellationToken).ConfigureAwait(false);
         }
 
-        if (callingMethod?.HasAttribute<Belay.Attributes.ThreadAttribute>() == true) {
+        if (executionContext?.ThreadAttribute != null) {
             return await this.threadExecutor.Value.ApplyPoliciesAndExecuteAsync<T>(code, cancellationToken).ConfigureAwait(false);
         }
 
-        if (callingMethod?.HasAttribute<Belay.Attributes.TeardownAttribute>() == true) {
+        if (executionContext?.TeardownAttribute != null) {
             return await this.teardownExecutor.Value.ApplyPoliciesAndExecuteAsync<T>(code, cancellationToken).ConfigureAwait(false);
         }
 
@@ -363,26 +370,6 @@ public class Device : IDisposable {
         return new Device(communication, loggerFactory?.CreateLogger<Device>(), loggerFactory);
     }
 
-    /// <summary>
-    /// Gets the calling method information from the stack frame.
-    /// </summary>
-    /// <param name="skipFrames">Number of frames to skip (default is 2 to skip this method and the caller).</param>
-    /// <returns>The calling method information, or null if not available.</returns>
-    private System.Reflection.MethodInfo? GetCallingMethod(int skipFrames = 2) {
-        try {
-            var stackTrace = new System.Diagnostics.StackTrace();
-            if (stackTrace.FrameCount <= skipFrames) {
-                return null;
-            }
-
-            var frame = stackTrace.GetFrame(skipFrames);
-            return frame?.GetMethod() as System.Reflection.MethodInfo;
-        }
-        catch {
-            // Stack trace inspection failed - return null
-            return null;
-        }
-    }
 
     /// <summary>
     /// Discover available MicroPython devices on the system.
@@ -410,7 +397,7 @@ public class Device : IDisposable {
 
     /// <summary>
     /// Executes a method with automatic executor selection based on attributes.
-    /// This is the main entry point for the attribute-based programming model.
+    /// This is the main entry point for the attribute-based programming model and uses secure execution context.
     /// </summary>
     /// <typeparam name="T">The expected return type.</typeparam>
     /// <param name="method">The method to execute.</param>
@@ -427,13 +414,17 @@ public class Device : IDisposable {
             throw new ObjectDisposedException(nameof(Device));
         }
 
+        // Create execution context for secure attribute detection (replacement for stack frame inspection)
+        var context = new MethodExecutionContext(method, instance, parameters);
+        using var contextScope = this.executionContextService.SetContext(context);
+
         // Find the appropriate executor for this method
         var executor = this.GetExecutorForMethod(method);
         if (executor == null) {
             throw new InvalidOperationException($"No suitable executor found for method '{method.Name}'. Ensure the method has a supported attribute ([Task], [Setup], [Thread], or [Teardown]).");
         }
 
-        this.logger.LogDebug("Executing method {MethodName} using {ExecutorType}", method.Name, executor.GetType().Name);
+        this.logger.LogDebug("Executing method {MethodName} using {ExecutorType} with secure execution context", method.Name, executor.GetType().Name);
 
         return await executor.ExecuteAsync<T>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
     }

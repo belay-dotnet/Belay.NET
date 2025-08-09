@@ -78,8 +78,9 @@ namespace Belay.Core.Execution {
         /// <param name="device">The device to execute code on.</param>
         /// <param name="sessionManager">The session manager for device coordination.</param>
         /// <param name="logger">The logger for diagnostic information.</param>
-        public ThreadExecutor(Device device, Belay.Core.Sessions.IDeviceSessionManager sessionManager, ILogger<ThreadExecutor> logger)
-            : base(device, sessionManager, logger) {
+        /// <param name="executionContextService">Optional execution context service for secure method detection.</param>
+        public ThreadExecutor(Device device, Belay.Core.Sessions.IDeviceSessionManager sessionManager, ILogger<ThreadExecutor> logger, IExecutionContextService? executionContextService = null)
+            : base(device, sessionManager, logger, executionContextService: executionContextService) {
             this.runningThreads = new ConcurrentDictionary<string, RunningThread>();
         }
 
@@ -103,12 +104,12 @@ namespace Belay.Core.Execution {
             var methodName = callingMethod ?? "Unknown";
             this.Logger.LogDebug("Thread executor applying policies for method {MethodName}", methodName);
 
-            // Get calling method info for attribute inspection
-            var callingMethodInfo = this.GetCallingMethod();
-            var threadAttribute = callingMethodInfo?.GetAttribute<ThreadAttribute>();
+            // Get execution context for secure attribute inspection (replaces stack frame inspection)
+            var context = this.GetCurrentMethodContext();
+            var threadAttribute = context?.ThreadAttribute;
 
             if (threadAttribute == null) {
-                this.Logger.LogWarning("Method {MethodName} called ThreadExecutor but has no [Thread] attribute", methodName);
+                this.Logger.LogWarning("Method {MethodName} called ThreadExecutor but has no [Thread] attribute in execution context", methodName);
 
                 // Execute without thread policies
                 return await this.Device.ExecuteAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);

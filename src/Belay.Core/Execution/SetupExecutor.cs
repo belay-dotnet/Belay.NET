@@ -23,8 +23,9 @@ namespace Belay.Core.Execution {
         /// <param name="device">The device to execute code on.</param>
         /// <param name="sessionManager">The session manager for device coordination.</param>
         /// <param name="logger">The logger for diagnostic information.</param>
-        public SetupExecutor(Device device, Belay.Core.Sessions.IDeviceSessionManager sessionManager, ILogger<SetupExecutor> logger)
-            : base(device, sessionManager, logger) {
+        /// <param name="executionContextService">Optional execution context service for secure method detection.</param>
+        public SetupExecutor(Device device, Belay.Core.Sessions.IDeviceSessionManager sessionManager, ILogger<SetupExecutor> logger, IExecutionContextService? executionContextService = null)
+            : base(device, sessionManager, logger, executionContextService: executionContextService) {
             this.executedSetupMethods = new ConcurrentDictionary<string, bool>();
             this.setupSemaphore = new SemaphoreSlim(1, 1);
         }
@@ -49,12 +50,12 @@ namespace Belay.Core.Execution {
             var methodName = callingMethod ?? "Unknown";
             this.Logger.LogDebug("Setup executor applying policies for method {MethodName}", methodName);
 
-            // Get calling method info for attribute inspection
-            var callingMethodInfo = this.GetCallingMethod();
-            var setupAttribute = callingMethodInfo?.GetAttribute<SetupAttribute>();
+            // Get execution context for secure attribute inspection (replaces stack frame inspection)
+            var context = this.GetCurrentMethodContext();
+            var setupAttribute = context?.SetupAttribute;
 
             if (setupAttribute == null) {
-                this.Logger.LogWarning("Method {MethodName} called SetupExecutor but has no [Setup] attribute", methodName);
+                this.Logger.LogWarning("Method {MethodName} called SetupExecutor but has no [Setup] attribute in execution context", methodName);
 
                 // Execute without setup policies
                 return await this.Device.ExecuteAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);

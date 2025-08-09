@@ -246,13 +246,20 @@ namespace Belay.Sync {
             }
 
             // Check for reserved names that might cause issues
-            var fileName = GetFileName(path);
-            if (!string.IsNullOrEmpty(fileName)) {
-                var reserved = new[] { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" };
-                var baseFileName = GetFileNameWithoutExtension(fileName).ToUpperInvariant();
+            // Extract filename manually to avoid recursion with GetFileName
+            var lastSeparator = path.LastIndexOf(DeviceSeparator);
+            if (lastSeparator >= 0 && lastSeparator < path.Length - 1) {
+                var fileName = path.Substring(lastSeparator + 1);
+                if (!string.IsNullOrEmpty(fileName)) {
+                    var reserved = new[] { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" };
 
-                if (Array.Exists(reserved, name => name == baseFileName)) {
-                    throw new ArgumentException($"Path contains reserved name: {fileName}", nameof(path));
+                    // Extract filename without extension manually to avoid recursion
+                    var lastDot = fileName.LastIndexOf('.');
+                    var baseFileName = (lastDot > 0 ? fileName.Substring(0, lastDot) : fileName).ToUpperInvariant();
+
+                    if (Array.Exists(reserved, name => name == baseFileName)) {
+                        throw new ArgumentException($"Path contains reserved name: {fileName}", nameof(path));
+                    }
                 }
             }
         }
