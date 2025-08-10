@@ -31,8 +31,6 @@
     <RepositoryUrl>https://github.com/belay-dotnet/Belay.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://belay-dotnet.github.io</PackageProjectUrl>
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>micropython;circuitpython;iot;embedded;device;automation;maker;esp32;raspberry-pi</PackageTags>
     <Description>A C# library for seamless integration between .NET applications and MicroPython/CircuitPython devices</Description>
     <Authors>Belay.NET Contributors</Authors>
