@@ -11,9 +11,13 @@ Console.WriteLine();
 
 try
 {
-    // Create device connection (using subprocess for reliable testing)
-    var micropythonPath = "../../micropython/ports/unix/build-standard/micropython";
-    var device = Device.FromConnectionString($"subprocess:{micropythonPath}", loggerFactory: null);
+    // Create device connection - supports both subprocess and hardware
+    var connectionString = args.Length > 0 
+        ? args[0] 
+        : "subprocess:../../micropython/ports/unix/build-standard/micropython";
+        
+    Console.WriteLine($"Connection string: {connectionString}");
+    var device = Device.FromConnectionString(connectionString, loggerFactory: null);
     
     Console.WriteLine("Connecting to MicroPython device...");
     await device.ConnectAsync();

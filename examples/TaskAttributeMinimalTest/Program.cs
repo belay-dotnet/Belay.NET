@@ -23,8 +23,13 @@ try
     // Test 2: TaskExecutor infrastructure
     Console.WriteLine("\n=== Testing TaskExecutor Infrastructure ===");
     
-    // Create a mock device (we won't actually connect)
-    var device = Device.FromConnectionString("subprocess:echo");
+    // Create device - supports both subprocess and hardware
+    var connectionString = args.Length > 0 
+        ? args[0] 
+        : "subprocess:echo";
+        
+    Console.WriteLine($"Using connection: {connectionString}");
+    var device = Device.FromConnectionString(connectionString);
     Console.WriteLine("✓ Device created");
     
     // Try to access the Task property
