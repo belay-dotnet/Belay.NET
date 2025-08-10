@@ -28,7 +28,7 @@ public class RawReplProtocolTests
         // Act - Using reflection to access private method
         var parseMethod = typeof(RawReplProtocol)
             .GetMethod("ParseResponse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var result = (RawReplResponse)parseMethod!.Invoke(protocol, new object[] { input });
+        var result = (RawReplResponse)parseMethod!.Invoke(protocol, new object[] { input })!;
         
         // Assert
         Assert.True(result.IsSuccess);
@@ -49,7 +49,7 @@ public class RawReplProtocolTests
         // Act
         var parseMethod = typeof(RawReplProtocol)
             .GetMethod("ParseResponse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var result = (RawReplResponse)parseMethod!.Invoke(protocol, new object[] { errorOutput });
+        var result = (RawReplResponse)parseMethod!.Invoke(protocol, new object[] { errorOutput })!;
         
         // Assert
         Assert.False(result.IsSuccess);

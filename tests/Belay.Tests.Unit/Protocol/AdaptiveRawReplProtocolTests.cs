@@ -29,7 +29,7 @@ public class AdaptiveRawReplProtocolTests
         // Act - Using reflection to access private method
         var parseMethod = typeof(AdaptiveRawReplProtocol)
             .GetMethod("ParseResponse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var result = (RawReplResponse)parseMethod!.Invoke(null, new object[] { input });
+        var result = (RawReplResponse)parseMethod!.Invoke(null, new object[] { input })!;
         
         // Assert
         Assert.True(result.IsSuccess);
@@ -50,7 +50,7 @@ public class AdaptiveRawReplProtocolTests
         // Act
         var parseMethod = typeof(AdaptiveRawReplProtocol)
             .GetMethod("ParseResponse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var result = (RawReplResponse)parseMethod!.Invoke(null, new object[] { errorOutput });
+        var result = (RawReplResponse)parseMethod!.Invoke(null, new object[] { errorOutput })!;
         
         // Assert
         Assert.False(result.IsSuccess);
@@ -73,7 +73,7 @@ public class AdaptiveRawReplProtocolTests
         // Act
         var preprocessMethod = typeof(AdaptiveRawReplProtocol)
             .GetMethod("PreprocessCodeForRawRepl", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var result = (string)preprocessMethod!.Invoke(null, new object[] { input });
+        var result = (string)preprocessMethod!.Invoke(null, new object[] { input })!;
         
         // Assert
         Assert.Equal(expected, result);
@@ -97,7 +97,7 @@ public class AdaptiveRawReplProtocolTests
         // Act
         var preprocessMethod = typeof(AdaptiveRawReplProtocol)
             .GetMethod("PreprocessCodeForRawRepl", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var result = (string)preprocessMethod!.Invoke(null, new object[] { input });
+        var result = (string)preprocessMethod!.Invoke(null, new object[] { input })!;
         
         // Assert
         Assert.Equal(input, result);
@@ -119,7 +119,7 @@ public class AdaptiveRawReplProtocolTests
         // Act
         var preprocessMethod = typeof(AdaptiveRawReplProtocol)
             .GetMethod("PreprocessCodeForRawRepl", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var result = (string)preprocessMethod!.Invoke(null, new object[] { input });
+        var result = (string)preprocessMethod!.Invoke(null, new object[] { input })!;
         
         // Assert
         Assert.Equal($"print({input})", result);
@@ -135,7 +135,7 @@ public class AdaptiveRawReplProtocolTests
         // Act
         var preprocessMethod = typeof(AdaptiveRawReplProtocol)
             .GetMethod("PreprocessCodeForRawRepl", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var result = (string)preprocessMethod!.Invoke(null, new object[] { "" });
+        var result = (string?)preprocessMethod!.Invoke(null, new object[] { "" });
         
         // Assert
         Assert.Equal("", result);
@@ -151,7 +151,7 @@ public class AdaptiveRawReplProtocolTests
         // Act
         var preprocessMethod = typeof(AdaptiveRawReplProtocol)
             .GetMethod("PreprocessCodeForRawRepl", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        var result = (string)preprocessMethod!.Invoke(null, new object[] { (string)null! });
+        var result = (string?)preprocessMethod!.Invoke(null, new object?[] { null });
         
         // Assert
         Assert.Null(result);
