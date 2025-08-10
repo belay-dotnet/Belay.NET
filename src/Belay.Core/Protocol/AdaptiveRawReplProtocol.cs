@@ -5,6 +5,7 @@ namespace Belay.Core.Protocol;
 
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 /// <summary>
@@ -634,7 +635,7 @@ print('Flow control test completed')
         {
             logger.LogDebug("Executing code in Raw REPL mode: {Code}", code);
 
-            // Send the code
+            // Send the code (temporarily disable preprocessing for testing)
             byte[] codeBytes = Encoding.UTF8.GetBytes(code);
             await stream.WriteAsync(codeBytes, cancellationToken);
             await stream.FlushAsync(cancellationToken);
@@ -935,6 +936,51 @@ print('Flow control test completed')
         }
     }
 
+    private static string PreprocessCodeForRawRepl(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return code;
+        }
+
+        var trimmedCode = code.Trim();
+        
+        // Skip preprocessing for certain patterns:
+        // 1. Already contains print statements
+        // 2. Contains function definitions, imports, assignments, etc.
+        // 3. Contains control flow statements
+        if (trimmedCode.Contains("print(") ||
+            trimmedCode.Contains("def ") ||
+            trimmedCode.Contains("import ") ||
+            trimmedCode.Contains("from ") ||
+            trimmedCode.Contains("class ") ||
+            trimmedCode.Contains("if ") ||
+            trimmedCode.Contains("for ") ||
+            trimmedCode.Contains("while ") ||
+            trimmedCode.Contains("try:") ||
+            trimmedCode.Contains("with ") ||
+            trimmedCode.Contains("=") && !IsComparisonOperator(trimmedCode) ||
+            trimmedCode.EndsWith(":") ||
+            trimmedCode.Contains("\n"))
+        {
+            return code; // Return as-is for complex statements
+        }
+
+        // For simple expressions (like "2+2", "len('hello')", "math.pi"), wrap in print
+        // This ensures Raw REPL will output the result
+        return $"print({trimmedCode})";
+    }
+    
+    private static bool IsComparisonOperator(string code)
+    {
+        return code.Contains("==") || 
+               code.Contains("!=") || 
+               code.Contains("<=") || 
+               code.Contains(">=") || 
+               (code.Contains("<") && !code.Contains("=")) ||
+               (code.Contains(">") && !code.Contains("="));
+    }
+
     private static RawReplResponse ParseResponse(string output)
     {
         var response = new RawReplResponse();
@@ -950,7 +996,31 @@ print('Flow control test completed')
         {
             response.IsSuccess = true;
             response.Output = output;
-            response.Result = output.Trim();
+            
+            // Parse Raw REPL response format: "OK<content>\x04\x04>"
+            string result = output;
+            
+            // Remove "OK" prefix if present
+            if (result.StartsWith("OK"))
+            {
+                result = result.Substring(2);
+            }
+            
+            // Remove trailing control characters and prompt
+            // Find the first \x04 character (start of end sequence)
+            int firstControlCharIndex = result.IndexOf('\x04');
+            
+            if (firstControlCharIndex >= 0)
+            {
+                result = result.Substring(0, firstControlCharIndex);
+            }
+            else if (result.EndsWith(">"))
+            {
+                result = result.Substring(0, result.Length - 1);
+            }
+            
+            // Trim whitespace and control characters
+            response.Result = result.Trim('\r', '\n', ' ', '\t');
         }
 
         return response;
