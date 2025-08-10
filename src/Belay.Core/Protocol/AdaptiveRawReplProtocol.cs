@@ -635,8 +635,16 @@ print('Flow control test completed')
         {
             logger.LogDebug("Executing code in Raw REPL mode: {Code}", code);
 
-            // Send the code (temporarily disable preprocessing for testing)
-            byte[] codeBytes = Encoding.UTF8.GetBytes(code);
+            // Preprocess code for Raw REPL compatibility
+            string processedCode = PreprocessCodeForRawRepl(code);
+            
+            if (configuration.EnableVerboseLogging && processedCode != code)
+            {
+                logger.LogDebug("Code transformed for Raw REPL: {OriginalCode} -> {ProcessedCode}", code, processedCode);
+            }
+
+            // Send the processed code
+            byte[] codeBytes = Encoding.UTF8.GetBytes(processedCode);
             await stream.WriteAsync(codeBytes, cancellationToken);
             await stream.FlushAsync(cancellationToken);
 
