@@ -151,3 +151,4 @@ find docs/ -name "*.md" -exec grep -l "Documentation in Progress" {} \; | xargs 
 # Identify high-priority placeholders
 grep -r "URGENT\|CRITICAL\|High Priority" docs/ --include="*.md" -l
 ```
+- there is a RPI Pico micropython available for testing on tty: /dev/usb/tty-Board_in_FS_mode-e6614c311b7e6f35
