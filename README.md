@@ -200,6 +200,12 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 git clone --recurse-submodules https://github.com/belay-dotnet/Belay.NET
 cd belay
 
+# Setup development environment (includes git hooks)
+make setup
+
+# Or manually install git hooks for documentation validation
+./scripts/install-hooks.sh
+
 # Build the solution
 dotnet build
 

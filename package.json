@@ -1,0 +1,24 @@
+{
+  "name": "belay-dotnet",
+  "version": "0.3.0-alpha",
+  "description": "Control MicroPython devices from .NET with zero friction",
+  "scripts": {
+    "postinstall": "./scripts/install-hooks.sh",
+    "setup": "./scripts/install-hooks.sh",
+    "validate-docs": "./scripts/validate-docs.sh",
+    "docs:dev": "cd docs && npm run dev",
+    "docs:build": "cd docs && npm run build",
+    "docs:preview": "cd docs && npm run preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/belay-dotnet/Belay.NET.git"
+  },
+  "keywords": ["dotnet", "micropython", "hardware", "iot", "embedded"],
+  "author": "Belay.NET Contributors",
+  "license": "Apache-2.0",
+  "devDependencies": {},
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
