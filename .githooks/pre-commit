@@ -1,0 +1,147 @@
+#!/bin/bash
+
+# Belay.NET Pre-Commit Hook
+# Validates documentation builds and prevents broken deployments
+
+set -e
+
+echo "🔍 Running pre-commit validation..."
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to print colored output
+print_status() {
+    echo -e "${BLUE}[PRE-COMMIT]${NC} $1"
+}
+
+print_success() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+print_warning() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}✗${NC} $1"
+}
+
+# Check if docs directory exists
+if [ ! -d "docs" ]; then
+    print_warning "No docs directory found, skipping documentation validation"
+    exit 0
+fi
+
+# Check if this commit affects documentation
+DOCS_CHANGED=$(git diff --cached --name-only | grep -E '^docs/' || true)
+if [ -z "$DOCS_CHANGED" ]; then
+    print_status "No documentation changes detected, skipping docs validation"
+    exit 0
+fi
+
+print_status "Documentation changes detected, running validation..."
+
+# Change to docs directory
+cd docs
+
+# Check if package.json exists (indicates VitePress setup)
+if [ ! -f "package.json" ]; then
+    print_error "No package.json found in docs directory"
+    exit 1
+fi
+
+# Install dependencies if node_modules doesn't exist
+if [ ! -d "node_modules" ]; then
+    print_status "Installing documentation dependencies..."
+    npm install --silent
+    if [ $? -ne 0 ]; then
+        print_error "Failed to install documentation dependencies"
+        exit 1
+    fi
+fi
+
+# Run VitePress build
+print_status "Running VitePress build validation..."
+npm run build > /tmp/vitepress_build.log 2>&1
+BUILD_EXIT_CODE=$?
+
+if [ $BUILD_EXIT_CODE -ne 0 ]; then
+    print_error "Documentation build failed!"
+    echo ""
+    echo "Build output:"
+    cat /tmp/vitepress_build.log
+    echo ""
+    print_error "Common issues:"
+    echo "  • Dead links to non-existent pages"
+    echo "  • New pages not added to .vitepress/config.ts sidebar"
+    echo "  • Broken markdown syntax"
+    echo "  • Missing frontmatter"
+    echo ""
+    print_error "Fix these issues before committing."
+    exit 1
+fi
+
+print_success "Documentation build completed successfully"
+
+# Additional validation checks
+print_status "Running additional documentation validation..."
+
+# Check for orphaned pages (pages not referenced in config.ts)
+python3 -c "
+import os
+import re
+import sys
+
+# Read VitePress config
+try:
+    with open('.vitepress/config.ts', 'r') as f:
+        config_content = f.read()
+except FileNotFoundError:
+    print('⚠ Warning: VitePress config not found')
+    sys.exit(0)
+
+# Find all markdown files
+md_files = []
+for root, dirs, files in os.walk('.'):
+    # Skip node_modules and .vitepress
+    dirs[:] = [d for d in dirs if d not in ['node_modules', '.vitepress', 'dist']]
+    for file in files:
+        if file.endswith('.md') and file != 'index.md':
+            rel_path = os.path.relpath(os.path.join(root, file), '.')
+            # Convert to URL path (remove .md extension)
+            url_path = '/' + rel_path.replace('.md', '').replace(os.sep, '/')
+            md_files.append((rel_path, url_path))
+
+# Check if each page is referenced in config
+orphaned_pages = []
+for file_path, url_path in md_files:
+    if url_path not in config_content:
+        orphaned_pages.append(file_path)
+
+if orphaned_pages:
+    print('⚠ Warning: Found potential orphaned pages (not linked in navigation):')
+    for page in orphaned_pages:
+        print(f'  • {page}')
+    print('Consider adding these to .vitepress/config.ts sidebar navigation')
+else:
+    print('✓ All documentation pages are properly linked in navigation')
+" 2>/dev/null || print_warning "Could not run orphaned page check (Python not available)"
+
+# Check for TODO/FIXME markers in documentation
+TODO_COUNT=$(find . -name "*.md" -not -path "./node_modules/*" -exec grep -l "TODO\|FIXME\|XXX" {} \; | wc -l)
+if [ $TODO_COUNT -gt 0 ]; then
+    print_warning "Found $TODO_COUNT documentation files with TODO/FIXME markers"
+    find . -name "*.md" -not -path "./node_modules/*" -exec grep -l "TODO\|FIXME\|XXX" {} \;
+fi
+
+print_success "Pre-commit documentation validation completed successfully"
+
+# Clean up
+rm -f /tmp/vitepress_build.log
+
+exit 0

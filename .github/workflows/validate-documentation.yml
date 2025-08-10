@@ -1,0 +1,194 @@
+name: Documentation Validation
+
+on:
+  push:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/validate-documentation.yml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/validate-documentation.yml'
+
+jobs:
+  validate-docs:
+    name: Validate Documentation Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'docs/package-lock.json'
+    
+    - name: Install documentation dependencies
+      working-directory: docs
+      run: npm ci
+    
+    - name: Validate VitePress configuration
+      working-directory: docs
+      run: |
+        echo "Checking VitePress configuration..."
+        if [ ! -f ".vitepress/config.ts" ]; then
+          echo "❌ VitePress configuration not found"
+          exit 1
+        fi
+        echo "✅ VitePress configuration found"
+    
+    - name: Build documentation
+      working-directory: docs
+      run: |
+        echo "Building documentation with VitePress..."
+        npm run build
+        echo "✅ Documentation build completed successfully"
+    
+    - name: Run comprehensive documentation validation
+      run: |
+        chmod +x scripts/validate-docs.sh
+        ./scripts/validate-docs.sh
+    
+    - name: Check for orphaned pages
+      working-directory: docs
+      run: |
+        echo "Checking for orphaned documentation pages..."
+        
+        # Find all markdown files
+        find . -name "*.md" -not -path "./node_modules/*" -not -path "./.vitepress/*" > /tmp/all_md_files.txt
+        
+        # Check if all pages are referenced in config
+        orphaned_count=0
+        while read -r file; do
+          if [ "$file" != "./index.md" ]; then
+            # Convert to URL path
+            url_path=$(echo "$file" | sed 's/^\.//; s/\.md$//; s/\/index$/\//')
+            
+            if ! grep -q "$url_path" .vitepress/config.ts; then
+              if [ $orphaned_count -eq 0 ]; then
+                echo "⚠️ Found potentially orphaned pages:"
+              fi
+              echo "  • $file"
+              orphaned_count=$((orphaned_count + 1))
+            fi
+          fi
+        done < /tmp/all_md_files.txt
+        
+        if [ $orphaned_count -gt 0 ]; then
+          echo ""
+          echo "❌ Found $orphaned_count potentially orphaned pages"
+          echo "These pages exist but may not be linked in the navigation."
+          echo "Consider adding them to .vitepress/config.ts sidebar configuration."
+          exit 1
+        else
+          echo "✅ All documentation pages are properly linked"
+        fi
+    
+    - name: Check for broken internal links
+      working-directory: docs
+      run: |
+        echo "Checking for broken internal links..."
+        
+        # This is a basic check - VitePress build already catches most issues
+        broken_links=0
+        
+        find . -name "*.md" -not -path "./node_modules/*" -not -path "./.vitepress/*" -exec grep -l "](\./" {} \; | while read -r file; do
+          echo "Checking links in $file..."
+          
+          # Extract relative links and verify they exist
+          grep -o "](\.\/[^)]*)" "$file" | while read -r link; do
+            path=$(echo "$link" | sed 's/](\.\///; s/)$//')
+            
+            # Add .md extension if not present
+            if [[ ! "$path" =~ \.md$ ]] && [[ ! "$path" =~ /$ ]]; then
+              path="$path.md"
+            fi
+            
+            if [ ! -f "$path" ]; then
+              echo "⚠️ Potentially broken link in $file: $link"
+              broken_links=$((broken_links + 1))
+            fi
+          done
+        done
+        
+        echo "✅ Internal link check completed"
+    
+    - name: Verify build artifacts
+      run: |
+        echo "Verifying build artifacts..."
+        
+        if [ ! -d "docs/.vitepress/dist" ]; then
+          echo "❌ Build artifacts not found"
+          exit 1
+        fi
+        
+        if [ ! -f "docs/.vitepress/dist/index.html" ]; then
+          echo "❌ Main index.html not generated"
+          exit 1
+        fi
+        
+        echo "✅ Build artifacts verified"
+    
+    - name: Documentation validation summary
+      run: |
+        echo ""
+        echo "📚 Documentation Validation Summary"
+        echo "=================================="
+        echo "✅ VitePress configuration valid"
+        echo "✅ Documentation builds successfully"
+        echo "✅ No dead links detected"
+        echo "✅ Navigation structure validated"
+        echo "✅ Build artifacts generated"
+        echo ""
+        echo "🚀 Documentation is ready for deployment!"
+
+  # Optional: Deploy preview for pull requests
+  deploy-preview:
+    name: Deploy Documentation Preview
+    runs-on: ubuntu-latest
+    needs: validate-docs
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: true
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'docs/package-lock.json'
+    
+    - name: Install and build
+      working-directory: docs
+      run: |
+        npm ci
+        npm run build
+    
+    - name: Deploy to GitHub Pages (Preview)
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.event_name == 'pull_request'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/.vitepress/dist
+        destination_dir: preview/pr-${{ github.event.number }}
+    
+    - name: Comment on PR with preview link
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '📖 Documentation preview deployed! View at: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/preview/pr-${{ github.event.number }}/'
+          })
