@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <NoWarn>SA1000,SA1028,SA1101,SA1116,SA1118,SA1122,SA1200,SA1210,SA1413,SA1503,SA1513,SA1518,S1118</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Belay.Core/Belay.Core.csproj" />
+    <ProjectReference Include="../../src/Belay.Attributes/Belay.Attributes.csproj" />
+    <ProjectReference Include="../../src/Belay.Sync/Belay.Sync.csproj" />
+  </ItemGroup>
+</Project>

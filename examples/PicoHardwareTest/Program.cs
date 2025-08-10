@@ -24,7 +24,7 @@ Console.WriteLine();
 
 try
 {
-    var device = Device.FromConnectionString(connectionString);
+    using var device = Device.FromConnectionString(connectionString);
     
     Console.WriteLine("=== Step 1: Basic Connection ===");
     await device.ConnectAsync();
@@ -153,7 +153,8 @@ print('Pico hardware initialized')
     [Task]
     public async Task SetLedAsync(bool state)
     {
-        await device.ExecuteAsync($"led.{'on' if state else 'off'}()");
+        var command = state ? "led.on()" : "led.off()";
+        await device.ExecuteAsync(command);
     }
     
     /// <summary>
@@ -189,6 +190,10 @@ f'Pico - MicroPython {sys.version} on {sys.platform}'
     [Task]
     public async Task<float> CalculateAsync(int a, int b)
     {
+        // Validate parameters to prevent injection
+        if (a < -1000000 || a > 1000000 || b == 0 || b < -1000000 || b > 1000000)
+            throw new ArgumentException("Invalid parameters for calculation");
+            
         return await device.ExecuteAsync<float>($@"
 # Pico calculation: a={a}, b={b}
 result = {a} * {b} + ({a} / {b})

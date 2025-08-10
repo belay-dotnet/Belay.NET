@@ -220,11 +220,27 @@ public class Program {
 
         var logger = loggerFactory.CreateLogger<Program>();
 
+        // Show usage if needed
+        if (args.Length > 0 && (args[0] == "--help" || args[0] == "-h")) {
+            Console.WriteLine("File Transfer Example");
+            Console.WriteLine("Usage: FileTransferExample [connection_string]");
+            Console.WriteLine();
+            Console.WriteLine("Examples:");
+            Console.WriteLine("  Subprocess: FileTransferExample");
+            Console.WriteLine("  Pico:       FileTransferExample serial:/dev/ttyACM0");
+            Console.WriteLine("  ESP32:      FileTransferExample serial:/dev/ttyUSB0");
+            Console.WriteLine("  Windows:    FileTransferExample serial:COM3");
+            return;
+        }
+
         try {
             logger.LogInformation("Starting File Transfer Example");
 
-            // Create device (using subprocess for testing)
-            using var device = Device.FromConnectionString("subprocess:../micropython/ports/unix/build-standard/micropython", loggerFactory);
+            // Create device - can use subprocess, Pico, or ESP32
+            string connectionString = args.Length > 0 ? args[0] : "subprocess:../micropython/ports/unix/build-standard/micropython";
+            logger.LogInformation("Using connection: {ConnectionString}", connectionString);
+            
+            using var device = Device.FromConnectionString(connectionString, loggerFactory);
             await device.ConnectAsync();
 
             logger.LogInformation("Connected to device successfully");

@@ -11,7 +11,10 @@ Console.WriteLine();
 if (args.Length < 2)
 {
     Console.WriteLine("Usage: ProtocolComparison <subprocess_path> <hardware_connection>");
-    Console.WriteLine("Example: ProtocolComparison ../../micropython/ports/unix/build-standard/micropython serial:/dev/ttyACM0");
+    Console.WriteLine("Examples:");
+    Console.WriteLine("  Pico:  ProtocolComparison ../../micropython/ports/unix/build-standard/micropython serial:/dev/ttyACM0");
+    Console.WriteLine("  ESP32: ProtocolComparison ../../micropython/ports/unix/build-standard/micropython serial:/dev/ttyUSB0");
+    Console.WriteLine("  Windows: ProtocolComparison ..\\..\\micropython\\ports\\unix\\build-standard\\micropython.exe serial:COM3");
     return;
 }
 
@@ -25,7 +28,13 @@ var testCases = new[]
     new { Name = "Variable Assignment", Code = "x = 100; print(x * 2)", ExpectedOutput = "200" },
     new { Name = "Multi-line Code", Code = "for i in range(3):\n    print(f'Line {i}')", ExpectedOutput = "Line 0\nLine 1\nLine 2" },
     new { Name = "Large Output", Code = "print('x' * 500)", ExpectedOutput = new string('x', 500) },
-    new { Name = "JSON Output", Code = "import json; print(json.dumps({'test': 42, 'array': [1,2,3]}))", ExpectedOutput = "{\"test\": 42, \"array\": [1, 2, 3]}" }
+    new { Name = "JSON Output", Code = "import json; print(json.dumps({'test': 42, 'array': [1,2,3]}))", ExpectedOutput = "{\"test\": 42, \"array\": [1, 2, 3]}" },
+    new { Name = "Platform Detection", Code = "import sys; print(sys.platform)", ExpectedOutput = "" }, // Platform-specific
+    new { Name = "Memory Information", Code = "import gc; gc.collect(); print(gc.mem_free() > 0)", ExpectedOutput = "True" },
+    new { Name = "Machine Module", Code = "from machine import Pin; print('Pin class available')", ExpectedOutput = "Pin class available" },
+    new { Name = "List Comprehension", Code = "print([x*2 for x in range(5)])", ExpectedOutput = "[0, 2, 4, 6, 8]" },
+    new { Name = "Exception Handling", Code = "try:\n    1/0\nexcept ZeroDivisionError:\n    print('Caught division by zero')", ExpectedOutput = "Caught division by zero" },
+    new { Name = "String Operations", Code = "s = 'MicroPython'; print(s.upper(), len(s))", ExpectedOutput = "MICROPYTHON 11" }
 };
 
 Console.WriteLine("Running protocol comparison tests...\n");
@@ -112,16 +121,33 @@ foreach (var result in results)
     if (result.SubprocessSuccess && result.HardwareSuccess)
     {
         var outputMatch = result.SubprocessOutput == result.HardwareOutput;
-        Console.WriteLine($"### Output Comparison: {(outputMatch ? "IDENTICAL" : "DIFFERENT")}");
+        var isPlatformSpecific = result.TestName == "Platform Detection";
         
-        if (!outputMatch)
+        // For platform detection, we expect different outputs (unix vs rp2/esp32)
+        if (isPlatformSpecific)
         {
-            Console.WriteLine($"**Subprocess Output:** `{result.SubprocessOutput}`");
-            Console.WriteLine($"**Hardware Output:** `{result.HardwareOutput}`");
+            var validPlatforms = new[] { "unix", "rp2", "esp32" };
+            var subprocessValid = validPlatforms.Contains(result.SubprocessOutput);
+            var hardwareValid = validPlatforms.Contains(result.HardwareOutput);
+            var platformMatch = subprocessValid && hardwareValid;
+            
+            Console.WriteLine($"### Platform Comparison: {(platformMatch ? "VALID PLATFORMS" : "UNEXPECTED PLATFORMS")}");
+            Console.WriteLine($"**Subprocess Platform:** `{result.SubprocessOutput}`");
+            Console.WriteLine($"**Hardware Platform:** `{result.HardwareOutput}`");
         }
         else
         {
-            Console.WriteLine($"**Output:** `{result.SubprocessOutput}`");
+            Console.WriteLine($"### Output Comparison: {(outputMatch ? "IDENTICAL" : "DIFFERENT")}");
+            
+            if (!outputMatch)
+            {
+                Console.WriteLine($"**Subprocess Output:** `{result.SubprocessOutput}`");
+                Console.WriteLine($"**Hardware Output:** `{result.HardwareOutput}`");
+            }
+            else
+            {
+                Console.WriteLine($"**Output:** `{result.SubprocessOutput}`");
+            }
         }
         
         var timeDiff = Math.Abs(result.HardwareTime - result.SubprocessTime);
