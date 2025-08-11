@@ -116,7 +116,8 @@ except OSError:
             {
                 return await this.ReadFileDirectAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
             }
-            else {
+            else
+            {
                 return await this.ReadFileChunkedAsync(normalizedPath, fileSize, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -141,7 +142,8 @@ except OSError:
             {
                 await this.WriteFileDirectAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
             }
-            else {
+            else
+            {
                 await this.WriteFileChunkedAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
             }
         }

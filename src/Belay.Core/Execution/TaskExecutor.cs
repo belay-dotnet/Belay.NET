@@ -94,7 +94,8 @@ namespace Belay.Core.Execution {
                         if (taskAttribute.Exclusive) {
                             result = await this.ExecuteExclusiveAsync<T>(pythonCode, effectiveCancellationToken, methodName).ConfigureAwait(false);
                         }
-                        else {
+                        else
+                        {
                             result = await this.ExecuteNonExclusiveAsync<T>(pythonCode, effectiveCancellationToken, methodName).ConfigureAwait(false);
                         }
 

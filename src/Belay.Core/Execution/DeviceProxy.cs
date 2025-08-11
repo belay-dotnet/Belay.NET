@@ -100,7 +100,8 @@ namespace Belay.Core.Execution {
                         await this.executor.ExecuteAsync(method, this, args).ConfigureAwait(false);
                         return Task.CompletedTask;
                     }
-                    else {
+                    else
+                    {
                         // Task<T>
                         var genericType = returnType.GetGenericArguments()[0];
                         var executeMethod = typeof(IEnhancedExecutor).GetMethod(nameof(IEnhancedExecutor.ExecuteAsync),
@@ -123,13 +124,15 @@ namespace Belay.Core.Execution {
                         return taskFromResult?.Invoke(null, new[] { result });
                     }
                 }
-                else {
+                else
+                {
                     // Handle sync methods
                     if (returnType == typeof(void)) {
                         await this.executor.ExecuteAsync(method, this, args).ConfigureAwait(false);
                         return null;
                     }
-                    else {
+                    else
+                    {
                         var executeMethod = typeof(IEnhancedExecutor).GetMethod(nameof(IEnhancedExecutor.ExecuteAsync),
                             new[] { typeof(MethodInfo), typeof(object), typeof(object[]), typeof(CancellationToken) })
                             ?.MakeGenericMethod(returnType);

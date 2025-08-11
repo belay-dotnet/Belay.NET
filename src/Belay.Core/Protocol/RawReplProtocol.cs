@@ -205,7 +205,8 @@ public class RawReplProtocol : IDisposable {
             if (useRawPasteMode && await SupportsRawPasteModeAsync()) {
                 return await this.ExecuteWithRawPasteModeAsync(code, cancellationToken);
             }
-            else {
+            else
+            {
                 return await this.ExecuteWithRawModeAsync(code, cancellationToken);
             }
         }
@@ -426,7 +427,8 @@ public class RawReplProtocol : IDisposable {
             if (b == markerBytes[markerIndex]) {
                 markerIndex++;
             }
-            else {
+            else
+            {
                 markerIndex = (b == markerBytes[0]) ? 1 : 0;
             }
         }
@@ -478,7 +480,8 @@ public class RawReplProtocol : IDisposable {
         if (totalRead.Length > 0) {
             this.logger.LogDebug("Total drained output: '{Output}' (length: {Length})", totalRead.ToString().Replace("\r", "\\r").Replace("\n", "\\n"), totalRead.Length);
         }
-        else {
+        else
+        {
             this.logger.LogDebug("No output to drain after {Attempts} attempts", drainAttempts);
         }
     }
@@ -533,7 +536,8 @@ public class RawReplProtocol : IDisposable {
             response.ErrorOutput = output;
             response.Exception = new Exception($"Device execution error: {output}");
         }
-        else {
+        else
+        {
             response.IsSuccess = true;
             response.Output = output;
 

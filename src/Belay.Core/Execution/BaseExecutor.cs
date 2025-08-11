@@ -725,7 +725,8 @@ namespace Belay.Core.Execution {
                     "Registered session resource {ResourceId} of type {ResourceType}",
                     resource.ResourceId, resource.ResourceType);
             }
-            else {
+            else
+            {
                 this.Logger.LogWarning(
                     "No current session available to register resource {ResourceId}",
                     resource.ResourceId);

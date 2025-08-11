@@ -149,7 +149,8 @@ public class Device : IDisposable {
         else if (this.communication is SubprocessDeviceCommunication subprocess) {
             await subprocess.StartAsync(cancellationToken);
         }
-        else {
+        else
+        {
             throw new NotSupportedException($"Communication type {this.communication.GetType().Name} is not supported");
         }
 
