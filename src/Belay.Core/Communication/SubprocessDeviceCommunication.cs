@@ -26,7 +26,13 @@ public class SubprocessDeviceCommunication : IDeviceCommunication {
     private Task? errorMonitorTask;
     private bool disposed;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SubprocessDeviceCommunication"/> class.
+    /// </summary>
+    /// <param name="micropythonExecutablePath">Path to the MicroPython executable for subprocess communication.</param>
+    /// <param name="additionalArgs">Additional command-line arguments to pass to MicroPython process.</param>
+    /// <param name="logger">Optional logger for diagnostic output.</param>
+    /// <exception cref="ArgumentException">Thrown when micropythonExecutablePath is null or empty.</exception>
     public SubprocessDeviceCommunication(
         string micropythonExecutablePath = "micropython",
         string[]? additionalArgs = null, ILogger<SubprocessDeviceCommunication>? logger = null) {
@@ -436,7 +442,10 @@ public class SubprocessDeviceCommunication : IDeviceCommunication {
             oldState, newState, reason ?? "No reason provided");
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Releases the unmanaged resources used by the <see cref="SubprocessDeviceCommunication"/> and optionally releases the managed resources.
+    /// </summary>
+    /// <param name="disposing">True to release both managed and unmanaged resources; false to release only unmanaged resources.</param>
     protected virtual void Dispose(bool disposing) {
         if (!this.disposed) {
             if (disposing) {
@@ -459,7 +468,9 @@ public class SubprocessDeviceCommunication : IDeviceCommunication {
         }
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose() {
         this.Dispose(disposing: true);
         GC.SuppressFinalize(this);
