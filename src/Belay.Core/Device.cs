@@ -130,7 +130,6 @@ public class Device : IDisposable {
     /// </summary>
     public IDeviceSessionManager Sessions => this.sessionManager;
 
-
     /// <summary>
     /// Connect to the MicroPython device.
     /// </summary>
@@ -149,8 +148,7 @@ public class Device : IDisposable {
         else if (this.communication is SubprocessDeviceCommunication subprocess) {
             await subprocess.StartAsync(cancellationToken);
         }
-        else
-        {
+        else {
             throw new NotSupportedException($"Communication type {this.communication.GetType().Name} is not supported");
         }
 
@@ -370,7 +368,6 @@ public class Device : IDisposable {
 
         return new Device(communication, loggerFactory?.CreateLogger<Device>(), loggerFactory);
     }
-
 
     /// <summary>
     /// Discover available MicroPython devices on the system.

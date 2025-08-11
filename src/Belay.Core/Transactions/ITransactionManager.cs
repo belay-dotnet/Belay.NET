@@ -69,6 +69,7 @@ namespace Belay.Core.Transactions {
                 }
                 catch (Exception rollbackEx) {
                     this.logger.LogError(rollbackEx, "Failed to rollback transaction {TransactionId}", transaction.TransactionId);
+
                     // Don't mask the original exception
                 }
 
@@ -78,10 +79,11 @@ namespace Belay.Core.Transactions {
 
         /// <inheritdoc />
         public async Task ExecuteInTransactionAsync(Func<IDeviceTransaction, Task> operation, CancellationToken cancellationToken = default) {
-            await ExecuteInTransactionAsync(async transaction => {
-                await operation(transaction).ConfigureAwait(false);
-                return (object?)null;
-            }, cancellationToken).ConfigureAwait(false);
+            await this.ExecuteInTransactionAsync(
+                async transaction => {
+                    await operation(transaction).ConfigureAwait(false);
+                    return (object?)null;
+                }, cancellationToken).ConfigureAwait(false);
         }
     }
 }

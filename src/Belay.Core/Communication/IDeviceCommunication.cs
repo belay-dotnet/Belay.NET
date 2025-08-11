@@ -11,19 +11,19 @@ public class DeviceOutputEventArgs(string output, bool isError = false) : EventA
     /// Gets the output text received from the device.
     /// </summary>
     /// <value>The raw string output from the device execution or communication.</value>
-    public string Output { get; } = output;
+    public string Output { get; }
 
     /// <summary>
     /// Gets a value indicating whether this output represents an error.
     /// </summary>
     /// <value>True if the output is from stderr or represents an error condition; otherwise, false.</value>
-    public bool IsError { get; } = isError;
+    public bool IsError { get; }
 
     /// <summary>
     /// Gets the timestamp when this output was received.
     /// </summary>
     /// <value>The UTC timestamp of when the output was captured.</value>
-    public DateTime Timestamp { get; } = DateTime.UtcNow;
+    public DateTime Timestamp { get; }
 }
 
 /// <summary>
@@ -35,31 +35,31 @@ public class DeviceStateChangeEventArgs(DeviceConnectionState oldState, DeviceCo
     /// Gets the previous connection state before the change.
     /// </summary>
     /// <value>The device connection state before the transition occurred.</value>
-    public DeviceConnectionState OldState { get; } = oldState;
+    public DeviceConnectionState OldState { get; }
 
     /// <summary>
     /// Gets the new connection state after the change.
     /// </summary>
     /// <value>The device connection state after the transition occurred.</value>
-    public DeviceConnectionState NewState { get; } = newState;
+    public DeviceConnectionState NewState { get; }
 
     /// <summary>
     /// Gets the reason for the state change, if available.
     /// </summary>
     /// <value>A human-readable description of why the state changed, or null if no specific reason is available.</value>
-    public string? Reason { get; } = reason;
+    public string? Reason { get; }
 
     /// <summary>
     /// Gets the exception that caused the state change, if applicable.
     /// </summary>
     /// <value>The exception that triggered the state change, or null if the change was not due to an error.</value>
-    public Exception? Exception { get; } = exception;
+    public Exception? Exception { get; }
 
     /// <summary>
     /// Gets the timestamp when the state change occurred.
     /// </summary>
     /// <value>The UTC timestamp of when the state transition was detected.</value>
-    public DateTime Timestamp { get; } = DateTime.UtcNow;
+    public DateTime Timestamp { get; }
 }
 
 /// <summary>

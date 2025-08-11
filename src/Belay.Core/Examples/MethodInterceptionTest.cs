@@ -3,33 +3,30 @@
 
 namespace Belay.Core.Examples;
 
+using System;
+using System.Threading.Tasks;
 using Belay.Core.Communication;
 using Belay.Core.Execution;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 
 /// <summary>
 /// Test class demonstrating method interception with the [Task] and [PythonCode] attributes.
 /// This shows how to create a proxy that automatically routes method calls to a MicroPython device.
 /// </summary>
-public static class MethodInterceptionTest
-{
+public static class MethodInterceptionTest {
     /// <summary>
     /// Demonstrates basic method interception using an interface proxy.
     /// </summary>
     /// <param name="logger">Logger for diagnostic output.</param>
     /// <returns>A task representing the test operation.</returns>
-    public static async Task RunBasicInterceptionTestAsync(ILogger? logger = null)
-    {
+    public static async Task RunBasicInterceptionTestAsync(ILogger? logger = null) {
         logger?.LogInformation("Starting method interception test...");
 
         // Create a device with subprocess communication for testing
         using var communication = new SubprocessDeviceCommunication("python3", logger: logger as ILogger<SubprocessDeviceCommunication>);
         using var device = new Device(communication, logger as ILogger<Device>);
 
-        try
-        {
+        try {
             // Connect to the device
             await device.ConnectAsync();
             logger?.LogInformation("Connected to device successfully");
@@ -69,13 +66,11 @@ public static class MethodInterceptionTest
 
             logger?.LogInformation("All method interception tests completed successfully!");
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             logger?.LogError(ex, "Method interception test failed");
             throw;
         }
-        finally
-        {
+        finally {
             await device.DisconnectAsync();
             logger?.LogInformation("Disconnected from device");
         }
@@ -86,15 +81,13 @@ public static class MethodInterceptionTest
     /// </summary>
     /// <param name="logger">Logger for diagnostic output.</param>
     /// <returns>A task representing the test operation.</returns>
-    public static async Task RunEnhancedExecutorTestAsync(ILogger? logger = null)
-    {
+    public static async Task RunEnhancedExecutorTestAsync(ILogger? logger = null) {
         logger?.LogInformation("Starting enhanced executor test...");
 
         using var communication = new SubprocessDeviceCommunication("python3", logger: logger as ILogger<SubprocessDeviceCommunication>);
         using var device = new Device(communication, logger as ILogger<Device>);
 
-        try
-        {
+        try {
             await device.ConnectAsync();
 
             // Get the enhanced executor
@@ -122,13 +115,11 @@ public static class MethodInterceptionTest
 
             logger?.LogInformation("Enhanced executor test completed successfully!");
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             logger?.LogError(ex, "Enhanced executor test failed");
             throw;
         }
-        finally
-        {
+        finally {
             await device.DisconnectAsync();
         }
     }

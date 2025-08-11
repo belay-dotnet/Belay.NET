@@ -35,7 +35,7 @@ namespace Belay.Core.Execution {
         private readonly AsyncLocal<IMethodExecutionContext?> currentContext = new();
 
         /// <inheritdoc />
-        public IMethodExecutionContext? Current => currentContext.Value;
+        public IMethodExecutionContext? Current => this.currentContext.Value;
 
         /// <inheritdoc />
         public IDisposable SetContext(IMethodExecutionContext context) {
@@ -43,15 +43,15 @@ namespace Belay.Core.Execution {
                 throw new ArgumentNullException(nameof(context));
             }
 
-            var previousContext = currentContext.Value;
-            currentContext.Value = context;
+            var previousContext = this.currentContext.Value;
+            this.currentContext.Value = context;
 
             return new ExecutionContextScope(this, previousContext);
         }
 
         /// <inheritdoc />
         public void ClearContext() {
-            currentContext.Value = null;
+            this.currentContext.Value = null;
         }
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Belay.Core.Execution {
         /// </summary>
         /// <param name="previousContext">The previous context to restore.</param>
         internal void RestoreContext(IMethodExecutionContext? previousContext) {
-            currentContext.Value = previousContext;
+            this.currentContext.Value = previousContext;
         }
     }
 
@@ -76,10 +76,11 @@ namespace Belay.Core.Execution {
             this.previousContext = previousContext;
         }
 
+        /// <inheritdoc/>
         public void Dispose() {
-            if (!disposed) {
-                service.RestoreContext(previousContext);
-                disposed = true;
+            if (!this.disposed) {
+                this.service.RestoreContext(this.previousContext);
+                this.disposed = true;
             }
         }
     }

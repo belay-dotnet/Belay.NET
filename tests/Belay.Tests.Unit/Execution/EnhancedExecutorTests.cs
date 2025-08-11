@@ -24,12 +24,12 @@ namespace Belay.Tests.Unit.Execution {
         public EnhancedExecutorTests(ITestOutputHelper output) {
             // Setup test logging
             var loggerFactory = new TestLoggerFactory(output);
-            this.logger = loggerFactory.CreateLogger<EnhancedExecutorTests>();
+            logger = loggerFactory.CreateLogger<EnhancedExecutorTests>();
 
             // Create test device with subprocess communication for unit testing
             var communication = new SubprocessDeviceCommunication();
-            this.device = new Device(communication, loggerFactory.CreateLogger<Device>(), loggerFactory);
-            this.enhancedExecutor = this.device.GetEnhancedExecutor(this.logger);
+            device = new Device(communication, loggerFactory.CreateLogger<Device>(), loggerFactory);
+            enhancedExecutor = device.GetEnhancedExecutor(logger);
         }
 
         [Fact]
@@ -38,7 +38,7 @@ namespace Belay.Tests.Unit.Execution {
             var method = typeof(TestMethods).GetMethod(nameof(TestMethods.TaskMethod))!;
 
             // Act
-            var canHandle = this.enhancedExecutor.CanHandle(method);
+            var canHandle = enhancedExecutor.CanHandle(method);
 
             // Assert
             Assert.True(canHandle);
@@ -50,7 +50,7 @@ namespace Belay.Tests.Unit.Execution {
             var method = typeof(TestMethods).GetMethod(nameof(TestMethods.PlainMethod))!;
 
             // Act
-            var canHandle = this.enhancedExecutor.CanHandle(method);
+            var canHandle = enhancedExecutor.CanHandle(method);
 
             // Assert
             Assert.False(canHandle);
@@ -63,7 +63,7 @@ namespace Belay.Tests.Unit.Execution {
             var testInstance = new TestMethods();
 
             // Act
-            var result = await this.enhancedExecutor.ExecuteAsync<int>(method, testInstance, new object[] { 5, 3 });
+            var result = await enhancedExecutor.ExecuteAsync<int>(method, testInstance, new object[] { 5, 3 });
 
             // Assert
             Assert.Equal(8, result);
@@ -76,20 +76,20 @@ namespace Belay.Tests.Unit.Execution {
             var testInstance = new TestMethods();
 
             // Act - Execute twice
-            var result1 = await this.enhancedExecutor.ExecuteAsync<string>(method, testInstance);
-            var result2 = await this.enhancedExecutor.ExecuteAsync<string>(method, testInstance);
+            var result1 = await enhancedExecutor.ExecuteAsync<string>(method, testInstance);
+            var result2 = await enhancedExecutor.ExecuteAsync<string>(method, testInstance);
 
             // Assert
             Assert.Equal(result1, result2);
-            
-            var stats = this.enhancedExecutor.GetExecutionStatistics();
+
+            var stats = enhancedExecutor.GetExecutionStatistics();
             Assert.True(stats.InterceptedMethodCount > 0);
         }
 
         [Fact]
         public void GetExecutionStatistics_ReturnsValidStatistics() {
             // Act
-            var stats = this.enhancedExecutor.GetExecutionStatistics();
+            var stats = enhancedExecutor.GetExecutionStatistics();
 
             // Assert
             Assert.NotNull(stats);
@@ -100,20 +100,20 @@ namespace Belay.Tests.Unit.Execution {
         [Fact]
         public void ClearExecutionCache_ClearsAllCaches() {
             // Arrange
-            var stats1 = this.enhancedExecutor.GetExecutionStatistics();
+            var stats1 = enhancedExecutor.GetExecutionStatistics();
 
             // Act
-            this.enhancedExecutor.ClearExecutionCache();
+            enhancedExecutor.ClearExecutionCache();
 
             // Assert - Should not throw
-            var stats2 = this.enhancedExecutor.GetExecutionStatistics();
+            var stats2 = enhancedExecutor.GetExecutionStatistics();
             Assert.NotNull(stats2);
         }
 
         [Fact]
         public void DeviceProxy_CanProxyInterface() {
             // Act
-            var canProxy = this.device.CanProxy(typeof(ITestInterface));
+            var canProxy = device.CanProxy(typeof(ITestInterface));
 
             // Assert
             Assert.True(canProxy);
@@ -122,7 +122,7 @@ namespace Belay.Tests.Unit.Execution {
         [Fact]
         public void DeviceProxy_CannotProxyConcreteClass() {
             // Act
-            var canProxy = this.device.CanProxy(typeof(TestMethods));
+            var canProxy = device.CanProxy(typeof(TestMethods));
 
             // Assert
             Assert.False(canProxy);
@@ -131,7 +131,7 @@ namespace Belay.Tests.Unit.Execution {
         [Fact]
         public async Task DeviceProxy_ExecutesMethodsCorrectly() {
             // Arrange
-            var proxy = this.device.CreateProxy<ITestInterface>(this.logger);
+            var proxy = device.CreateProxy<ITestInterface>(logger);
 
             // Act & Assert - Should not throw
             await proxy.TestTaskMethod();
@@ -142,21 +142,21 @@ namespace Belay.Tests.Unit.Execution {
         [Fact]
         public void EnhancedDevice_WrapsDeviceCorrectly() {
             // Act
-            using var enhancedDevice = new EnhancedDevice(this.device, this.logger);
+            using var enhancedDevice = new EnhancedDevice(device, logger);
 
             // Assert
             Assert.NotNull(enhancedDevice.EnhancedExecutor);
-            Assert.Same(this.device, enhancedDevice.UnderlyingDevice);
-            
+            Assert.Same(device, enhancedDevice.UnderlyingDevice);
+
             var stats = enhancedDevice.GetExecutionStatistics();
             Assert.NotNull(stats);
         }
 
         public void Dispose() {
-            if (this.enhancedExecutor is IDisposable disposableExecutor) {
+            if (enhancedExecutor is IDisposable disposableExecutor) {
                 disposableExecutor.Dispose();
             }
-            this.device?.Dispose();
+            device?.Dispose();
         }
 
         /// <summary>
@@ -201,11 +201,11 @@ namespace Belay.Tests.Unit.Execution {
         }
 
         public ILogger CreateLogger(string categoryName) {
-            return new TestLogger(categoryName, this.output);
+            return new TestLogger(categoryName, output);
         }
 
         public ILogger<T> CreateLogger<T>() {
-            return new TestLogger<T>(this.output);
+            return new TestLogger<T>(output);
         }
 
         public void AddProvider(ILoggerProvider provider) {
@@ -236,10 +236,10 @@ namespace Belay.Tests.Unit.Execution {
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) {
             try {
                 var message = formatter(state, exception);
-                this.output.WriteLine($"[{logLevel}] {this.categoryName}: {message}");
-                
+                output.WriteLine($"[{logLevel}] {categoryName}: {message}");
+
                 if (exception != null) {
-                    this.output.WriteLine($"Exception: {exception}");
+                    output.WriteLine($"Exception: {exception}");
                 }
             }
             catch {

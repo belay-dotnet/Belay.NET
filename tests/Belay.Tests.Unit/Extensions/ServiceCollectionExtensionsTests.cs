@@ -13,11 +13,9 @@ using Microsoft.Extensions.Options;
 using NUnit.Framework;
 
 [TestFixture]
-public class ServiceCollectionExtensionsTests
-{
+public class ServiceCollectionExtensionsTests {
     [Test]
-    public void AddBelay_WithDefaultConfiguration_RegistersAllServices()
-    {
+    public void AddBelay_WithDefaultConfiguration_RegistersAllServices() {
         // Arrange
         var services = new ServiceCollection();
         services.AddLogging();
@@ -33,8 +31,7 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Test]
-    public void AddBelay_WithActionConfiguration_ConfiguresOptions()
-    {
+    public void AddBelay_WithActionConfiguration_ConfiguresOptions() {
         // Arrange
         var services = new ServiceCollection();
         services.AddLogging();
@@ -53,11 +50,9 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Test]
-    public void AddBelay_WithIConfiguration_BindsConfiguration()
-    {
+    public void AddBelay_WithIConfiguration_BindsConfiguration() {
         // Arrange
-        var configData = new Dictionary<string, string?>
-        {
+        var configData = new Dictionary<string, string?> {
             ["Belay:Device:DefaultConnectionTimeoutMs"] = "15000",
             ["Belay:Communication:Serial:DefaultBaudRate"] = "57600"
         };
@@ -79,8 +74,7 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Test]
-    public void GetBelayDeviceFactory_ReturnsDeviceFactory()
-    {
+    public void GetBelayDeviceFactory_ReturnsDeviceFactory() {
         // Arrange
         var services = new ServiceCollection();
         services.AddLogging();
@@ -96,8 +90,7 @@ public class ServiceCollectionExtensionsTests
     }
 
     [Test]
-    public void GetBelayExecutorFactory_ReturnsExecutorFactory()
-    {
+    public void GetBelayExecutorFactory_ReturnsExecutorFactory() {
         // Arrange
         var services = new ServiceCollection();
         services.AddLogging();

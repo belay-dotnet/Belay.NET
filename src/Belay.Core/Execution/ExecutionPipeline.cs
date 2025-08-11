@@ -59,7 +59,7 @@ namespace Belay.Core.Execution {
         public required ILogger Logger { get; set; }
 
         /// <summary>
-        /// Gets or sets whether the execution is completed.
+        /// Gets or sets a value indicating whether gets or sets whether the execution is completed.
         /// </summary>
         public bool IsCompleted { get; set; }
 
@@ -143,7 +143,7 @@ namespace Belay.Core.Execution {
                     var expectedType = parameters[i].ParameterType;
                     var providedValue = providedParams[i];
 
-                    if (providedValue != null && !expectedType.IsAssignableFrom(providedValue.GetType())) {
+                    if (providedValue != null && !expectedType.IsInstanceOfType(providedValue)) {
                         // Allow some basic type conversions
                         if (!CanConvertType(providedValue.GetType(), expectedType)) {
                             context.Logger.LogWarning(
@@ -193,10 +193,10 @@ namespace Belay.Core.Execution {
         /// <typeparam name="T">The expected return type.</typeparam>
         /// <param name="context">The execution context to process.</param>
         /// <returns>The processed execution context.</returns>
-        public async Task<ExecutionContext<T>> ProcessAsync<T>(ExecutionContext<T> context) {
+        public Task<ExecutionContext<T>> ProcessAsync<T>(ExecutionContext<T> context) {
             var taskAttribute = context.Method.GetCustomAttribute<TaskAttribute>();
             if (taskAttribute == null) {
-                return context;
+                return Task.FromResult(context);
             }
 
             context.Logger.LogDebug(
@@ -215,7 +215,7 @@ namespace Belay.Core.Execution {
             }
 
             context.Logger.LogTrace("Task attribute stage completed for method {MethodName}", context.Method.Name);
-            return context;
+            return Task.FromResult(context);
         }
     }
 
@@ -270,7 +270,6 @@ namespace Belay.Core.Execution {
         public Task<ExecutionContext<T>> ProcessAsync<T>(ExecutionContext<T> context) {
             // TODO: Implement method deployment logic
             // This would check if the method is deployed and deploy it if necessary
-
             context.Logger.LogTrace("Deployment stage completed for method {MethodName}", context.Method.Name);
             return Task.FromResult(context);
         }
@@ -286,14 +285,14 @@ namespace Belay.Core.Execution {
         /// <typeparam name="T">The expected return type.</typeparam>
         /// <param name="context">The execution context to execute.</param>
         /// <returns>The executed context with result.</returns>
-        public async Task<ExecutionContext<T>> ProcessAsync<T>(ExecutionContext<T> context) {
+        public Task<ExecutionContext<T>> ProcessAsync<T>(ExecutionContext<T> context) {
             context.Logger.LogDebug("Executing method {MethodName} through execution stage", context.Method.Name);
 
             try {
                 // This stage doesn't actually execute - it signals that default execution should be used
                 // The EnhancedExecutor will handle the actual execution after pipeline processing
                 context.Logger.LogTrace("Execution stage prepared for method {MethodName}", context.Method.Name);
-                return context;
+                return Task.FromResult(context);
             }
             catch (Exception ex) {
                 context.Logger.LogError(ex, "Execution stage failed for method {MethodName}", context.Method.Name);

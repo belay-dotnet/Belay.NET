@@ -41,8 +41,7 @@ public class BelayHealthCheck : IHealthCheck {
             if (await this.CheckSessionManager(data, warnings, cancellationToken).ConfigureAwait(false)) {
                 data["session_manager"] = "healthy";
             }
-            else
-            {
+            else {
                 warnings.Add("Session manager check failed");
                 data["session_manager"] = "degraded";
             }
@@ -51,8 +50,7 @@ public class BelayHealthCheck : IHealthCheck {
             if (this.CheckDeviceFactory(data, warnings)) {
                 data["device_factory"] = "healthy";
             }
-            else
-            {
+            else {
                 warnings.Add("Device factory check failed");
                 data["device_factory"] = "degraded";
             }
@@ -73,8 +71,7 @@ public class BelayHealthCheck : IHealthCheck {
             this._logger.LogError("Belay health check failed with multiple issues: {Warnings}", string.Join(", ", warnings));
             return HealthCheckResult.Unhealthy("Belay.NET components are unhealthy", null, data);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             this._logger.LogError(ex, "Belay health check threw an exception");
             return HealthCheckResult.Unhealthy("Belay.NET health check failed with exception", ex);
         }
@@ -93,8 +90,7 @@ public class BelayHealthCheck : IHealthCheck {
 
             return true;
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             this._logger.LogWarning(ex, "Session manager health check failed");
             data["session_manager_error"] = ex.Message;
             return false;
@@ -108,8 +104,7 @@ public class BelayHealthCheck : IHealthCheck {
             data["device_factory_available"] = this._deviceFactory != null;
             return this._deviceFactory != null;
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             this._logger.LogWarning(ex, "Device factory health check failed");
             data["device_factory_error"] = ex.Message;
             return false;
@@ -168,22 +163,19 @@ public class DeviceConnectivityHealthCheck : IHealthCheck {
                 this._logger.LogDebug("Device connectivity check passed for {Target}", this._testPortOrPath);
                 return HealthCheckResult.Healthy($"Device {this._testPortOrPath} is accessible", data);
             }
-            catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested)
-            {
+            catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested) {
                 data["connectivity"] = "timeout";
                 this._logger.LogWarning("Device connectivity check timed out for {Target}", this._testPortOrPath);
                 return HealthCheckResult.Degraded($"Device {this._testPortOrPath} connection timed out", null, data);
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 data["connectivity"] = "failed";
                 data["error"] = ex.Message;
                 this._logger.LogWarning(ex, "Device connectivity check failed for {Target}", this._testPortOrPath);
                 return HealthCheckResult.Degraded($"Device {this._testPortOrPath} is not accessible", ex, data);
             }
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             this._logger.LogError(ex, "Device connectivity health check threw an exception");
             return HealthCheckResult.Unhealthy("Device connectivity health check failed with exception", ex);
         }

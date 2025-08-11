@@ -3,24 +3,22 @@
 
 namespace Belay.Core.Tests;
 
+using System;
+using System.Threading.Tasks;
 using Belay.Attributes;
 using Belay.Core.Communication;
 using Belay.Core.Execution;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 using Xunit;
 
 /// <summary>
 /// Tests for method interception functionality with [Task] and [PythonCode] attributes.
 /// </summary>
-public class MethodInterceptionTests
-{
+public class MethodInterceptionTests {
     /// <summary>
     /// Test interface for method interception validation.
     /// </summary>
-    public interface ITestSensor
-    {
+    public interface ITestSensor {
         [Task]
         [PythonCode("'Hello from test device!'")]
         Task<string> GetGreetingAsync();
@@ -43,8 +41,7 @@ public class MethodInterceptionTests
     }
 
     [Fact]
-    public void CreateProxy_WithValidInterface_ShouldSucceed()
-    {
+    public void CreateProxy_WithValidInterface_ShouldSucceed() {
         // Arrange
         using var communication = new SubprocessDeviceCommunication("python3");
         using var device = new Device(communication, null, null);
@@ -56,8 +53,7 @@ public class MethodInterceptionTests
     }
 
     [Fact]
-    public void DeviceProxyFactory_CanProxy_ShouldReturnTrueForValidInterface()
-    {
+    public void DeviceProxyFactory_CanProxy_ShouldReturnTrueForValidInterface() {
         // Act
         bool canProxy = DeviceProxyFactory.CanProxy(typeof(ITestSensor));
 
@@ -66,8 +62,7 @@ public class MethodInterceptionTests
     }
 
     [Fact]
-    public void DeviceProxyFactory_CanProxy_ShouldReturnFalseForInvalidType()
-    {
+    public void DeviceProxyFactory_CanProxy_ShouldReturnFalseForInvalidType() {
         // Act
         bool canProxy = DeviceProxyFactory.CanProxy(typeof(string));
 
@@ -76,14 +71,12 @@ public class MethodInterceptionTests
     }
 
     [Fact]
-    public async Task MethodInterception_WithSimpleReturn_ShouldWork()
-    {
+    public async Task MethodInterception_WithSimpleReturn_ShouldWork() {
         // Arrange
         using var communication = new SubprocessDeviceCommunication("python3");
         using var device = new Device(communication, null, null);
-        
-        try
-        {
+
+        try {
             await device.ConnectAsync();
             var sensor = device.CreateProxy<ITestSensor>();
 
@@ -93,34 +86,28 @@ public class MethodInterceptionTests
             // Assert
             Assert.Equal("Hello from test device!", result);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             // If we can't connect to Python for subprocess testing, skip this test
             // This allows the test to pass in CI environments without Python
-            if (ex.Message.Contains("python3") || ex.Message.Contains("subprocess"))
-            {
+            if (ex.Message.Contains("python3") || ex.Message.Contains("subprocess")) {
                 return; // Skip test
             }
             throw;
         }
-        finally
-        {
-            if (device.State == DeviceConnectionState.Connected)
-            {
+        finally {
+            if (device.State == DeviceConnectionState.Connected) {
                 await device.DisconnectAsync();
             }
         }
     }
 
     [Fact]
-    public async Task MethodInterception_WithParameterSubstitution_ShouldWork()
-    {
+    public async Task MethodInterception_WithParameterSubstitution_ShouldWork() {
         // Arrange
         using var communication = new SubprocessDeviceCommunication("python3");
         using var device = new Device(communication, null, null);
 
-        try
-        {
+        try {
             await device.ConnectAsync();
             var sensor = device.CreateProxy<ITestSensor>();
 
@@ -130,33 +117,27 @@ public class MethodInterceptionTests
             // Assert
             Assert.Equal(42, result);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             // Skip if Python not available
-            if (ex.Message.Contains("python3") || ex.Message.Contains("subprocess"))
-            {
+            if (ex.Message.Contains("python3") || ex.Message.Contains("subprocess")) {
                 return;
             }
             throw;
         }
-        finally
-        {
-            if (device.State == DeviceConnectionState.Connected)
-            {
+        finally {
+            if (device.State == DeviceConnectionState.Connected) {
                 await device.DisconnectAsync();
             }
         }
     }
 
     [Fact]
-    public async Task MethodInterception_WithMultipleParameters_ShouldWork()
-    {
+    public async Task MethodInterception_WithMultipleParameters_ShouldWork() {
         // Arrange
         using var communication = new SubprocessDeviceCommunication("python3");
         using var device = new Device(communication, null, null);
 
-        try
-        {
+        try {
             await device.ConnectAsync();
             var sensor = device.CreateProxy<ITestSensor>();
 
@@ -166,27 +147,22 @@ public class MethodInterceptionTests
             // Assert
             Assert.Equal("test: 123", result);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             // Skip if Python not available
-            if (ex.Message.Contains("python3") || ex.Message.Contains("subprocess"))
-            {
+            if (ex.Message.Contains("python3") || ex.Message.Contains("subprocess")) {
                 return;
             }
             throw;
         }
-        finally
-        {
-            if (device.State == DeviceConnectionState.Connected)
-            {
+        finally {
+            if (device.State == DeviceConnectionState.Connected) {
                 await device.DisconnectAsync();
             }
         }
     }
 
     [Fact]
-    public void GetEnhancedExecutor_ShouldReturnValidExecutor()
-    {
+    public void GetEnhancedExecutor_ShouldReturnValidExecutor() {
         // Arrange
         using var communication = new SubprocessDeviceCommunication("python3");
         using var device = new Device(communication, null, null);
@@ -200,8 +176,7 @@ public class MethodInterceptionTests
     }
 
     [Fact]
-    public void GetEnhancedExecutor_Statistics_ShouldReturnValidData()
-    {
+    public void GetEnhancedExecutor_Statistics_ShouldReturnValidData() {
         // Arrange
         using var communication = new SubprocessDeviceCommunication("python3");
         using var device = new Device(communication, null, null);

@@ -82,50 +82,51 @@ namespace Belay.Core.Execution {
             }
 
             // Execute within transaction boundary to ensure consistency between device operations and caching
-            return await this.transactionManager.ExecuteInTransactionAsync(async transaction => {
-                try {
-                    // Apply timeout from attribute if specified
-                    using var timeoutCts = CreateTimeoutCts(taskAttribute.TimeoutMs);
-                    var effectiveCancellationToken = CombineCancellationTokens(cancellationToken, timeoutCts, out var linkedCts);
+            return await this.transactionManager.ExecuteInTransactionAsync(
+                async transaction => {
+                    try {
+                        // Apply timeout from attribute if specified
+                        using var timeoutCts = CreateTimeoutCts(taskAttribute.TimeoutMs);
+                        var effectiveCancellationToken = CombineCancellationTokens(cancellationToken, timeoutCts, out var linkedCts);
 
-                    using (linkedCts) {
-                        // Handle exclusive/non-exclusive execution using reader-writer lock
-                        T result;
-                        if (taskAttribute.Exclusive) {
-                            result = await this.ExecuteExclusiveAsync<T>(pythonCode, effectiveCancellationToken, methodName).ConfigureAwait(false);
+                        using (linkedCts) {
+                            // Handle exclusive/non-exclusive execution using reader-writer lock
+                            T result;
+                            if (taskAttribute.Exclusive) {
+                                result = await this.ExecuteExclusiveAsync<T>(pythonCode, effectiveCancellationToken, methodName).ConfigureAwait(false);
+                            }
+                            else {
+                                result = await this.ExecuteNonExclusiveAsync<T>(pythonCode, effectiveCancellationToken, methodName).ConfigureAwait(false);
+                            }
+
+                            // Cache result if caching is enabled - register compensating action for rollback
+                            if (taskAttribute.Cache && cacheKey != null) {
+                                this.methodCache.Set(cacheKey, result, expiresAfter: null);
+                                this.Logger.LogDebug("Cached result for method {MethodName}", methodName);
+
+                                // Register compensating action to remove cache entry on rollback
+                                transaction.RegisterCompensatingAction(
+                                    _ => {
+                                        this.methodCache.Remove(cacheKey);
+                                        this.Logger.LogDebug("Rolled back cache entry for method {MethodName}", methodName);
+                                        return Task.CompletedTask;
+                                    },
+                                    $"Remove cache entry for method {methodName}");
+                            }
+
+                            this.Logger.LogDebug("[Task] method {MethodName} completed successfully", methodName);
+                            return result;
                         }
-                        else
-                        {
-                            result = await this.ExecuteNonExclusiveAsync<T>(pythonCode, effectiveCancellationToken, methodName).ConfigureAwait(false);
-                        }
-
-                        // Cache result if caching is enabled - register compensating action for rollback
-                        if (taskAttribute.Cache && cacheKey != null) {
-                            this.methodCache.Set(cacheKey, result, expiresAfter: null);
-                            this.Logger.LogDebug("Cached result for method {MethodName}", methodName);
-
-                            // Register compensating action to remove cache entry on rollback
-                            transaction.RegisterCompensatingAction(
-                                async _ => {
-                                    this.methodCache.Remove(cacheKey);
-                                    this.Logger.LogDebug("Rolled back cache entry for method {MethodName}", methodName);
-                                },
-                                $"Remove cache entry for method {methodName}");
-                        }
-
-                        this.Logger.LogDebug("[Task] method {MethodName} completed successfully", methodName);
-                        return result;
                     }
-                }
-                catch (OperationCanceledException) when (taskAttribute.TimeoutMs != -1) {
-                    this.Logger.LogWarning("[Task] method {MethodName} timed out after {TimeoutMs}ms", methodName, taskAttribute.TimeoutMs);
-                    throw new TimeoutException($"Task method {methodName} timed out after {taskAttribute.TimeoutMs}ms");
-                }
-                catch (Exception ex) {
-                    this.Logger.LogError(ex, "[Task] method {MethodName} failed within transaction", methodName);
-                    throw;
-                }
-            }, cancellationToken).ConfigureAwait(false);
+                    catch (OperationCanceledException) when (taskAttribute.TimeoutMs != -1) {
+                        this.Logger.LogWarning("[Task] method {MethodName} timed out after {TimeoutMs}ms", methodName, taskAttribute.TimeoutMs);
+                        throw new TimeoutException($"Task method {methodName} timed out after {taskAttribute.TimeoutMs}ms");
+                    }
+                    catch (Exception ex) {
+                        this.Logger.LogError(ex, "[Task] method {MethodName} failed within transaction", methodName);
+                        throw;
+                    }
+                }, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -137,17 +138,18 @@ namespace Belay.Core.Execution {
 
             // For exclusive methods, we need a writer lock that blocks everything
             // We need to handle this carefully with async/await
-            return await Task.Run(async () => {
-                this.executionLock.EnterWriteLock();
-                try {
-                    this.Logger.LogDebug("Executing method {MethodName} in exclusive mode (writer lock acquired)", methodName);
-                    return await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);
-                }
-                finally {
-                    this.executionLock.ExitWriteLock();
-                    this.Logger.LogDebug("Released exclusive (writer) lock for method {MethodName}", methodName);
-                }
-            }, cancellationToken).ConfigureAwait(false);
+            return await Task.Run(
+                async () => {
+                    this.executionLock.EnterWriteLock();
+                    try {
+                        this.Logger.LogDebug("Executing method {MethodName} in exclusive mode (writer lock acquired)", methodName);
+                        return await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);
+                    }
+                    finally {
+                        this.executionLock.ExitWriteLock();
+                        this.Logger.LogDebug("Released exclusive (writer) lock for method {MethodName}", methodName);
+                    }
+                }, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -159,17 +161,18 @@ namespace Belay.Core.Execution {
 
             // For non-exclusive methods, we use a reader lock that allows concurrency with other readers
             // but blocks when a writer (exclusive method) is active
-            return await Task.Run(async () => {
-                this.executionLock.EnterReadLock();
-                try {
-                    this.Logger.LogDebug("Executing method {MethodName} in non-exclusive mode (reader lock acquired)", methodName);
-                    return await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);
-                }
-                finally {
-                    this.executionLock.ExitReadLock();
-                    this.Logger.LogDebug("Released non-exclusive (reader) lock for method {MethodName}", methodName);
-                }
-            }, cancellationToken).ConfigureAwait(false);
+            return await Task.Run(
+                async () => {
+                    this.executionLock.EnterReadLock();
+                    try {
+                        this.Logger.LogDebug("Executing method {MethodName} in non-exclusive mode (reader lock acquired)", methodName);
+                        return await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);
+                    }
+                    finally {
+                        this.executionLock.ExitReadLock();
+                        this.Logger.LogDebug("Released non-exclusive (reader) lock for method {MethodName}", methodName);
+                    }
+                }, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -210,8 +213,7 @@ namespace Belay.Core.Execution {
                 this.executionLock.IsWriteLockHeld,
                 this.executionLock.CurrentReadCount,
                 this.executionLock.WaitingReadCount,
-                this.executionLock.WaitingWriteCount
-            );
+                this.executionLock.WaitingWriteCount);
         }
 
         /// <summary>

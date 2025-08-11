@@ -57,8 +57,8 @@ namespace Belay.Core.Transactions {
         /// Initializes a new instance of the <see cref="DeviceTransaction"/> class.
         /// </summary>
         public DeviceTransaction() {
-            TransactionId = Guid.NewGuid().ToString("N")[..8]; // Short ID for logs
-            compensatingActions = new List<(Func<CancellationToken, Task>, string)>();
+            this.TransactionId = Guid.NewGuid().ToString("N")[..8]; // Short ID for logs
+            this.compensatingActions = new List<(Func<CancellationToken, Task>, string)>();
         }
 
         /// <inheritdoc />
@@ -67,8 +67,8 @@ namespace Belay.Core.Transactions {
         /// <inheritdoc />
         public bool IsActive {
             get {
-                lock (lockObject) {
-                    return isActive && !disposed;
+                lock (this.lockObject) {
+                    return this.isActive && !this.disposed;
                 }
             }
         }
@@ -83,23 +83,24 @@ namespace Belay.Core.Transactions {
                 throw new ArgumentException("Description cannot be null or empty", nameof(description));
             }
 
-            lock (lockObject) {
-                if (!IsActive) {
+            lock (this.lockObject) {
+                if (!this.IsActive) {
                     throw new InvalidOperationException("Cannot register compensating actions on an inactive transaction");
                 }
 
-                compensatingActions.Add((compensatingAction, description));
+                this.compensatingActions.Add((compensatingAction, description));
             }
         }
 
         /// <inheritdoc />
         public Task CommitAsync(CancellationToken cancellationToken = default) {
-            lock (lockObject) {
-                if (!IsActive) {
+            lock (this.lockObject) {
+                if (!this.IsActive) {
                     throw new InvalidOperationException("Transaction is not active");
                 }
 
-                isActive = false;
+                this.isActive = false;
+
                 // On commit, we don't need to run compensating actions
                 // They are only for rollback scenarios
                 return Task.CompletedTask;
@@ -110,15 +111,16 @@ namespace Belay.Core.Transactions {
         public async Task RollbackAsync(CancellationToken cancellationToken = default) {
             List<(Func<CancellationToken, Task>, string)> actionsToRun;
 
-            lock (lockObject) {
-                if (!IsActive) {
+            lock (this.lockObject) {
+                if (!this.IsActive) {
                     return; // Already rolled back or committed
                 }
 
-                isActive = false;
+                this.isActive = false;
+
                 // Copy the actions to avoid lock contention during execution
-                actionsToRun = new List<(Func<CancellationToken, Task>, string)>(compensatingActions);
-                compensatingActions.Clear();
+                actionsToRun = new List<(Func<CancellationToken, Task>, string)>(this.compensatingActions);
+                this.compensatingActions.Clear();
             }
 
             // Execute compensating actions in reverse order (LIFO)
@@ -137,21 +139,21 @@ namespace Belay.Core.Transactions {
 
         /// <inheritdoc />
         public void Dispose() {
-            if (disposed) {
+            if (this.disposed) {
                 return;
             }
 
             // If transaction is still active when disposed, roll it back
-            if (IsActive) {
+            if (this.IsActive) {
                 try {
-                    RollbackAsync().GetAwaiter().GetResult();
+                    this.RollbackAsync().GetAwaiter().GetResult();
                 }
                 catch {
                     // Suppress exceptions during disposal
                 }
             }
 
-            disposed = true;
+            this.disposed = true;
         }
     }
 }

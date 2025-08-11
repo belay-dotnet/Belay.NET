@@ -112,12 +112,10 @@ except OSError:
             var fileSize = fileInfo.Size ?? 0;
 
             // For small files, read directly
-            if (fileSize <= 8192)
-            {
+            if (fileSize <= 8192) {
                 return await this.ReadFileDirectAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
             }
-            else
-            {
+            else {
                 return await this.ReadFileChunkedAsync(normalizedPath, fileSize, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -138,12 +136,10 @@ except OSError:
             var normalizedPath = DevicePathUtil.NormalizePath(path);
             this.logger.LogDebug("Writing file: {Path} ({Size} bytes)", normalizedPath, content.Length);
 
-            if (content.Length <= 4096)
-            {
+            if (content.Length <= 4096) {
                 await this.WriteFileDirectAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
             }
-            else
-            {
+            else {
                 await this.WriteFileChunkedAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
             }
         }
@@ -523,21 +519,21 @@ except OSError as e:
 
                 if (entries != null) {
                     foreach (var entry in entries) {
-                    var path = entry.GetProperty("path").GetString() ?? string.Empty;
-                    var isDirectory = entry.GetProperty("is_directory").GetBoolean();
+                        var path = entry.GetProperty("path").GetString() ?? string.Empty;
+                        var isDirectory = entry.GetProperty("is_directory").GetBoolean();
 
-                    long? size = null;
-                    if (entry.TryGetProperty("size", out var sizeElement) && sizeElement.ValueKind == JsonValueKind.Number) {
-                        size = sizeElement.GetInt64();
-                    }
+                        long? size = null;
+                        if (entry.TryGetProperty("size", out var sizeElement) && sizeElement.ValueKind == JsonValueKind.Number) {
+                            size = sizeElement.GetInt64();
+                        }
 
-                    DateTime? modified = null;
-                    if (entry.TryGetProperty("modified", out var modifiedElement) && modifiedElement.ValueKind == JsonValueKind.Number) {
-                        var timestamp = modifiedElement.GetInt64();
-                        modified = DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
-                    }
+                        DateTime? modified = null;
+                        if (entry.TryGetProperty("modified", out var modifiedElement) && modifiedElement.ValueKind == JsonValueKind.Number) {
+                            var timestamp = modifiedElement.GetInt64();
+                            modified = DateTimeOffset.FromUnixTimeSeconds(timestamp).DateTime;
+                        }
 
-                    result.Add(new DeviceFileInfo {
+                        result.Add(new DeviceFileInfo {
                             Path = path,
                             IsDirectory = isDirectory,
                             Size = size,

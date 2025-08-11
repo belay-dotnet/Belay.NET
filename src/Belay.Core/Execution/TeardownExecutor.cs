@@ -118,8 +118,7 @@ namespace Belay.Core.Execution {
             if (teardownAttribute.TimeoutMs != -1) {
                 timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(teardownAttribute.TimeoutMs));
             }
-            else
-            {
+            else {
                 // Default teardown timeout of 10 seconds to prevent hanging during disconnect
                 timeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
             }
@@ -162,8 +161,7 @@ namespace Belay.Core.Execution {
                         // Critical teardown failures should be re-thrown
                         throw new InvalidOperationException($"Critical teardown method {methodName} failed: {ex.Message}", ex);
                     }
-                    else
-                    {
+                    else {
                         // Non-critical teardown failures are logged but allow execution to continue
                         this.Logger.LogWarning("Non-critical teardown method {methodName} failed, continuing", methodName);
                         this.executedTeardownMethods.TryAdd(methodName, true);

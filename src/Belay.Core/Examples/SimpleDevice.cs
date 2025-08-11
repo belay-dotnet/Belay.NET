@@ -3,25 +3,23 @@
 
 namespace Belay.Core.Examples;
 
+using System.Threading.Tasks;
 using Belay.Attributes;
 using Belay.Core.Communication;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 
 /// <summary>
 /// Simple example device demonstrating [Task] attribute method interception.
 /// This shows how users can inherit from Device and use attributes for method execution.
 /// </summary>
-public class SimpleDevice : Device
-{
+public class SimpleDevice : Device {
     /// <summary>
     /// Initializes a new instance of the <see cref="SimpleDevice"/> class.
     /// </summary>
     /// <param name="communication">The device communication implementation.</param>
     /// <param name="logger">Optional logger for device operations.</param>
     public SimpleDevice(IDeviceCommunication communication, ILogger<Device>? logger = null)
-        : base(communication, logger)
-    {
+        : base(communication, logger) {
     }
 
     /// <summary>
@@ -30,10 +28,9 @@ public class SimpleDevice : Device
     /// </summary>
     /// <returns>A greeting message from the MicroPython device.</returns>
     [Task]
-    public virtual async Task<string> GetGreetingAsync()
-    {
+    public virtual async Task<string> GetGreetingAsync() {
         // This code should be intercepted and executed on the device
-        return await ExecuteAsync<string>("'Hello from MicroPython!'");
+        return await this.ExecuteAsync<string>("'Hello from MicroPython!'");
     }
 
     /// <summary>
@@ -42,10 +39,9 @@ public class SimpleDevice : Device
     /// </summary>
     /// <returns>The temperature reading from the device.</returns>
     [Task(Name = "read_temp", TimeoutMs = 5000)]
-    public virtual async Task<float> ReadTemperatureAsync()
-    {
+    public virtual async Task<float> ReadTemperatureAsync() {
         // This should be intercepted and the Python code executed on device
-        return await ExecuteAsync<float>(@"
+        return await this.ExecuteAsync<float>(@"
 import machine
 import time
 
@@ -60,10 +56,10 @@ temp
     /// Setup method that initializes the device.
     /// Demonstrates [Setup] attribute for initialization code.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     [Setup(Order = 1)]
-    public virtual async Task InitializeAsync()
-    {
-        await ExecuteAsync(@"
+    public virtual async Task InitializeAsync() {
+        await this.ExecuteAsync(@"
 # Initialize device
 print('Device initialized')
 import machine
@@ -75,10 +71,10 @@ import time
     /// Teardown method that cleans up the device.
     /// Demonstrates [Teardown] attribute for cleanup code.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     [Teardown(Order = 1)]
-    public virtual async Task CleanupAsync()
-    {
-        await ExecuteAsync(@"
+    public virtual async Task CleanupAsync() {
+        await this.ExecuteAsync(@"
 # Cleanup device resources
 print('Device cleanup complete')
 ");

@@ -47,16 +47,17 @@ namespace Belay.Tests.Integration.Subprocess {
 
             var logger = _loggerFactory.CreateLogger<SubprocessDeviceCommunication>();
             _device = new SubprocessDeviceCommunication(_micropythonPath, logger: logger);
-            
+
             // Wait a moment for the process to start up
             await Task.Delay(500);
         }
 
-        public async Task DisposeAsync() {
+        public Task DisposeAsync() {
             if (_device != null) {
                 _device.Dispose();
             }
             _loggerFactory.Dispose();
+            return Task.CompletedTask;
         }
 
         [SkippableFact]

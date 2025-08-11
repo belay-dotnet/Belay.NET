@@ -300,7 +300,7 @@ namespace Belay.Core.Sessions {
                     AvailableRamBytes = memoryInfo.TotalBytes,
                     PerformanceTier = tier,
                     BenchmarkResults = new Dictionary<string, double> {
-                        { "arithmetic_10k_us", benchmarkTime }
+                        { "arithmetic_10k_us", benchmarkTime },
                     },
                 };
 

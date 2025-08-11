@@ -8,11 +8,9 @@ using NUnit.Framework;
 namespace Belay.Tests.Unit.Caching;
 
 [TestFixture]
-public class MethodCacheKeyTests
-{
+public class MethodCacheKeyTests {
     [Test]
-    public void Constructor_WithValidParameters_CreatesKey()
-    {
+    public void Constructor_WithValidParameters_CreatesKey() {
         // Arrange & Act
         var key = new MethodCacheKey("device1", "v1.0", "method_signature");
 
@@ -22,8 +20,7 @@ public class MethodCacheKeyTests
     }
 
     [Test]
-    public void Equals_WithSameValues_ReturnsTrue()
-    {
+    public void Equals_WithSameValues_ReturnsTrue() {
         // Arrange
         var key1 = new MethodCacheKey("device1", "v1.0", "method");
         var key2 = new MethodCacheKey("device1", "v1.0", "method");
@@ -34,8 +31,7 @@ public class MethodCacheKeyTests
     }
 
     [Test]
-    public void Equals_WithDifferentDeviceId_ReturnsFalse()
-    {
+    public void Equals_WithDifferentDeviceId_ReturnsFalse() {
         // Arrange
         var key1 = new MethodCacheKey("device1", "v1.0", "method");
         var key2 = new MethodCacheKey("device2", "v1.0", "method");
@@ -46,8 +42,7 @@ public class MethodCacheKeyTests
     }
 
     [Test]
-    public void Equals_WithDifferentFirmwareVersion_ReturnsFalse()
-    {
+    public void Equals_WithDifferentFirmwareVersion_ReturnsFalse() {
         // Arrange
         var key1 = new MethodCacheKey("device1", "v1.0", "method");
         var key2 = new MethodCacheKey("device1", "v2.0", "method");
@@ -58,8 +53,7 @@ public class MethodCacheKeyTests
     }
 
     [Test]
-    public void Equals_WithDifferentMethodSignature_ReturnsFalse()
-    {
+    public void Equals_WithDifferentMethodSignature_ReturnsFalse() {
         // Arrange
         var key1 = new MethodCacheKey("device1", "v1.0", "method1");
         var key2 = new MethodCacheKey("device1", "v1.0", "method2");
@@ -70,8 +64,7 @@ public class MethodCacheKeyTests
     }
 
     [Test]
-    public void GetHashCode_WithSameValues_ReturnsSameHashCode()
-    {
+    public void GetHashCode_WithSameValues_ReturnsSameHashCode() {
         // Arrange
         var key1 = new MethodCacheKey("device1", "v1.0", "method");
         var key2 = new MethodCacheKey("device1", "v1.0", "method");
@@ -81,8 +74,7 @@ public class MethodCacheKeyTests
     }
 
     [Test]
-    public void GetHashCode_WithDifferentValues_ReturnsDifferentHashCode()
-    {
+    public void GetHashCode_WithDifferentValues_ReturnsDifferentHashCode() {
         // Arrange
         var key1 = new MethodCacheKey("device1", "v1.0", "method1");
         var key2 = new MethodCacheKey("device1", "v1.0", "method2");
@@ -92,8 +84,7 @@ public class MethodCacheKeyTests
     }
 
     [Test]
-    public void ToString_ReturnsFormattedString()
-    {
+    public void ToString_ReturnsFormattedString() {
         // Arrange
         var key = new MethodCacheKey("device1", "v1.0", "method");
 
@@ -106,8 +97,7 @@ public class MethodCacheKeyTests
     }
 
     [Test]
-    public void OperatorEquals_WithSameValues_ReturnsTrue()
-    {
+    public void OperatorEquals_WithSameValues_ReturnsTrue() {
         // Arrange
         var key1 = new MethodCacheKey("device1", "v1.0", "method");
         var key2 = new MethodCacheKey("device1", "v1.0", "method");
@@ -118,8 +108,7 @@ public class MethodCacheKeyTests
     }
 
     [Test]
-    public void OperatorEquals_WithDifferentValues_ReturnsFalse()
-    {
+    public void OperatorEquals_WithDifferentValues_ReturnsFalse() {
         // Arrange
         var key1 = new MethodCacheKey("device1", "v1.0", "method1");
         var key2 = new MethodCacheKey("device1", "v1.0", "method2");

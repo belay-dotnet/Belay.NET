@@ -10,11 +10,9 @@ using NUnit.Framework;
 namespace Belay.Tests.Unit.Caching;
 
 [TestFixture]
-public class MethodCacheEntryTests
-{
+public class MethodCacheEntryTests {
     [Test]
-    public void Constructor_WithValue_CreatesEntry()
-    {
+    public void Constructor_WithValue_CreatesEntry() {
         // Arrange
         var value = "test_value";
         var expiration = TimeSpan.FromMinutes(5);
@@ -31,8 +29,7 @@ public class MethodCacheEntryTests
     }
 
     [Test]
-    public void Constructor_WithoutExpiration_UsesDefaultExpiration()
-    {
+    public void Constructor_WithoutExpiration_UsesDefaultExpiration() {
         // Arrange
         var value = "test_value";
 
@@ -45,8 +42,7 @@ public class MethodCacheEntryTests
     }
 
     [Test]
-    public void IsExpired_WhenNotExpired_ReturnsFalse()
-    {
+    public void IsExpired_WhenNotExpired_ReturnsFalse() {
         // Arrange
         var entry = new MethodCacheEntry<string>("value", TimeSpan.FromMinutes(5));
 
@@ -55,8 +51,7 @@ public class MethodCacheEntryTests
     }
 
     [Test]
-    public void IsExpired_WhenExpired_ReturnsTrue()
-    {
+    public void IsExpired_WhenExpired_ReturnsTrue() {
         // Arrange
         var entry = new MethodCacheEntry<string>("value", TimeSpan.FromMilliseconds(1));
 
@@ -68,8 +63,7 @@ public class MethodCacheEntryTests
     }
 
     [Test]
-    public void UpdateLastAccessed_UpdatesTimestamp()
-    {
+    public void UpdateLastAccessed_UpdatesTimestamp() {
         // Arrange
         var entry = new MethodCacheEntry<string>("value");
         var originalTime = entry.LastAccessedAt;
@@ -83,8 +77,7 @@ public class MethodCacheEntryTests
     }
 
     [Test]
-    public void GetValue_ReturnsValueAsObject()
-    {
+    public void GetValue_ReturnsValueAsObject() {
         // Arrange
         var value = "test_value";
         var entry = new MethodCacheEntry<string>(value);
@@ -98,8 +91,7 @@ public class MethodCacheEntryTests
     }
 
     [Test]
-    public void GetRemainingLifetime_WhenNotExpired_ReturnsPositiveTimeSpan()
-    {
+    public void GetRemainingLifetime_WhenNotExpired_ReturnsPositiveTimeSpan() {
         // Arrange
         var expiration = TimeSpan.FromMinutes(5);
         var entry = new MethodCacheEntry<string>("value", expiration);
@@ -113,8 +105,7 @@ public class MethodCacheEntryTests
     }
 
     [Test]
-    public void GetRemainingLifetime_WhenExpired_ReturnsZero()
-    {
+    public void GetRemainingLifetime_WhenExpired_ReturnsZero() {
         // Arrange
         var entry = new MethodCacheEntry<string>("value", TimeSpan.FromMilliseconds(1));
 
@@ -127,8 +118,7 @@ public class MethodCacheEntryTests
     }
 
     [Test]
-    public void Constructor_WithGenericTypes_WorksCorrectly()
-    {
+    public void Constructor_WithGenericTypes_WorksCorrectly() {
         // Arrange & Act
         var stringEntry = new MethodCacheEntry<string>("hello");
         var intEntry = new MethodCacheEntry<int>(42);

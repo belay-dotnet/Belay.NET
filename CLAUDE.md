@@ -1,6 +1,57 @@
 # CLAUDE.md - Belay.NET Development Guide
 
-This file provides guidance to Claude Code when working on the Belay.NET project - a C# library for seamless integration between .NET applications and MicroPython/CircuitPython devices.
+This file provides **MANDATORY** development requirements for Claude Code when working on the Belay.NET project - a C# library for seamless integration between .NET applications and MicroPython/CircuitPython devices.
+
+**⚠️ CRITICAL**: All requirements marked as MANDATORY are non-negotiable and must be followed without exception.
+
+## MANDATORY Development Cycle Requirements
+
+### 1. MANDATORY: Task Management and Planning
+- **MUST** use TodoWrite tool for all complex tasks (3+ steps)
+- **MUST** track progress systematically with in_progress/completed status
+- **MUST** consult project-architect-scrum-master agent for architectural decisions
+- **MUST** reference planning documents in ./plan/ directory before major changes
+
+### 2. MANDATORY: Research and Understanding Phase
+- **MUST** use search tools (Grep, Glob) extensively before making changes
+- **MUST** read related files to understand existing conventions and patterns
+- **MUST** examine neighboring components to match existing architecture
+- **NEVER** assume libraries are available - ALWAYS verify dependencies first
+- **MUST** follow existing code conventions religiously
+
+### 3. MANDATORY: Quality Gates - PRE-COMMIT REQUIREMENTS
+**⚠️ ZERO TOLERANCE**: These requirements are MANDATORY before every single commit:
+
+#### MANDATORY Build Validation
+- **MUST** run local build/test scripts and they **MUST** pass completely
+- **MUST** run linting and type checking (npm run lint, npm run typecheck, etc.)
+- **MUST** fix ALL compilation errors and critical warnings
+- **NEVER** commit if local validation fails - NO EXCEPTIONS
+
+#### MANDATORY Documentation Testing  
+- **MUST** run `docs/scripts/test-docfx.sh` for any API changes
+- **MUST** ensure all code examples in documentation compile and run
+- **MUST** validate documentation builds completely before commit
+
+#### MANDATORY Code Quality
+- **MUST** invoke principal-code-reviewer agent after completing any implementation
+- **MUST** use specialized agents appropriately (micropython-embedded-expert, build-test-commit-engineer)
+- **MUST** maintain 98% XML documentation coverage standard
+
+### 4. MANDATORY: Git Workflow Requirements
+- **MUST** stage related changes together logically
+- **MUST** write descriptive commit messages with context and rationale  
+- **MUST** push to remote only after successful local validation
+- **MUST** handle submodules properly (docs submodule updates)
+
+### 5. MANDATORY: Documentation-Driven Development
+**ALL** feature development **MUST** include documentation updates:
+- **MUST** identify all documentation pages that need updates before implementation
+- **MUST** complete any related stub documentation pages as part of the same task
+- **MUST** validate all code examples compile and run correctly
+- **MUST** avoid creating new stub pages unless absolutely necessary
+
+**ENFORCEMENT**: Cannot close issue until linked documentation pages are complete.
 
 ## Project Overview
 
@@ -135,11 +186,12 @@ When completing a placeholder page:
 
 6. **Update this tracking section** in CLAUDE.md
 
-### Quality Gates
+### MANDATORY Quality Gates
 - **Issue Completion**: Cannot close issue until linked documentation pages are complete
-- **Release Gates**: Cannot release milestone with placeholder pages
+- **Release Gates**: Cannot release milestone with placeholder pages  
 - **PR Review**: Must verify documentation completion in code reviews
 - **CI/CD**: Automated checks for placeholder content before deployment
+- **ZERO-TOLERANCE**: Any commit that breaks CI due to skipped local testing is a process violation
 
 ### Documentation Debt Metrics
 Track progress with these commands:
@@ -286,12 +338,13 @@ public async Task<string> ExecuteAsync(string code, CancellationToken token)
 public async Task<string> ExecuteAsync(string code, CancellationToken token)
 ```
 
-### Quality Metrics and Enforcement
+### MANDATORY Quality Metrics and Enforcement
 
-- **Coverage Threshold**: 98% (currently achieved)
-- **Example Target**: 30% of public classes/methods (currently 2%)
-- **Deployment Blocking**: Enforced via CI/CD quality gates
-- **Gold Standard**: Belay.Attributes assembly (65% with examples)
+- **Coverage Threshold**: 98% (currently achieved) - **MANDATORY** to maintain
+- **Example Target**: 30% of public classes/methods (currently 2%) - **MANDATORY** for new code
+- **Deployment Blocking**: Enforced via CI/CD quality gates - **MANDATORY**
+- **Gold Standard**: Belay.Attributes assembly (65% with examples) - **MANDATORY** baseline
+- **ZERO-TOLERANCE**: Never lower documentation coverage standards
 
 ### High-Priority Documentation Debt
 
@@ -303,3 +356,20 @@ Critical files requiring immediate attention:
 5. Service registration extensions - Add DI configuration examples
 
 - there is a RPI Pico micropython available for testing on tty: /dev/usb/tty-Board_in_FS_mode-e6614c311b7e6f35
+
+## MANDATORY Development Cycle Summary
+
+**ZERO-TOLERANCE POLICY**: The following cycle is MANDATORY and non-negotiable:
+
+1. **Plan** → Use TodoWrite, consult architects, reference ./plan/ docs
+2. **Research** → Search extensively, understand patterns, verify dependencies  
+3. **Implement** → Follow conventions, implement incrementally, test frequently
+4. **Quality Gates** → Local build/test MUST pass, invoke code reviewers
+5. **Document** → Update docs, complete stubs, validate examples
+6. **Pre-Commit** → Run ALL validation scripts, fix ALL issues
+7. **Commit** → Only after complete validation, descriptive messages
+8. **Push** → Only after successful local validation
+
+**ENFORCEMENT**: Any deviation from this cycle that results in CI failure or broken deployments is considered a process violation. The goal is **prevention over correction** - catch issues locally rather than in CI/production.
+
+**QUALITY FIRST**: Better to spend time on proper validation than fix broken deployments. The development cycle prioritizes systematic quality over speed.

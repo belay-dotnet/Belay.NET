@@ -152,27 +152,27 @@ namespace Belay.Tests.Unit.Execution {
             // Simulate existing threads
             var threads = new[]
             {
-                new RunningThread { 
-                    ThreadId = "id1", 
-                    MethodName = threadName1, 
-                    StartedAt = DateTime.UtcNow, 
-                    AutoRestart = false, 
+                new RunningThread {
+                    ThreadId = "id1",
+                    MethodName = threadName1,
+                    StartedAt = DateTime.UtcNow,
+                    AutoRestart = false,
                     Priority = Belay.Attributes.ThreadPriority.Normal,
                     MaxRuntimeMs = null
                 },
-                new RunningThread { 
-                    ThreadId = "id2", 
-                    MethodName = threadName2, 
+                new RunningThread {
+                    ThreadId = "id2",
+                    MethodName = threadName2,
                     StartedAt = DateTime.UtcNow,
-                    AutoRestart = false, 
+                    AutoRestart = false,
                     Priority = Belay.Attributes.ThreadPriority.Normal,
                     MaxRuntimeMs = null
                 },
-                new RunningThread { 
-                    ThreadId = "id3", 
-                    MethodName = threadName3, 
+                new RunningThread {
+                    ThreadId = "id3",
+                    MethodName = threadName3,
                     StartedAt = DateTime.UtcNow,
-                    AutoRestart = false, 
+                    AutoRestart = false,
                     Priority = Belay.Attributes.ThreadPriority.Normal,
                     MaxRuntimeMs = null
                 }

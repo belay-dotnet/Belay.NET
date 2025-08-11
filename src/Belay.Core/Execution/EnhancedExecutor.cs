@@ -95,7 +95,7 @@ namespace Belay.Core.Execution {
                 InterceptionContext = context,
                 Device = this.Device,
                 SessionManager = this.SessionManager,
-                Logger = this.Logger
+                Logger = this.Logger,
             };
 
             return await this.ExecuteThroughPipelineAsync(executionContext).ConfigureAwait(false);
@@ -125,7 +125,8 @@ namespace Belay.Core.Execution {
             }
 
             // Fallback to direct execution for code without method context
-            this.Logger.LogDebug("No method context available, executing Python code directly: {Code}",
+            this.Logger.LogDebug(
+                "No method context available, executing Python code directly: {Code}",
                 pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
 
             return await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);
@@ -158,12 +159,14 @@ namespace Belay.Core.Execution {
             if (attributeType == null) {
                 throw new ArgumentNullException(nameof(attributeType));
             }
+
             if (executor == null) {
                 throw new ArgumentNullException(nameof(executor));
             }
 
             this.specializedExecutors[attributeType] = executor;
-            this.Logger.LogDebug("Registered specialized executor {ExecutorType} for attribute {AttributeType}",
+            this.Logger.LogDebug(
+                "Registered specialized executor {ExecutorType} for attribute {AttributeType}",
                 executor.GetType().Name, attributeType.Name);
         }
 
@@ -178,7 +181,7 @@ namespace Belay.Core.Execution {
                 InterceptedMethodCount = this.interceptionCache.Count,
                 DeploymentCacheStatistics = this.deploymentCache.GetStatistics(),
                 SpecializedExecutorCount = this.specializedExecutors.Count,
-                PipelineStageCount = this.pipeline.StageCount
+                PipelineStageCount = this.pipeline.StageCount,
             };
         }
 
@@ -231,7 +234,7 @@ namespace Belay.Core.Execution {
             var context = new MethodInterceptionContext {
                 Method = method,
                 InstanceType = instance?.GetType(),
-                Pipeline = new List<IPipelineStage>()
+                Pipeline = new List<IPipelineStage>(),
             };
 
             // Build pipeline based on method attributes
@@ -274,6 +277,7 @@ namespace Belay.Core.Execution {
                     return executor;
                 }
             }
+
             return null;
         }
 

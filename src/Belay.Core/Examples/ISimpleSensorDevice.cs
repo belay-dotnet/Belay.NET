@@ -3,15 +3,14 @@
 
 namespace Belay.Core.Examples;
 
-using Belay.Attributes;
 using System.Threading.Tasks;
+using Belay.Attributes;
 
 /// <summary>
 /// Example interface demonstrating method interception with the [Task] and [PythonCode] attributes.
 /// This interface shows how to embed Python code directly in method declarations.
 /// </summary>
-public interface ISimpleSensorDevice
-{
+public interface ISimpleSensorDevice {
     /// <summary>
     /// Gets a simple greeting from the device.
     /// Demonstrates basic [Task] and [PythonCode] attribute usage.
@@ -43,6 +42,7 @@ public interface ISimpleSensorDevice
     /// </summary>
     /// <param name="pin">The GPIO pin number for the LED.</param>
     /// <param name="state">The LED state (True for on, False for off).</param>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     [Task]
     [PythonCode(@"
         import machine
@@ -58,7 +58,8 @@ public interface ISimpleSensorDevice
     /// </summary>
     /// <returns>Device information string.</returns>
     [Task]
-    [PythonCode(@"
+    [PythonCode(
+        @"
         import sys
         import gc
         info = f'Platform: {sys.platform}, Memory: {gc.mem_free()} bytes'
@@ -70,6 +71,7 @@ public interface ISimpleSensorDevice
     /// Initializes the device sensors.
     /// Demonstrates [Setup] attribute with [PythonCode].
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     [Setup(Order = 1)]
     [PythonCode(@"
         # Initialize device sensors
@@ -85,6 +87,7 @@ public interface ISimpleSensorDevice
     /// Cleans up the device.
     /// Demonstrates [Teardown] attribute with [PythonCode].
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     [Teardown(Order = 1)]
     [PythonCode(@"
         # Cleanup device resources

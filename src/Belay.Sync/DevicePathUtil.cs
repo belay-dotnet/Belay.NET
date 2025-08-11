@@ -117,8 +117,7 @@ namespace Belay.Sync {
             var fileName = GetFileName(path);
             var lastDot = fileName.LastIndexOf('.');
 
-            if (lastDot <= 0)
-            {
+            if (lastDot <= 0) {
                 return fileName;
             }
 
@@ -134,8 +133,7 @@ namespace Belay.Sync {
             var fileName = GetFileName(path);
             var lastDot = fileName.LastIndexOf('.');
 
-            if (lastDot <= 0)
-            {
+            if (lastDot <= 0) {
                 return string.Empty;
             }
 

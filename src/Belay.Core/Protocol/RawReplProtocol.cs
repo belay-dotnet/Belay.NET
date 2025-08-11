@@ -70,13 +70,13 @@ public class RawReplProtocolException(string message, RawReplState expectedState
     /// Gets the expected Raw REPL protocol state.
     /// </summary>
     /// <value>The state the protocol expected to be in when the error occurred.</value>
-    public RawReplState ExpectedState { get; } = expectedState;
+    public RawReplState ExpectedState { get; }
 
     /// <summary>
     /// Gets the actual Raw REPL protocol state when the error occurred.
     /// </summary>
     /// <value>The actual state the protocol was in when the error occurred.</value>
-    public RawReplState ActualState { get; } = actualState;
+    public RawReplState ActualState { get; }
 }
 
 /// <summary>
@@ -88,13 +88,13 @@ public class FlowControlException(string message, int windowSize, byte receivedB
     /// Gets the window size when the flow control error occurred.
     /// </summary>
     /// <value>The number of bytes that can be sent before waiting for flow control acknowledgment.</value>
-    public int WindowSize { get; } = windowSize;
+    public int WindowSize { get; }
 
     /// <summary>
     /// Gets the unexpected byte received during flow control.
     /// </summary>
     /// <value>The byte value that was received instead of the expected flow control byte.</value>
-    public byte ReceivedByte { get; } = receivedByte;
+    public byte ReceivedByte { get; }
 }
 
 /// <summary>
@@ -205,8 +205,7 @@ public class RawReplProtocol : IDisposable {
             if (useRawPasteMode && await SupportsRawPasteModeAsync()) {
                 return await this.ExecuteWithRawPasteModeAsync(code, cancellationToken);
             }
-            else
-            {
+            else {
                 return await this.ExecuteWithRawModeAsync(code, cancellationToken);
             }
         }
@@ -427,8 +426,7 @@ public class RawReplProtocol : IDisposable {
             if (b == markerBytes[markerIndex]) {
                 markerIndex++;
             }
-            else
-            {
+            else {
                 markerIndex = (b == markerBytes[0]) ? 1 : 0;
             }
         }
@@ -480,8 +478,7 @@ public class RawReplProtocol : IDisposable {
         if (totalRead.Length > 0) {
             this.logger.LogDebug("Total drained output: '{Output}' (length: {Length})", totalRead.ToString().Replace("\r", "\\r").Replace("\n", "\\n"), totalRead.Length);
         }
-        else
-        {
+        else {
             this.logger.LogDebug("No output to drain after {Attempts} attempts", drainAttempts);
         }
     }
@@ -536,8 +533,7 @@ public class RawReplProtocol : IDisposable {
             response.ErrorOutput = output;
             response.Exception = new Exception($"Device execution error: {output}");
         }
-        else
-        {
+        else {
             response.IsSuccess = true;
             response.Output = output;
 
@@ -545,8 +541,7 @@ public class RawReplProtocol : IDisposable {
             string result = output;
 
             // Remove "OK" prefix if present
-            if (result.StartsWith("OK"))
-            {
+            if (result.StartsWith("OK")) {
                 result = result.Substring(2);
             }
 
@@ -554,12 +549,10 @@ public class RawReplProtocol : IDisposable {
             // Find the first \x04 character (start of end sequence)
             int firstControlCharIndex = result.IndexOf('\x04');
 
-            if (firstControlCharIndex >= 0)
-            {
+            if (firstControlCharIndex >= 0) {
                 result = result.Substring(0, firstControlCharIndex);
             }
-            else if (result.EndsWith(">"))
-            {
+            else if (result.EndsWith('>')) {
                 result = result.Substring(0, result.Length - 1);
             }
 

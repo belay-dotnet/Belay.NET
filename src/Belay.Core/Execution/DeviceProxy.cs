@@ -8,6 +8,7 @@ namespace Belay.Core.Execution {
     using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
+    using Belay.Core.Exceptions;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -155,7 +156,40 @@ namespace Belay.Core.Execution {
             }
             catch (Exception ex) {
                 this.logger?.LogError(ex, "Failed to execute method {MethodName} through proxy", method.Name);
-                throw;
+                
+                // Enrich exceptions with method context for attribute system
+                if (ex is BelayException belayEx) {
+                    belayEx.WithContext("proxy_method", method.Name)
+                           .WithContext("proxy_interface", typeof(T).Name)
+                           .WithContext("parameter_count", args?.Length ?? 0);
+                    
+                    // Add attribute information if available
+                    var attributes = method.GetCustomAttributes().Select(attr => attr.GetType().Name).ToArray();
+                    if (attributes.Length > 0) {
+                        belayEx.WithContext("method_attributes", string.Join(", ", attributes));
+                    }
+                    
+                    throw; // Re-throw the enriched BelayException
+                }
+                else {
+                    // Wrap non-Belay exceptions with context
+                    var wrappedException = new DeviceExecutionException(
+                        $"Method '{method.Name}' failed in proxy: {ex.Message}", 
+                        ex, 
+                        code: null);
+                    
+                    wrappedException.WithContext("proxy_method", method.Name)
+                                   .WithContext("proxy_interface", typeof(T).Name)
+                                   .WithContext("parameter_count", args?.Length ?? 0);
+                    
+                    // Add attribute information
+                    var attributes = method.GetCustomAttributes().Select(attr => attr.GetType().Name).ToArray();
+                    if (attributes.Length > 0) {
+                        wrappedException.WithContext("method_attributes", string.Join(", ", attributes));
+                    }
+                    
+                    throw wrappedException;
+                }
             }
         }
 

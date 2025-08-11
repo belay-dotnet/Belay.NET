@@ -6,8 +6,7 @@ namespace Belay.Core.Protocol;
 /// <summary>
 /// Configuration options for Raw REPL protocol behavior with auto-detection capabilities.
 /// </summary>
-public class RawReplConfiguration
-{
+public class RawReplConfiguration {
     /// <summary>
     /// Gets or sets the timeout for initial protocol initialization.
     /// Auto-detection will increase this if needed.
@@ -70,23 +69,23 @@ public class RawReplConfiguration
     public TimeSpan InterruptDelay { get; set; } = TimeSpan.FromMilliseconds(100);
 
     /// <summary>
-    /// Gets or sets whether to enable raw-paste mode auto-detection.
+    /// Gets or sets a value indicating whether gets or sets whether to enable raw-paste mode auto-detection.
     /// If false, will fall back to regular raw mode.
     /// </summary>
     public bool EnableRawPasteAutoDetection { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets whether to enable adaptive timing adjustments.
+    /// Gets or sets a value indicating whether gets or sets whether to enable adaptive timing adjustments.
     /// </summary>
     public bool EnableAdaptiveTiming { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets whether to enable adaptive flow control.
+    /// Gets or sets a value indicating whether gets or sets whether to enable adaptive flow control.
     /// </summary>
     public bool EnableAdaptiveFlowControl { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets whether to enable verbose protocol logging.
+    /// Gets or sets a value indicating whether gets or sets whether to enable verbose protocol logging.
     /// Useful for debugging protocol issues.
     /// </summary>
     public bool EnableVerboseLogging { get; set; } = false;
@@ -96,25 +95,23 @@ public class RawReplConfiguration
     /// Used when auto-detection fails.
     /// </summary>
     /// <returns>A new configuration with conservative settings.</returns>
-    public RawReplConfiguration CreateFallbackConfiguration()
-    {
-        return new RawReplConfiguration
-        {
+    public RawReplConfiguration CreateFallbackConfiguration() {
+        return new RawReplConfiguration {
             InitializationTimeout = TimeSpan.FromSeconds(10),
             BaseResponseTimeout = TimeSpan.FromSeconds(5),
-            MaxResponseTimeout = MaxResponseTimeout,
+            MaxResponseTimeout = this.MaxResponseTimeout,
             PreferredWindowSize = 32, // Conservative window size
-            MinimumWindowSize = MinimumWindowSize,
+            MinimumWindowSize = this.MinimumWindowSize,
             MaximumWindowSize = 256, // Conservative maximum
-            MaxRetryAttempts = MaxRetryAttempts + 2, // More retries for difficult devices
+            MaxRetryAttempts = this.MaxRetryAttempts + 2, // More retries for difficult devices
             RetryDelay = TimeSpan.FromMilliseconds(500), // Longer delays
             StartupDelay = TimeSpan.FromSeconds(5),
-            MaxStartupDelay = MaxStartupDelay,
+            MaxStartupDelay = this.MaxStartupDelay,
             InterruptDelay = TimeSpan.FromMilliseconds(500),
             EnableRawPasteAutoDetection = false, // Disable raw-paste mode
             EnableAdaptiveTiming = false,
             EnableAdaptiveFlowControl = false,
-            EnableVerboseLogging = EnableVerboseLogging
+            EnableVerboseLogging = this.EnableVerboseLogging,
         };
     }
 }
@@ -122,10 +119,9 @@ public class RawReplConfiguration
 /// <summary>
 /// Detected capabilities and characteristics of a MicroPython device's REPL implementation.
 /// </summary>
-public class DeviceReplCapabilities
-{
+public class DeviceReplCapabilities {
     /// <summary>
-    /// Gets or sets whether the device supports raw-paste mode.
+    /// Gets or sets a value indicating whether gets or sets whether the device supports raw-paste mode.
     /// </summary>
     public bool SupportsRawPasteMode { get; set; }
 
@@ -145,12 +141,12 @@ public class DeviceReplCapabilities
     public TimeSpan AverageResponseTime { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the device needs extended startup delays.
+    /// Gets or sets a value indicating whether gets or sets whether the device needs extended startup delays.
     /// </summary>
     public bool RequiresExtendedStartup { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the device needs extended interrupt processing time.
+    /// Gets or sets a value indicating whether gets or sets whether the device needs extended interrupt processing time.
     /// </summary>
     public bool RequiresExtendedInterruptDelay { get; set; }
 
@@ -165,12 +161,12 @@ public class DeviceReplCapabilities
     public string? MicroPythonVersion { get; set; }
 
     /// <summary>
-    /// Gets or sets whether flow control bytes are processed correctly.
+    /// Gets or sets a value indicating whether gets or sets whether flow control bytes are processed correctly.
     /// </summary>
     public bool HasReliableFlowControl { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets whether the device properly handles large code transfers.
+    /// Gets or sets a value indicating whether gets or sets whether the device properly handles large code transfers.
     /// </summary>
     public bool SupportsLargeCodeTransfers { get; set; } = true;
 
@@ -183,8 +179,7 @@ public class DeviceReplCapabilities
 /// <summary>
 /// Protocol metrics and performance tracking.
 /// </summary>
-public class ReplProtocolMetrics
-{
+public class ReplProtocolMetrics {
     /// <summary>
     /// Gets or sets the number of successful operations.
     /// </summary>
@@ -216,10 +211,10 @@ public class ReplProtocolMetrics
     public DateTime LastOperationTime { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Calculates the success rate as a percentage.
+    /// Gets calculates the success rate as a percentage.
     /// </summary>
     public double SuccessRate =>
-        SuccessfulOperations + FailedOperations == 0 ?
+        this.SuccessfulOperations + this.FailedOperations == 0 ?
         100.0 :
-        (double)SuccessfulOperations / (SuccessfulOperations + FailedOperations) * 100.0;
+        (double)this.SuccessfulOperations / (this.SuccessfulOperations + this.FailedOperations) * 100.0;
 }

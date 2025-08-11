@@ -132,8 +132,7 @@ namespace Belay.Core.Execution {
                         // Critical setup failures should stop the initialization process
                         throw new InvalidOperationException($"Critical setup method {methodName} failed: {ex.Message}", ex);
                     }
-                    else
-                    {
+                    else {
                         // Non-critical setup failures are logged but allow execution to continue
                         this.Logger.LogWarning("Non-critical setup method {MethodName} failed, continuing", methodName);
                         return default(T)!;

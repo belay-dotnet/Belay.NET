@@ -11,16 +11,13 @@ using NUnit.Framework;
 namespace Belay.Tests.Unit.Caching;
 
 [TestFixture]
-public class MethodDeploymentCacheTests
-{
+public class MethodDeploymentCacheTests {
     private MethodDeploymentCache cache = null!;
     private MethodCacheConfiguration configuration = null!;
 
     [SetUp]
-    public void Setup()
-    {
-        configuration = new MethodCacheConfiguration
-        {
+    public void Setup() {
+        configuration = new MethodCacheConfiguration {
             MaxCacheSize = 100,
             DefaultExpiration = TimeSpan.FromMinutes(5),
             EnablePeriodicCleanup = false // Disable for tests
@@ -29,14 +26,12 @@ public class MethodDeploymentCacheTests
     }
 
     [TearDown]
-    public void TearDown()
-    {
+    public void TearDown() {
         cache?.Dispose();
     }
 
     [Test]
-    public void Get_WhenKeyDoesNotExist_ReturnsDefault()
-    {
+    public void Get_WhenKeyDoesNotExist_ReturnsDefault() {
         // Arrange
         var key = new MethodCacheKey("device1", "v1.0", "test_method");
 
@@ -48,8 +43,7 @@ public class MethodDeploymentCacheTests
     }
 
     [Test]
-    public void Set_And_Get_WhenKeyExists_ReturnsValue()
-    {
+    public void Set_And_Get_WhenKeyExists_ReturnsValue() {
         // Arrange
         var key = new MethodCacheKey("device1", "v1.0", "test_method");
         var value = "test_result";
@@ -63,8 +57,7 @@ public class MethodDeploymentCacheTests
     }
 
     [Test]
-    public void Get_WhenEntryIsExpired_ReturnsDefault()
-    {
+    public void Get_WhenEntryIsExpired_ReturnsDefault() {
         // Arrange
         var key = new MethodCacheKey("device1", "v1.0", "test_method");
         var value = "test_result";
@@ -79,8 +72,7 @@ public class MethodDeploymentCacheTests
     }
 
     [Test]
-    public void Remove_WhenKeyExists_RemovesEntryAndReturnsTrue()
-    {
+    public void Remove_WhenKeyExists_RemovesEntryAndReturnsTrue() {
         // Arrange
         var key = new MethodCacheKey("device1", "v1.0", "test_method");
         var value = "test_result";
@@ -96,8 +88,7 @@ public class MethodDeploymentCacheTests
     }
 
     [Test]
-    public void Remove_WhenKeyDoesNotExist_ReturnsFalse()
-    {
+    public void Remove_WhenKeyDoesNotExist_ReturnsFalse() {
         // Arrange
         var key = new MethodCacheKey("device1", "v1.0", "test_method");
 
@@ -109,8 +100,7 @@ public class MethodDeploymentCacheTests
     }
 
     [Test]
-    public void ClearAll_RemovesAllEntries()
-    {
+    public void ClearAll_RemovesAllEntries() {
         // Arrange
         var key1 = new MethodCacheKey("device1", "v1.0", "method1");
         var key2 = new MethodCacheKey("device1", "v1.0", "method2");
@@ -127,8 +117,7 @@ public class MethodDeploymentCacheTests
     }
 
     [Test]
-    public void GetStatistics_TracksHitsAndMisses()
-    {
+    public void GetStatistics_TracksHitsAndMisses() {
         // Arrange
         var key = new MethodCacheKey("device1", "v1.0", "test_method");
         var value = "test_result";
@@ -148,8 +137,7 @@ public class MethodDeploymentCacheTests
     }
 
     [Test]
-    public void Set_WithGenericTypes_WorksCorrectly()
-    {
+    public void Set_WithGenericTypes_WorksCorrectly() {
         // Arrange
         var stringKey = new MethodCacheKey("device1", "v1.0", "string_method");
         var intKey = new MethodCacheKey("device1", "v1.0", "int_method");
@@ -166,8 +154,7 @@ public class MethodDeploymentCacheTests
     }
 
     [Test]
-    public void Dispose_DoesNotThrow()
-    {
+    public void Dispose_DoesNotThrow() {
         // Arrange
         var cache = new MethodDeploymentCache(configuration);
 
@@ -176,14 +163,12 @@ public class MethodDeploymentCacheTests
     }
 
     [Test]
-    public void Dispose_MultipleTimes_DoesNotThrow()
-    {
+    public void Dispose_MultipleTimes_DoesNotThrow() {
         // Arrange
         var cache = new MethodDeploymentCache(configuration);
 
         // Act & Assert
-        Assert.DoesNotThrow(() => 
-        {
+        Assert.DoesNotThrow(() => {
             cache.Dispose();
             cache.Dispose();
             cache.Dispose();

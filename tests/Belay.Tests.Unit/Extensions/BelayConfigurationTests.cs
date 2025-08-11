@@ -7,11 +7,9 @@ using Belay.Extensions.Configuration;
 using NUnit.Framework;
 
 [TestFixture]
-public class BelayConfigurationTests
-{
+public class BelayConfigurationTests {
     [Test]
-    public void BelayConfiguration_DefaultValues_AreSetCorrectly()
-    {
+    public void BelayConfiguration_DefaultValues_AreSetCorrectly() {
         // Act
         var config = new BelayConfiguration();
 
@@ -28,8 +26,7 @@ public class BelayConfigurationTests
     }
 
     [Test]
-    public void DeviceDiscoveryConfiguration_DefaultValues_AreSetCorrectly()
-    {
+    public void DeviceDiscoveryConfiguration_DefaultValues_AreSetCorrectly() {
         // Act
         var config = new DeviceDiscoveryConfiguration();
 
@@ -42,8 +39,7 @@ public class BelayConfigurationTests
     }
 
     [Test]
-    public void RawReplConfiguration_DefaultValues_AreSetCorrectly()
-    {
+    public void RawReplConfiguration_DefaultValues_AreSetCorrectly() {
         // Act
         var config = new RawReplConfiguration();
 
@@ -54,8 +50,7 @@ public class BelayConfigurationTests
     }
 
     [Test]
-    public void ExceptionHandlingConfiguration_DefaultValues_AreSetCorrectly()
-    {
+    public void ExceptionHandlingConfiguration_DefaultValues_AreSetCorrectly() {
         // Act
         var config = new ExceptionHandlingConfiguration();
 
@@ -69,8 +64,7 @@ public class BelayConfigurationTests
     }
 
     [Test]
-    public void RetryConfiguration_DefaultValues_AreSetCorrectly()
-    {
+    public void RetryConfiguration_DefaultValues_AreSetCorrectly() {
         // Act
         var config = new RetryConfiguration();
 
@@ -82,8 +76,7 @@ public class BelayConfigurationTests
     }
 
     [Test]
-    public void BelayConfiguration_CanBeModified()
-    {
+    public void BelayConfiguration_CanBeModified() {
         // Arrange
         var config = new BelayConfiguration();
 

@@ -5,16 +5,13 @@ using Belay.Core.Sessions;
 using FluentAssertions;
 using NUnit.Framework;
 
-namespace Belay.Tests.Unit.Sessions
-{
+namespace Belay.Tests.Unit.Sessions {
     /// <summary>
     /// Tests for the FileSystemContext class.
     /// </summary>
-    public class FileSystemContextTests
-    {
+    public class FileSystemContextTests {
         [Test]
-        public void Constructor_WithValidParameters_InitializesCorrectly()
-        {
+        public void Constructor_WithValidParameters_InitializesCorrectly() {
             // Arrange
             var sessionId = "test-session";
             var capabilities = FileSystemCapabilities.BasicFileOperations | FileSystemCapabilities.DirectoryOperations;
@@ -31,8 +28,7 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public void Constructor_WithNullSessionId_ThrowsArgumentNullException()
-        {
+        public void Constructor_WithNullSessionId_ThrowsArgumentNullException() {
             // Act & Assert
             var act = () => new FileSystemContext(null!, FileSystemCapabilities.BasicFileOperations);
             act.Should().Throw<ArgumentNullException>()
@@ -40,8 +36,7 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public void Constructor_WithNoCapabilities_SetsFileSystemNotSupported()
-        {
+        public void Constructor_WithNoCapabilities_SetsFileSystemNotSupported() {
             // Arrange & Act
             var context = new FileSystemContext("test-session", FileSystemCapabilities.None);
 
@@ -51,8 +46,7 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public void CurrentDirectory_SetValidPath_UpdatesCurrentDirectory()
-        {
+        public void CurrentDirectory_SetValidPath_UpdatesCurrentDirectory() {
             // Arrange
             var context = new FileSystemContext("test-session");
             var newPath = "/home/user";
@@ -67,8 +61,7 @@ namespace Belay.Tests.Unit.Sessions
         [TestCase(null)]
         [TestCase("")]
         [TestCase("   ")]
-        public void CurrentDirectory_SetInvalidPath_ThrowsArgumentException(string? invalidPath)
-        {
+        public void CurrentDirectory_SetInvalidPath_ThrowsArgumentException(string? invalidPath) {
             // Arrange
             var context = new FileSystemContext("test-session");
 
@@ -79,18 +72,16 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public async Task RefreshDirectoryAsync_WithValidPath_ClearsMatchingCacheEntries()
-        {
+        public async Task RefreshDirectoryAsync_WithValidPath_ClearsMatchingCacheEntries() {
             // Arrange
             var context = new FileSystemContext("test-session");
             var directoryPath = "/home";
-            
+
             // Add some test entries to cache
-            var testFile = new FileMetadata 
-            { 
-                Path = "/home/test.txt", 
-                Name = "test.txt", 
-                IsDirectory = false 
+            var testFile = new FileMetadata {
+                Path = "/home/test.txt",
+                Name = "test.txt",
+                IsDirectory = false
             };
             context.CacheFileMetadata(testFile);
 
@@ -104,8 +95,7 @@ namespace Belay.Tests.Unit.Sessions
         [TestCase(null)]
         [TestCase("")]
         [TestCase("   ")]
-        public async Task RefreshDirectoryAsync_WithInvalidPath_ThrowsArgumentException(string? invalidPath)
-        {
+        public async Task RefreshDirectoryAsync_WithInvalidPath_ThrowsArgumentException(string? invalidPath) {
             // Arrange
             var context = new FileSystemContext("test-session");
 
@@ -116,16 +106,14 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public async Task InvalidateCacheAsync_WithValidPath_RemovesCachedEntry()
-        {
+        public async Task InvalidateCacheAsync_WithValidPath_RemovesCachedEntry() {
             // Arrange
             var context = new FileSystemContext("test-session");
             var filePath = "/home/test.txt";
-            var testFile = new FileMetadata 
-            { 
-                Path = filePath, 
-                Name = "test.txt", 
-                IsDirectory = false 
+            var testFile = new FileMetadata {
+                Path = filePath,
+                Name = "test.txt",
+                IsDirectory = false
             };
             context.CacheFileMetadata(testFile);
 
@@ -137,8 +125,7 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public async Task InvalidateCacheAsync_WithNullPath_DoesNotThrow()
-        {
+        public async Task InvalidateCacheAsync_WithNullPath_DoesNotThrow() {
             // Arrange
             var context = new FileSystemContext("test-session");
 
@@ -148,15 +135,13 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public async Task GetFileMetadataAsync_WithCachedFile_ReturnsCachedData()
-        {
+        public async Task GetFileMetadataAsync_WithCachedFile_ReturnsCachedData() {
             // Arrange
             var context = new FileSystemContext("test-session");
             var filePath = "/home/test.txt";
-            var expectedMetadata = new FileMetadata 
-            { 
-                Path = filePath, 
-                Name = "test.txt", 
+            var expectedMetadata = new FileMetadata {
+                Path = filePath,
+                Name = "test.txt",
                 IsDirectory = false,
                 Size = 1024
             };
@@ -171,8 +156,7 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public async Task GetFileMetadataAsync_WithUncachedFile_ReturnsNull()
-        {
+        public async Task GetFileMetadataAsync_WithUncachedFile_ReturnsNull() {
             // Arrange
             var context = new FileSystemContext("test-session");
 
@@ -184,16 +168,14 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public async Task ListDirectoryAsync_WithCachedEntries_ReturnsCachedData()
-        {
+        public async Task ListDirectoryAsync_WithCachedEntries_ReturnsCachedData() {
             // Arrange
             var context = new FileSystemContext("test-session");
             var directoryPath = "/home";
-            var testFile = new FileMetadata 
-            { 
-                Path = "/home/test.txt", 
-                Name = "test.txt", 
-                IsDirectory = false 
+            var testFile = new FileMetadata {
+                Path = "/home/test.txt",
+                Name = "test.txt",
+                IsDirectory = false
             };
             context.CacheFileMetadata(testFile);
 
@@ -206,8 +188,7 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public async Task ListDirectoryAsync_WithoutCache_ReturnsEmptyList()
-        {
+        public async Task ListDirectoryAsync_WithoutCache_ReturnsEmptyList() {
             // Arrange
             var context = new FileSystemContext("test-session");
 
@@ -219,15 +200,13 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public void ClearCache_RemovesAllCachedEntries()
-        {
+        public void ClearCache_RemovesAllCachedEntries() {
             // Arrange
             var context = new FileSystemContext("test-session");
-            var testFile = new FileMetadata 
-            { 
-                Path = "/home/test.txt", 
-                Name = "test.txt", 
-                IsDirectory = false 
+            var testFile = new FileMetadata {
+                Path = "/home/test.txt",
+                Name = "test.txt",
+                IsDirectory = false
             };
             context.CacheFileMetadata(testFile);
 
@@ -239,8 +218,7 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public void FileMetadata_WithValidData_InitializesCorrectly()
-        {
+        public void FileMetadata_WithValidData_InitializesCorrectly() {
             // Arrange
             var path = "/home/test.txt";
             var name = "test.txt";
@@ -248,8 +226,7 @@ namespace Belay.Tests.Unit.Sessions
             var lastModified = DateTime.UtcNow;
 
             // Act
-            var metadata = new FileMetadata
-            {
+            var metadata = new FileMetadata {
                 Path = path,
                 Name = name,
                 IsDirectory = false,
@@ -270,8 +247,7 @@ namespace Belay.Tests.Unit.Sessions
         [TestCase(FileSystemCapabilities.DirectoryOperations)]
         [TestCase(FileSystemCapabilities.FileMetadata)]
         [TestCase(FileSystemCapabilities.BasicFileOperations | FileSystemCapabilities.DirectoryOperations)]
-        public void FileSystemCapabilities_EnumValues_WorkCorrectly(FileSystemCapabilities capabilities)
-        {
+        public void FileSystemCapabilities_EnumValues_WorkCorrectly(FileSystemCapabilities capabilities) {
             // Arrange & Act
             var context = new FileSystemContext("test-session", capabilities);
 

@@ -123,19 +123,19 @@ namespace Belay.Core.Caching {
 
             return Task.Run(
                 async () => {
-                try {
-                    while (!this.cleanupCancellationSource.Token.IsCancellationRequested) {
-                        await Task.Delay(this.configuration.CleanupInterval, this.cleanupCancellationSource.Token);
-                        this.CleanExpiredEntries();
+                    try {
+                        while (!this.cleanupCancellationSource.Token.IsCancellationRequested) {
+                            await Task.Delay(this.configuration.CleanupInterval, this.cleanupCancellationSource.Token);
+                            this.CleanExpiredEntries();
+                        }
                     }
-                }
-                catch (OperationCanceledException) {
-                    // Expected when disposal is requested
-                }
-                catch (Exception ex) {
-                    this.logger.LogError(ex, "Error in cache cleanup task");
-                }
-            }, this.cleanupCancellationSource.Token);
+                    catch (OperationCanceledException) {
+                        // Expected when disposal is requested
+                    }
+                    catch (Exception ex) {
+                        this.logger.LogError(ex, "Error in cache cleanup task");
+                    }
+                }, this.cleanupCancellationSource.Token);
         }
 
         private void CleanExpiredEntries() {

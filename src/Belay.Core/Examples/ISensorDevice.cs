@@ -3,15 +3,14 @@
 
 namespace Belay.Core.Examples;
 
-using Belay.Attributes;
 using System.Threading.Tasks;
+using Belay.Attributes;
 
 /// <summary>
 /// Example interface demonstrating method interception with the [Task] attribute.
 /// This interface shows the recommended pattern for using Belay.NET's attribute-based programming model.
 /// </summary>
-public interface ISensorDevice
-{
+public interface ISensorDevice {
     /// <summary>
     /// Reads the temperature from the device sensor.
     /// Demonstrates basic [Task] attribute usage.

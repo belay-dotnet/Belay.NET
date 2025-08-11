@@ -88,16 +88,16 @@ namespace Belay.Core.Execution {
         /// <param name="parameters">The parameters passed to the method.</param>
         /// <param name="methodName">Override for the method name if needed.</param>
         public MethodExecutionContext(MethodInfo? method, object? instance = null, object?[]? parameters = null, string? methodName = null) {
-            Method = method;
-            Instance = instance;
-            Parameters = parameters;
-            MethodName = methodName ?? method?.Name;
+            this.Method = method;
+            this.Instance = instance;
+            this.Parameters = parameters;
+            this.MethodName = methodName ?? method?.Name;
 
             // Extract attributes for fast access
-            TaskAttribute = method?.GetAttribute<TaskAttribute>();
-            SetupAttribute = method?.GetAttribute<SetupAttribute>();
-            ThreadAttribute = method?.GetAttribute<ThreadAttribute>();
-            TeardownAttribute = method?.GetAttribute<TeardownAttribute>();
+            this.TaskAttribute = method?.GetAttribute<TaskAttribute>();
+            this.SetupAttribute = method?.GetAttribute<SetupAttribute>();
+            this.ThreadAttribute = method?.GetAttribute<ThreadAttribute>();
+            this.TeardownAttribute = method?.GetAttribute<TeardownAttribute>();
         }
 
         /// <summary>
@@ -126,19 +126,34 @@ namespace Belay.Core.Execution {
     /// Specialized context for Task attribute methods.
     /// </summary>
     internal sealed class TaskMethodExecutionContext : IMethodExecutionContext {
+        /// <inheritdoc/>
         public MethodInfo? Method => null;
+
+        /// <inheritdoc/>
         public string? MethodName { get; }
+
+        /// <inheritdoc/>
         public TaskAttribute? TaskAttribute { get; }
+
+        /// <inheritdoc/>
         public SetupAttribute? SetupAttribute => null;
+
+        /// <inheritdoc/>
         public ThreadAttribute? ThreadAttribute => null;
+
+        /// <inheritdoc/>
         public TeardownAttribute? TeardownAttribute => null;
+
+        /// <inheritdoc/>
         public object?[]? Parameters { get; }
+
+        /// <inheritdoc/>
         public object? Instance => null;
 
         internal TaskMethodExecutionContext(string methodName, TaskAttribute taskAttribute, object?[]? parameters) {
-            MethodName = methodName;
-            TaskAttribute = taskAttribute;
-            Parameters = parameters;
+            this.MethodName = methodName;
+            this.TaskAttribute = taskAttribute;
+            this.Parameters = parameters;
         }
     }
 }

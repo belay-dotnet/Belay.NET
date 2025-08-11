@@ -89,8 +89,7 @@ internal class GlobalExceptionHandler : IGlobalExceptionHandler {
                 belayEx.ErrorCode,
                 belayEx.ComponentName);
         }
-        else
-        {
+        else {
             this.logger.Log(
                 this.configuration.ExceptionLogLevel,
                 exception,

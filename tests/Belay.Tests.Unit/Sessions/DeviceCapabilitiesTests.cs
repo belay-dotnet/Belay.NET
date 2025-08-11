@@ -8,110 +8,100 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 
-namespace Belay.Tests.Unit.Sessions
-{
+namespace Belay.Tests.Unit.Sessions {
     /// <summary>
     /// Tests for the DeviceCapabilities class.
     /// </summary>
-    public class DeviceCapabilitiesTests
-    {
+    public class DeviceCapabilitiesTests {
         private readonly Mock<IDeviceCommunication> mockCommunication;
         private readonly Mock<ILogger<DeviceCapabilities>> mockLogger;
         private readonly DeviceCapabilities deviceCapabilities;
 
-        public DeviceCapabilitiesTests()
-        {
-            this.mockCommunication = new Mock<IDeviceCommunication>();
-            this.mockLogger = new Mock<ILogger<DeviceCapabilities>>();
-            this.deviceCapabilities = new DeviceCapabilities(this.mockCommunication.Object, this.mockLogger.Object);
+        public DeviceCapabilitiesTests() {
+            mockCommunication = new Mock<IDeviceCommunication>();
+            mockLogger = new Mock<ILogger<DeviceCapabilities>>();
+            deviceCapabilities = new DeviceCapabilities(mockCommunication.Object, mockLogger.Object);
 
-            this.mockCommunication.Setup(c => c.State)
+            mockCommunication.Setup(c => c.State)
                 .Returns(DeviceConnectionState.Connected);
         }
 
         [Test]
-        public void Constructor_WithValidParameters_InitializesCorrectly()
-        {
+        public void Constructor_WithValidParameters_InitializesCorrectly() {
             // Act & Assert
-            this.deviceCapabilities.FirmwareVersion.Should().BeNull();
-            this.deviceCapabilities.DeviceType.Should().BeNull();
-            this.deviceCapabilities.SupportedFeatures.Should().Be(DeviceFeatureSet.None);
-            this.deviceCapabilities.IsDetectionComplete.Should().BeFalse();
+            deviceCapabilities.FirmwareVersion.Should().BeNull();
+            deviceCapabilities.DeviceType.Should().BeNull();
+            deviceCapabilities.SupportedFeatures.Should().Be(DeviceFeatureSet.None);
+            deviceCapabilities.IsDetectionComplete.Should().BeFalse();
         }
 
         [Test]
-        public void Constructor_WithNullCommunication_ThrowsArgumentNullException()
-        {
+        public void Constructor_WithNullCommunication_ThrowsArgumentNullException() {
             // Act & Assert
-            var act = () => new DeviceCapabilities(null!, this.mockLogger.Object);
+            var act = () => new DeviceCapabilities(null!, mockLogger.Object);
             act.Should().Throw<ArgumentNullException>()
                 .Which.ParamName.Should().Be("communication");
         }
 
         [Test]
-        public void Constructor_WithNullLogger_ThrowsArgumentNullException()
-        {
+        public void Constructor_WithNullLogger_ThrowsArgumentNullException() {
             // Act & Assert
-            var act = () => new DeviceCapabilities(this.mockCommunication.Object, null!);
+            var act = () => new DeviceCapabilities(mockCommunication.Object, null!);
             act.Should().Throw<ArgumentNullException>()
                 .Which.ParamName.Should().Be("logger");
         }
 
         [Test]
-        public async Task RefreshCapabilitiesAsync_WhenDisconnected_ThrowsDeviceConnectionException()
-        {
+        public async Task RefreshCapabilitiesAsync_WhenDisconnected_ThrowsDeviceConnectionException() {
             // Arrange
-            this.mockCommunication.Setup(c => c.State)
+            mockCommunication.Setup(c => c.State)
                 .Returns(DeviceConnectionState.Disconnected);
 
             // Act & Assert
-            var act = async () => await this.deviceCapabilities.RefreshCapabilitiesAsync();
+            var act = async () => await deviceCapabilities.RefreshCapabilitiesAsync();
             await act.Should().ThrowAsync<Belay.Core.Exceptions.DeviceConnectionException>();
         }
 
         [Test]
-        public async Task RefreshCapabilitiesAsync_WithValidDevice_DetectsBasicInfo()
-        {
+        public async Task RefreshCapabilitiesAsync_WithValidDevice_DetectsBasicInfo() {
             // Arrange
-            this.mockCommunication.Setup(c => c.ExecuteAsync<string>("import sys; sys.version", It.IsAny<CancellationToken>()))
+            mockCommunication.Setup(c => c.ExecuteAsync<string>("import sys; sys.version", It.IsAny<CancellationToken>()))
                 .ReturnsAsync("MicroPython v1.19.1 on 2023-05-18; ESP32 module with ESP32");
-            this.mockCommunication.Setup(c => c.ExecuteAsync<string>("sys.platform", It.IsAny<CancellationToken>()))
+            mockCommunication.Setup(c => c.ExecuteAsync<string>("sys.platform", It.IsAny<CancellationToken>()))
                 .ReturnsAsync("esp32");
-            this.mockCommunication.Setup(c => c.ExecuteAsync<object[]>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mockCommunication.Setup(c => c.ExecuteAsync<object[]>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new object[] { 100000, 50000, 150000 }); // free, alloc, total memory
 
             // Act
-            await this.deviceCapabilities.RefreshCapabilitiesAsync();
+            await deviceCapabilities.RefreshCapabilitiesAsync();
 
             // Assert
-            this.deviceCapabilities.FirmwareVersion.Should().NotBeNull();
-            this.deviceCapabilities.DeviceType.Should().Be("esp32");
-            this.deviceCapabilities.IsDetectionComplete.Should().BeTrue();
+            deviceCapabilities.FirmwareVersion.Should().NotBeNull();
+            deviceCapabilities.DeviceType.Should().Be("esp32");
+            deviceCapabilities.IsDetectionComplete.Should().BeTrue();
         }
 
         [Test]
-        public void SupportsFeature_WithSupportedFeature_ReturnsTrue()
-        {
+        public void SupportsFeature_WithSupportedFeature_ReturnsTrue() {
             // Arrange - use reflection to set supported features for testing
-            var featuresField = typeof(DeviceCapabilities).GetField("supportedFeatures", 
+            var featuresField = typeof(DeviceCapabilities).GetField("supportedFeatures",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            featuresField?.SetValue(this.deviceCapabilities, DeviceFeatureSet.GPIO | DeviceFeatureSet.I2C);
+            featuresField?.SetValue(deviceCapabilities, DeviceFeatureSet.GPIO | DeviceFeatureSet.I2C);
 
             // Act & Assert
-            this.deviceCapabilities.SupportsFeature(DeviceFeature.GPIO).Should().BeTrue();
-            this.deviceCapabilities.SupportsFeature(DeviceFeature.I2C).Should().BeTrue();
-            this.deviceCapabilities.SupportsFeature(DeviceFeature.SPI).Should().BeFalse();
+            deviceCapabilities.SupportsFeature(DeviceFeature.GPIO).Should().BeTrue();
+            deviceCapabilities.SupportsFeature(DeviceFeature.I2C).Should().BeTrue();
+            deviceCapabilities.SupportsFeature(DeviceFeature.SPI).Should().BeFalse();
         }
 
         [Test]
-        public async Task GetMemoryInfoAsync_WithValidResponse_ReturnsMemoryInfo()
-        {
+        public async Task GetMemoryInfoAsync_WithValidResponse_ReturnsMemoryInfo() {
             // Arrange
-            this.mockCommunication.Setup(c => c.ExecuteAsync<object[]>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mockCommunication.Setup(c => c.ExecuteAsync<object[]>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new object[] { 100000, 50000, 150000 });
 
             // Act
-            var memoryInfo = await this.deviceCapabilities.GetMemoryInfoAsync();
+            var memoryInfo = await deviceCapabilities.GetMemoryInfoAsync();
 
             // Assert
             memoryInfo.FreeBytes.Should().Be(100000);
@@ -120,14 +110,13 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public async Task GetMemoryInfoAsync_WithInvalidResponse_ReturnsDefaultMemoryInfo()
-        {
+        public async Task GetMemoryInfoAsync_WithInvalidResponse_ReturnsDefaultMemoryInfo() {
             // Arrange
-            this.mockCommunication.Setup(c => c.ExecuteAsync<object[]>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mockCommunication.Setup(c => c.ExecuteAsync<object[]>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new object[] { 100 }); // Invalid response format
 
             // Act
-            var memoryInfo = await this.deviceCapabilities.GetMemoryInfoAsync();
+            var memoryInfo = await deviceCapabilities.GetMemoryInfoAsync();
 
             // Assert
             memoryInfo.FreeBytes.Should().Be(0);
@@ -136,39 +125,37 @@ namespace Belay.Tests.Unit.Sessions
         }
 
         [Test]
-        public async Task RefreshCapabilitiesAsync_DetectsPerformanceProfile()
-        {
+        public async Task RefreshCapabilitiesAsync_DetectsPerformanceProfile() {
             // Arrange
-            this.mockCommunication.Setup(c => c.ExecuteAsync<string>("import sys; sys.version", It.IsAny<CancellationToken>()))
+            mockCommunication.Setup(c => c.ExecuteAsync<string>("import sys; sys.version", It.IsAny<CancellationToken>()))
                 .ReturnsAsync("MicroPython v1.19.1");
-            this.mockCommunication.Setup(c => c.ExecuteAsync<string>("sys.platform", It.IsAny<CancellationToken>()))
+            mockCommunication.Setup(c => c.ExecuteAsync<string>("sys.platform", It.IsAny<CancellationToken>()))
                 .ReturnsAsync("esp32");
-            this.mockCommunication.Setup(c => c.ExecuteAsync<object[]>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mockCommunication.Setup(c => c.ExecuteAsync<object[]>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new object[] { 100000, 50000, 150000 });
-            this.mockCommunication.Setup(c => c.ExecuteAsync<int>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mockCommunication.Setup(c => c.ExecuteAsync<int>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(5000); // benchmark time in microseconds
 
             // Act
-            await this.deviceCapabilities.RefreshCapabilitiesAsync();
+            await deviceCapabilities.RefreshCapabilitiesAsync();
 
             // Assert
-            this.deviceCapabilities.PerformanceProfile.Should().NotBeNull();
-            this.deviceCapabilities.PerformanceProfile.PerformanceTier.Should().NotBe(DevicePerformanceTier.Unknown);
-            this.deviceCapabilities.PerformanceProfile.AvailableRamBytes.Should().BeGreaterThan(0);
+            deviceCapabilities.PerformanceProfile.Should().NotBeNull();
+            deviceCapabilities.PerformanceProfile.PerformanceTier.Should().NotBe(DevicePerformanceTier.Unknown);
+            deviceCapabilities.PerformanceProfile.AvailableRamBytes.Should().BeGreaterThan(0);
         }
 
         [TestCase(DeviceFeature.GPIO, DeviceFeatureSet.GPIO)]
         [TestCase(DeviceFeature.I2C, DeviceFeatureSet.I2C)]
         [TestCase(DeviceFeature.WiFi, DeviceFeatureSet.WiFi)]
-        public void SupportsFeature_MapsCorrectly(DeviceFeature feature, DeviceFeatureSet expectedFlag)
-        {
+        public void SupportsFeature_MapsCorrectly(DeviceFeature feature, DeviceFeatureSet expectedFlag) {
             // Arrange - use reflection to set specific feature flag
-            var featuresField = typeof(DeviceCapabilities).GetField("supportedFeatures", 
+            var featuresField = typeof(DeviceCapabilities).GetField("supportedFeatures",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            featuresField?.SetValue(this.deviceCapabilities, expectedFlag);
+            featuresField?.SetValue(deviceCapabilities, expectedFlag);
 
             // Act & Assert
-            this.deviceCapabilities.SupportsFeature(feature).Should().BeTrue();
+            deviceCapabilities.SupportsFeature(feature).Should().BeTrue();
         }
     }
 }

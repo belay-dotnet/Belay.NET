@@ -51,7 +51,8 @@ namespace Belay.Core.Execution {
         /// <param name="device">The device to create the proxy for.</param>
         /// <param name="logger">Optional logger for proxy operations.</param>
         /// <returns>A proxy instance that routes method calls to the device.</returns>
-        public static T CreateProxy<T>(this Device device, ILogger? logger = null) where T : class {
+        public static T CreateProxy<T>(this Device device, ILogger? logger = null)
+            where T : class {
             if (device == null) {
                 throw new ArgumentNullException(nameof(device));
             }
@@ -69,10 +70,12 @@ namespace Belay.Core.Execution {
         /// <param name="executor">The enhanced executor to use for method execution.</param>
         /// <param name="logger">Optional logger for proxy operations.</param>
         /// <returns>A proxy instance that routes method calls through the executor.</returns>
-        public static T CreateProxyWithExecutor<T>(this Device device, IEnhancedExecutor executor, ILogger? logger = null) where T : class {
+        public static T CreateProxyWithExecutor<T>(this Device device, IEnhancedExecutor executor, ILogger? logger = null)
+            where T : class {
             if (device == null) {
                 throw new ArgumentNullException(nameof(device));
             }
+
             if (executor == null) {
                 throw new ArgumentNullException(nameof(executor));
             }
@@ -152,7 +155,8 @@ namespace Belay.Core.Execution {
         /// </summary>
         /// <typeparam name="T">The interface type to proxy.</typeparam>
         /// <returns>A proxy instance that routes method calls to the device.</returns>
-        T CreateProxy<T>() where T : class;
+        T CreateProxy<T>()
+            where T : class;
 
         /// <summary>
         /// Gets enhanced execution statistics.
@@ -191,7 +195,8 @@ namespace Belay.Core.Execution {
         public IEnhancedExecutor EnhancedExecutor => this.enhancedExecutor;
 
         /// <inheritdoc />
-        public T CreateProxy<T>() where T : class {
+        public T CreateProxy<T>()
+            where T : class {
             this.ThrowIfDisposed();
             return this.device.CreateProxy<T>(this.logger);
         }
