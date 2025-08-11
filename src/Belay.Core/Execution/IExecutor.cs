@@ -11,6 +11,86 @@ namespace Belay.Core.Execution {
     /// Interface for method executors that handle attribute-based method execution.
     /// Executors intercept method calls and apply attribute-specific policies.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The executor framework provides attribute-driven method execution with
+    /// automatic policy enforcement. Each attribute type (Task, Setup, Teardown, Thread)
+    /// has a corresponding executor that handles the specific execution semantics.
+    /// </para>
+    /// </remarks>
+    /// <example>
+    /// <para><strong>Basic Executor Implementation</strong></para>
+    /// <code>
+    /// public class CustomTaskExecutor : IExecutor
+    /// {
+    ///     public bool CanHandle(MethodInfo method)
+    ///     {
+    ///         return method.HasAttribute&lt;TaskAttribute&gt;();
+    ///     }
+    /// 
+    ///     public async Task&lt;T&gt; ExecuteAsync&lt;T&gt;(MethodInfo method, object? instance, 
+    ///         object?[]? parameters = null, CancellationToken cancellationToken = default)
+    ///     {
+    ///         var taskAttr = method.GetAttribute&lt;TaskAttribute&gt;();
+    ///         
+    ///         // Apply task-specific policies
+    ///         if (taskAttr?.Exclusive == true)
+    ///         {
+    ///             // Acquire exclusive device lock
+    ///             await AcquireExclusiveLock(cancellationToken);
+    ///         }
+    /// 
+    ///         try
+    ///         {
+    ///             // Execute the method with timeout
+    ///             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(
+    ///                 cancellationToken);
+    ///             if (taskAttr?.TimeoutMs.HasValue == true)
+    ///             {
+    ///                 timeoutCts.CancelAfter(taskAttr.TimeoutMs.Value);
+    ///             }
+    /// 
+    ///             return await ExecuteMethodAsync&lt;T&gt;(method, instance, parameters, 
+    ///                 timeoutCts.Token);
+    ///         }
+    ///         finally
+    ///         {
+    ///             if (taskAttr?.Exclusive == true)
+    ///             {
+    ///                 ReleaseLock();
+    ///             }
+    ///         }
+    ///     }
+    /// 
+    ///     public async Task ExecuteAsync(MethodInfo method, object? instance, 
+    ///         object?[]? parameters = null, CancellationToken cancellationToken = default)
+    ///     {
+    ///         await ExecuteAsync&lt;object&gt;(method, instance, parameters, cancellationToken);
+    ///     }
+    /// }
+    /// </code>
+    /// <para><strong>Using Executor with Device Methods</strong></para>
+    /// <code>
+    /// public class SensorDevice : Device
+    /// {
+    ///     [Task(Exclusive = true, TimeoutMs = 5000)]
+    ///     public async Task&lt;float&gt; ReadTemperatureAsync()
+    ///     {
+    ///         return await ExecuteAsync&lt;float&gt;(@"
+    ///             import machine
+    ///             sensor = machine.ADC(machine.Pin(26))
+    ///             reading = sensor.read_u16()
+    ///             temperature = (reading * 3.3 / 65535) * 100
+    ///             temperature
+    ///         ");
+    ///     }
+    /// }
+    /// 
+    /// // Executor automatically applies TaskAttribute policies
+    /// var device = new SensorDevice();
+    /// float temp = await device.ReadTemperatureAsync(); // Executed exclusively with 5s timeout
+    /// </code>
+    /// </example>
     public interface IExecutor {
         /// <summary>
         /// Executes a method with attribute-specific policies applied.
@@ -44,6 +124,28 @@ namespace Belay.Core.Execution {
     /// <summary>
     /// Extension methods for MethodInfo to support the executor framework.
     /// </summary>
+    /// <example>
+    /// <para><strong>Method Name Conversion Examples</strong></para>
+    /// <code>
+    /// public class ExampleDevice : Device
+    /// {
+    ///     [Task]
+    ///     public async Task ReadSensorDataAsync() { } // → "read_sensor_data_async"
+    ///     
+    ///     [Task(Name = "custom_sensor")]
+    ///     public async Task ReadTemperatureAsync() { } // → "custom_sensor"
+    ///     
+    ///     [Thread(Name = "monitor_thread")]
+    ///     public async Task StartMonitoringAsync() { } // → "monitor_thread"
+    /// }
+    /// 
+    /// // Usage
+    /// var method = typeof(ExampleDevice).GetMethod("ReadSensorDataAsync");
+    /// string deviceName = method.GetDeviceMethodName(); // "read_sensor_data_async"
+    /// string hash = method.GetSignatureHash(); // "A1B2C3D4"
+    /// bool hasTask = method.HasAttribute&lt;TaskAttribute&gt;(); // true
+    /// </code>
+    /// </example>
     public static class MethodInfoExtensions {
         /// <summary>
         /// Gets the device method name for a method, using custom name if specified in attributes.
