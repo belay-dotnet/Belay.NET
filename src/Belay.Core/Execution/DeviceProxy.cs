@@ -16,7 +16,8 @@ namespace Belay.Core.Execution {
     /// executed on MicroPython devices with proper attribute handling.
     /// </summary>
     /// <typeparam name="T">The interface or base class to proxy.</typeparam>
-    public class DeviceProxy<T> : DispatchProxy where T : class {
+    public class DeviceProxy<T> : DispatchProxy
+        where T : class {
         private IEnhancedExecutor? executor;
         private ILogger? logger;
         private readonly ConcurrentDictionary<MethodInfo, bool> methodCapabilityCache = new();
@@ -100,18 +101,21 @@ namespace Belay.Core.Execution {
                         await this.executor.ExecuteAsync(method, this, args).ConfigureAwait(false);
                         return Task.CompletedTask;
                     }
-                    else
-                    {
+                    else {
                         // Task<T>
                         var genericType = returnType.GetGenericArguments()[0];
-                        
-                        // Use direct generic method call instead of reflection
-                        var executeAsyncMethod = typeof(IExecutor).GetMethod("ExecuteAsync", new[] { typeof(MethodInfo), typeof(object), typeof(object[]), typeof(CancellationToken) });
-                        if (executeAsyncMethod == null) {
-                            throw new InvalidOperationException("Could not find ExecuteAsync method on IExecutor");
+
+                        // Get the generic ExecuteAsync<T> method specifically
+                        var executeAsyncMethods = typeof(IExecutor).GetMethods().Where(m =>
+                            m.Name == "ExecuteAsync" &&
+                            m.IsGenericMethod &&
+                            m.GetParameters().Length == 4).ToArray();
+
+                        if (executeAsyncMethods.Length == 0) {
+                            throw new InvalidOperationException("Could not find generic ExecuteAsync<T> method on IExecutor");
                         }
-                        
-                        var genericExecuteMethod = executeAsyncMethod.MakeGenericMethod(genericType);
+
+                        var genericExecuteMethod = executeAsyncMethods[0].MakeGenericMethod(genericType);
                         var task = (Task)genericExecuteMethod.Invoke(this.executor, new object[] { method, this, args ?? Array.Empty<object>(), CancellationToken.None })!;
                         await task.ConfigureAwait(false);
 
@@ -124,16 +128,15 @@ namespace Belay.Core.Execution {
                         return taskFromResult?.Invoke(null, new[] { result });
                     }
                 }
-                else
-                {
+                else {
                     // Handle sync methods
                     if (returnType == typeof(void)) {
                         await this.executor.ExecuteAsync(method, this, args).ConfigureAwait(false);
                         return null;
                     }
-                    else
-                    {
-                        var executeMethod = typeof(IEnhancedExecutor).GetMethod(nameof(IEnhancedExecutor.ExecuteAsync),
+                    else {
+                        var executeMethod = typeof(IEnhancedExecutor).GetMethod(
+                            nameof(IEnhancedExecutor.ExecuteAsync),
                             new[] { typeof(MethodInfo), typeof(object), typeof(object[]), typeof(CancellationToken) })
                             ?.MakeGenericMethod(returnType);
 
@@ -198,7 +201,8 @@ namespace Belay.Core.Execution {
         /// <param name="device">The device to execute methods on.</param>
         /// <param name="logger">Optional logger for diagnostic information.</param>
         /// <returns>A proxy instance that routes method calls to the device.</returns>
-        public static T CreateProxy<T>(Device device, ILogger? logger = null) where T : class {
+        public static T CreateProxy<T>(Device device, ILogger? logger = null)
+            where T : class {
             if (device == null) {
                 throw new ArgumentNullException(nameof(device));
             }
@@ -225,7 +229,8 @@ namespace Belay.Core.Execution {
         /// <param name="executor">The enhanced executor to use for method execution.</param>
         /// <param name="logger">Optional logger for diagnostic information.</param>
         /// <returns>A proxy instance that routes method calls through the executor.</returns>
-        public static T CreateProxyWithExecutor<T>(IEnhancedExecutor executor, ILogger? logger = null) where T : class {
+        public static T CreateProxyWithExecutor<T>(IEnhancedExecutor executor, ILogger? logger = null)
+            where T : class {
             if (executor == null) {
                 throw new ArgumentNullException(nameof(executor));
             }

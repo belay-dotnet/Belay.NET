@@ -129,9 +129,9 @@ public class SerialDeviceCommunication : IDeviceCommunication {
     /// Disconnect from the device.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public virtual async Task DisconnectAsync(CancellationToken cancellationToken = default) {
+    public virtual Task DisconnectAsync(CancellationToken cancellationToken = default) {
         if (this.State == DeviceConnectionState.Disconnected) {
-            return;
+            return Task.CompletedTask;
         }
 
         this.SetState(DeviceConnectionState.Disconnected, "Disconnecting");
@@ -140,7 +140,6 @@ public class SerialDeviceCommunication : IDeviceCommunication {
             if (this.serialPort.IsOpen) {
                 // Adaptive protocol handles raw mode internally, no need to explicitly exit
                 // Raw mode cleanup is handled by the protocol's disposal
-
                 this.serialPort.Close();
             }
         }
@@ -149,6 +148,7 @@ public class SerialDeviceCommunication : IDeviceCommunication {
         }
 
         this.logger.LogInformation("Disconnected from device on {PortName}", this.serialPort.PortName);
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -229,6 +229,11 @@ public class SerialDeviceCommunication : IDeviceCommunication {
 
             if (Nullable.GetUnderlyingType(typeof(T)) != null) {
                 return default!;
+            }
+
+            // For object type (used by void methods), return null when no result
+            if (typeof(T) == typeof(object)) {
+                return (T)(object?)null!;
             }
 
             throw new InvalidOperationException($"Cannot convert empty result to {typeof(T).Name}");

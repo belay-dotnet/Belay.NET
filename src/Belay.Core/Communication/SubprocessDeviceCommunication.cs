@@ -37,7 +37,29 @@ public class SubprocessDeviceCommunication : IDeviceCommunication {
         string micropythonExecutablePath = "micropython",
         string[]? additionalArgs = null, ILogger<SubprocessDeviceCommunication>? logger = null) {
         if (string.IsNullOrWhiteSpace(micropythonExecutablePath)) {
-            throw new ArgumentException("MicroPython executable path cannot be null or empty", nameof(micropythonExecutablePath));
+            micropythonExecutablePath = "micropython";
+        }
+
+        try {
+            // Validate executable path
+            if (!System.IO.File.Exists(micropythonExecutablePath)) {
+                // First, try resolving using PATH
+                var resolvedPath = System.Environment.GetEnvironmentVariable("PATH")
+                    ?.Split(System.IO.Path.PathSeparator)
+                    .Select(p => System.IO.Path.Combine(p, micropythonExecutablePath))
+                    .FirstOrDefault(System.IO.File.Exists);
+
+                if (resolvedPath != null) {
+                    micropythonExecutablePath = resolvedPath;
+                }
+                else {
+                    logger?.LogWarning($"MicroPython executable not found: {micropythonExecutablePath}");
+                    throw new System.IO.FileNotFoundException($"MicroPython executable not found: {micropythonExecutablePath}");
+                }
+            }
+        }
+        catch (Exception ex) {
+            logger?.LogWarning(ex, $"Error locating MicroPython executable: {ex.Message}");
         }
 
         this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<SubprocessDeviceCommunication>.Instance;
@@ -280,6 +302,11 @@ public class SubprocessDeviceCommunication : IDeviceCommunication {
                 return default!;
             }
 
+            // For object type (used by void methods), return null when no result
+            if (typeof(T) == typeof(object)) {
+                return (T)(object?)null!;
+            }
+
             throw new InvalidOperationException($"Cannot convert empty result to {typeof(T).Name}");
         }
 
@@ -370,11 +397,13 @@ public class SubprocessDeviceCommunication : IDeviceCommunication {
             }
 
             this.logger.LogDebug("Testing subprocess adaptive REPL protocol");
+
             // Test basic execution to verify the adaptive protocol is working
             var testResponse = await this.replProtocol.ExecuteCodeAsync("1+1", useRawPasteMode: true, cancellationToken);
             if (!testResponse.IsSuccess) {
                 throw new InvalidOperationException($"Adaptive REPL protocol test failed: {testResponse.ErrorOutput}");
             }
+
             this.logger.LogDebug("MicroPython subprocess adaptive REPL protocol test successful");
             return;
         }

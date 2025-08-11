@@ -271,7 +271,6 @@ namespace Belay.Core.Execution {
             }
         }
 
-
         /// <summary>
         /// Executes a method with attribute-specific policies applied.
         /// </summary>
@@ -551,6 +550,7 @@ namespace Belay.Core.Execution {
             if (pythonAttr != null) {
                 return this.ProcessPythonTemplate(pythonAttr.Code, method, parameters, pythonAttr.EnableParameterSubstitution);
             }
+
             return null;
         }
 
@@ -584,8 +584,9 @@ namespace Belay.Core.Execution {
                 return processedCode;
             }
             catch (Exception ex) {
-                this.Logger.LogWarning(ex, 
-                    "Failed to process Python template for method {MethodName}, using original template", 
+                this.Logger.LogWarning(
+                    ex,
+                    "Failed to process Python template for method {MethodName}, using original template",
                     method.Name);
                 return pythonTemplate;
             }
@@ -761,8 +762,7 @@ namespace Belay.Core.Execution {
                     "Registered session resource {ResourceId} of type {ResourceType}",
                     resource.ResourceId, resource.ResourceType);
             }
-            else
-            {
+            else {
                 this.Logger.LogWarning(
                     "No current session available to register resource {ResourceId}",
                     resource.ResourceId);

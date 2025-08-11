@@ -32,7 +32,7 @@ namespace Belay.Attributes;
 ///         led.value(1)
 ///     ")]
 ///     Task TurnOnLEDAsync();
-/// 
+///
 ///     [Task]
 ///     [PythonCode(@"
 ///         import machine
@@ -61,23 +61,19 @@ namespace Belay.Attributes;
 /// </code>
 /// </example>
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class PythonCodeAttribute : Attribute
-{
+public sealed class PythonCodeAttribute : Attribute {
     /// <summary>
     /// Initializes a new instance of the <see cref="PythonCodeAttribute"/> class.
     /// </summary>
     /// <param name="code">The Python code to execute on the device.</param>
     /// <exception cref="ArgumentNullException">Thrown when code is null.</exception>
     /// <exception cref="ArgumentException">Thrown when code is empty or whitespace.</exception>
-    public PythonCodeAttribute(string code)
-    {
-        if (code == null)
-        {
+    public PythonCodeAttribute(string code) {
+        if (code == null) {
             throw new ArgumentNullException(nameof(code));
         }
 
-        if (string.IsNullOrWhiteSpace(code))
-        {
+        if (string.IsNullOrWhiteSpace(code)) {
             throw new ArgumentException("Python code cannot be empty or whitespace.", nameof(code));
         }
 
@@ -132,8 +128,7 @@ public sealed class PythonCodeAttribute : Attribute
     /// Returns a string that represents the current <see cref="PythonCodeAttribute"/>.
     /// </summary>
     /// <returns>A string representation of the Python code attribute.</returns>
-    public override string ToString()
-    {
+    public override string ToString() {
         var preview = this.Code.Length > 50 ? this.Code.Substring(0, 47) + "..." : this.Code;
         return $"[PythonCode(\"{preview.Replace("\"", "\\\"")}\""
                + (this.EnableParameterSubstitution ? string.Empty : ", EnableParameterSubstitution=false") + ")]";
