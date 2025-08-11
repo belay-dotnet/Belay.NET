@@ -23,52 +23,99 @@ public enum RawReplState {
 /// <summary>
 /// Represents the response from a Raw REPL command execution.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This class encapsulates all the information returned from executing
+/// code through the MicroPython Raw REPL protocol, including success status,
+/// output streams, and any exceptions that occurred during execution.
+/// </para>
+/// </remarks>
 public class RawReplResponse {
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets or sets a value indicating whether the command execution was successful.
+    /// </summary>
+    /// <value>True if the command executed without errors; otherwise, false.</value>
     public bool IsSuccess { get; set; }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets or sets the standard output from the command execution.
+    /// </summary>
+    /// <value>The stdout content from the MicroPython device, or empty string if no output.</value>
     public string Output { get; set; } = string.Empty;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets or sets the error output from the command execution.
+    /// </summary>
+    /// <value>The stderr content or Python exception details from the device, or empty string if no errors.</value>
     public string ErrorOutput { get; set; } = string.Empty;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets or sets the final result of the code execution.
+    /// </summary>
+    /// <value>The evaluated result of the last expression in the executed code, or empty string if no result.</value>
     public string Result { get; set; } = string.Empty;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets or sets any exception that occurred during protocol communication.
+    /// </summary>
+    /// <value>The .NET exception that occurred during communication, or null if communication was successful.</value>
     public Exception? Exception { get; set; }
 }
 
 /// <summary>
 /// Exception thrown when Raw REPL protocol encounters an error.
 /// </summary>
-/// <inheritdoc/>
 public class RawReplProtocolException(string message, RawReplState expectedState, RawReplState actualState) : Exception(message) {
-    /// <inheritdoc/>
-    public RawReplState ExpectedState { get; }
+    /// <summary>
+    /// Gets the expected Raw REPL protocol state.
+    /// </summary>
+    /// <value>The state the protocol expected to be in when the error occurred.</value>
+    public RawReplState ExpectedState { get; } = expectedState;
 
-    /// <inheritdoc/>
-    public RawReplState ActualState { get; }
+    /// <summary>
+    /// Gets the actual Raw REPL protocol state when the error occurred.
+    /// </summary>
+    /// <value>The actual state the protocol was in when the error occurred.</value>
+    public RawReplState ActualState { get; } = actualState;
 }
 
 /// <summary>
 /// Exception thrown when flow control encounters an error.
 /// </summary>
-/// <inheritdoc/>
 public class FlowControlException(string message, int windowSize, byte receivedByte, RawReplState expectedState = RawReplState.RawPaste, RawReplState actualState = RawReplState.RawPaste)
     : RawReplProtocolException(message, expectedState, actualState) {
-    /// <inheritdoc/>
-    public int WindowSize { get; }
+    /// <summary>
+    /// Gets the window size when the flow control error occurred.
+    /// </summary>
+    /// <value>The number of bytes that can be sent before waiting for flow control acknowledgment.</value>
+    public int WindowSize { get; } = windowSize;
 
-    /// <inheritdoc/>
-    public byte ReceivedByte { get; }
+    /// <summary>
+    /// Gets the unexpected byte received during flow control.
+    /// </summary>
+    /// <value>The byte value that was received instead of the expected flow control byte.</value>
+    public byte ReceivedByte { get; } = receivedByte;
 }
 
 /// <summary>
 /// Implementation of MicroPython Raw REPL protocol with support for both raw mode and raw-paste mode.
 /// </summary>
-/// <inheritdoc/>
+/// <remarks>
+/// <para>
+/// This class handles the low-level Raw REPL protocol communication with MicroPython devices.
+/// It supports both the original raw mode (Ctrl+A) and the newer raw-paste mode with flow control
+/// for reliable transfer of larger code blocks.
+/// </para>
+/// <para>
+/// The protocol handles:
+/// <list type="bullet">
+/// <item><description>Mode switching between normal REPL and raw modes</description></item>
+/// <item><description>Flow control for large data transfers</description></item>
+/// <item><description>Error detection and recovery</description></item>
+/// <item><description>Timeout handling for device communication</description></item>
+/// </list>
+/// </para>
+/// </remarks>
 public class RawReplProtocol : IDisposable {
     private readonly Stream stream;
     private readonly ILogger<RawReplProtocol> logger;
@@ -519,7 +566,9 @@ public class RawReplProtocol : IDisposable {
         return response;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose() {
         if (this.disposed) {
             return;
