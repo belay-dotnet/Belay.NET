@@ -247,20 +247,20 @@ public sealed class SetupAttribute : Attribute {
     /// }
     /// </code>
     /// </example>
-    public int? TimeoutMs {
+    public int TimeoutMs {
         get => this.timeoutMs;
         set {
-            if (value.HasValue && value.Value <= 0) {
+            if (value != -1 && value <= 0) {
                 throw new ArgumentOutOfRangeException(
                     nameof(value),
-                    "Timeout must be a positive value in milliseconds");
+                    "Timeout must be a positive value in milliseconds, or -1 to use default timeout");
             }
 
             this.timeoutMs = value;
         }
     }
 
-    private int? timeoutMs;
+    private int timeoutMs = -1;
 
     /// <summary>
     /// Returns a string that represents the current <see cref="SetupAttribute"/>.
@@ -277,7 +277,7 @@ public sealed class SetupAttribute : Attribute {
             parts.Add("Critical=false");
         }
 
-        if (this.TimeoutMs.HasValue) {
+        if (this.TimeoutMs != -1) {
             parts.Add($"TimeoutMs={this.TimeoutMs}");
         }
 

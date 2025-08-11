@@ -165,14 +165,14 @@ public sealed class TaskAttribute : Attribute {
 
     /// <summary>
     /// Gets or sets the timeout for method execution in milliseconds.
-    /// If not specified, uses the default timeout configured for the device.
+    /// If not specified (or set to -1), uses the default timeout configured for the device.
     /// </summary>
     /// <value>
-    /// The timeout in milliseconds, or <c>null</c> to use the default timeout.
+    /// The timeout in milliseconds, or -1 to use the default timeout.
     /// Must be a positive value if specified.
     /// </value>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when setting a timeout value that is less than or equal to zero.
+    /// Thrown when setting a timeout value that is less than or equal to zero (except -1).
     /// </exception>
     /// <remarks>
     /// <para>
@@ -202,20 +202,20 @@ public sealed class TaskAttribute : Attribute {
     /// }
     /// </code>
     /// </example>
-    public int? TimeoutMs {
+    public int TimeoutMs {
         get => this.timeoutMs;
         set {
-            if (value.HasValue && value.Value <= 0) {
+            if (value != -1 && value <= 0) {
                 throw new ArgumentOutOfRangeException(
                     nameof(value),
-                    "Timeout must be a positive value in milliseconds");
+                    "Timeout must be a positive value in milliseconds, or -1 to use default timeout");
             }
 
             this.timeoutMs = value;
         }
     }
 
-    private int? timeoutMs;
+    private int timeoutMs = -1;
 
     /// <summary>
     /// Gets or sets a value indicating whether gets or sets whether this task method requires exclusive access to the device.
@@ -275,7 +275,7 @@ public sealed class TaskAttribute : Attribute {
             parts.Add("Cache=false");
         }
 
-        if (this.TimeoutMs.HasValue) {
+        if (this.TimeoutMs != -1) {
             parts.Add($"TimeoutMs={this.TimeoutMs}");
         }
 

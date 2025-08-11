@@ -115,8 +115,8 @@ namespace Belay.Core.Execution {
 
             // Apply teardown timeout if specified (typically shorter than setup/task timeouts)
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            if (teardownAttribute.TimeoutMs.HasValue) {
-                timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(teardownAttribute.TimeoutMs.Value));
+            if (teardownAttribute.TimeoutMs != -1) {
+                timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(teardownAttribute.TimeoutMs));
             }
             else
             {

@@ -207,8 +207,8 @@ namespace Belay.Core.Execution {
             context.ContextData["TaskAttribute"] = taskAttribute;
 
             // Apply timeout if specified
-            if (taskAttribute.TimeoutMs.HasValue) {
-                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(taskAttribute.TimeoutMs.Value));
+            if (taskAttribute.TimeoutMs != -1) {
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(taskAttribute.TimeoutMs));
                 var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken, timeoutCts.Token);
                 context.CancellationToken = combinedCts.Token;
                 context.ContextData["TimeoutCts"] = combinedCts;

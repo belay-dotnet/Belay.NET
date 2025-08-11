@@ -117,7 +117,7 @@ namespace Belay.Core.Execution {
                         return result;
                     }
                 }
-                catch (OperationCanceledException) when (taskAttribute.TimeoutMs.HasValue) {
+                catch (OperationCanceledException) when (taskAttribute.TimeoutMs != -1) {
                     this.Logger.LogWarning("[Task] method {MethodName} timed out after {TimeoutMs}ms", methodName, taskAttribute.TimeoutMs);
                     throw new TimeoutException($"Task method {methodName} timed out after {taskAttribute.TimeoutMs}ms");
                 }

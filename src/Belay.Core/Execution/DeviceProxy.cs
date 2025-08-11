@@ -104,15 +104,15 @@ namespace Belay.Core.Execution {
                     {
                         // Task<T>
                         var genericType = returnType.GetGenericArguments()[0];
-                        var executeMethod = typeof(IEnhancedExecutor).GetMethod(nameof(IEnhancedExecutor.ExecuteAsync),
-                            new[] { typeof(MethodInfo), typeof(object), typeof(object[]), typeof(CancellationToken) })
-                            ?.MakeGenericMethod(genericType);
-
-                        if (executeMethod == null) {
-                            throw new InvalidOperationException($"Could not create generic execute method for type {genericType.Name}");
+                        
+                        // Use direct generic method call instead of reflection
+                        var executeAsyncMethod = typeof(IExecutor).GetMethod("ExecuteAsync", new[] { typeof(MethodInfo), typeof(object), typeof(object[]), typeof(CancellationToken) });
+                        if (executeAsyncMethod == null) {
+                            throw new InvalidOperationException("Could not find ExecuteAsync method on IExecutor");
                         }
-
-                        var task = (Task)executeMethod.Invoke(this.executor, new object[] { method, this, args ?? Array.Empty<object>(), CancellationToken.None })!;
+                        
+                        var genericExecuteMethod = executeAsyncMethod.MakeGenericMethod(genericType);
+                        var task = (Task)genericExecuteMethod.Invoke(this.executor, new object[] { method, this, args ?? Array.Empty<object>(), CancellationToken.None })!;
                         await task.ConfigureAwait(false);
 
                         // Get result from completed task

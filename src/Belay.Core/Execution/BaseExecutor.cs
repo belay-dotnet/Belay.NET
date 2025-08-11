@@ -547,12 +547,48 @@ namespace Belay.Core.Execution {
         /// <param name="parameters">Method parameters for code templating.</param>
         /// <returns>Python code string or null if not found.</returns>
         protected virtual string? GetEmbeddedPythonCode(MethodInfo method, object?[]? parameters) {
-            // Future enhancement: Check for PythonCodeAttribute with embedded code
-            // var pythonAttr = method.GetCustomAttribute<PythonCodeAttribute>();
-            // if (pythonAttr != null) {
-            //     return ProcessPythonTemplate(pythonAttr.Code, parameters);
-            // }
+            var pythonAttr = method.GetCustomAttribute<Belay.Attributes.PythonCodeAttribute>();
+            if (pythonAttr != null) {
+                return this.ProcessPythonTemplate(pythonAttr.Code, method, parameters, pythonAttr.EnableParameterSubstitution);
+            }
             return null;
+        }
+
+        /// <summary>
+        /// Processes Python code template by substituting parameter values.
+        /// </summary>
+        /// <param name="pythonTemplate">The Python code template with parameter placeholders.</param>
+        /// <param name="method">The method being executed.</param>
+        /// <param name="parameters">The parameter values to substitute.</param>
+        /// <param name="enableSubstitution">Whether to perform parameter substitution.</param>
+        /// <returns>Python code with parameters substituted.</returns>
+        protected virtual string ProcessPythonTemplate(string pythonTemplate, MethodInfo method, object?[]? parameters, bool enableSubstitution) {
+            if (!enableSubstitution || parameters == null || parameters.Length == 0) {
+                return pythonTemplate;
+            }
+
+            try {
+                var methodParams = method.GetParameters();
+                var processedCode = pythonTemplate;
+
+                for (int i = 0; i < methodParams.Length && i < parameters.Length; i++) {
+                    var paramName = methodParams[i].Name;
+                    var paramValue = parameters[i];
+                    var pythonValue = this.ConvertToPythonValue(paramValue);
+
+                    // Replace parameter placeholder with Python value
+                    var placeholder = $"{{{paramName}}}";
+                    processedCode = processedCode.Replace(placeholder, pythonValue);
+                }
+
+                return processedCode;
+            }
+            catch (Exception ex) {
+                this.Logger.LogWarning(ex, 
+                    "Failed to process Python template for method {MethodName}, using original template", 
+                    method.Name);
+                return pythonTemplate;
+            }
         }
 
         /// <summary>

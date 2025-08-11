@@ -99,8 +99,8 @@ namespace Belay.Core.Execution {
 
             // Apply setup timeout if specified
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            if (setupAttribute.TimeoutMs.HasValue) {
-                timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(setupAttribute.TimeoutMs.Value));
+            if (setupAttribute.TimeoutMs != -1) {
+                timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(setupAttribute.TimeoutMs));
             }
 
             // Ensure setup methods execute in the correct order (serialize setup execution)
