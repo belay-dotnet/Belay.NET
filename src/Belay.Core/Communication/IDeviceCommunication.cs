@@ -100,11 +100,11 @@ public enum DeviceConnectionState {
 /// <para><strong>Basic Usage</strong></para>
 /// <code>
 /// using IDeviceCommunication device = new SerialDeviceCommunication("COM3");
-/// 
+///
 /// // Execute simple code
 /// string result = await device.ExecuteAsync("print('Hello from device!')");
 /// Console.WriteLine($"Device output: {result}");
-/// 
+///
 /// // Execute with typed return
 /// float temperature = await device.ExecuteAsync&lt;float&gt;(@"
 ///     import machine
@@ -113,7 +113,7 @@ public enum DeviceConnectionState {
 ///     temperature = 27 - (reading * 3.3 / 65535 - 0.706) / 0.001721
 ///     temperature
 /// ");
-/// 
+///
 /// // File operations
 /// await device.PutFileAsync("config.json", "/config.json");
 /// byte[] data = await device.GetFileAsync("/sensor_data.csv");
@@ -127,7 +127,7 @@ public enum DeviceConnectionState {
 ///         Console.WriteLine($"Output: {args.Output}");
 ///     }
 /// };
-/// 
+///
 /// device.StateChanged += (sender, args) => {
 ///     Console.WriteLine($"State: {args.OldState} → {args.NewState}");
 ///     if (args.Exception != null) {

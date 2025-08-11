@@ -39,7 +39,7 @@ namespace Belay.Core.Execution {
 
             proxy.executor = executor;
             proxy.logger = logger;
-            
+
             logger?.LogDebug("Created device proxy for type {TypeName}", typeof(T).Name);
             return (T)(object)proxy;
         }
@@ -66,7 +66,7 @@ namespace Belay.Core.Execution {
                 this.logger?.LogWarning(
                     "Method {MethodName} cannot be handled by executor, attempting direct invocation",
                     targetMethod.Name);
-                
+
                 // Attempt to invoke the method directly (this will only work for concrete methods)
                 try {
                     return targetMethod.Invoke(this, args);
@@ -91,7 +91,7 @@ namespace Belay.Core.Execution {
             try {
                 // Determine return type
                 var returnType = method.ReturnType;
-                bool isAsync = returnType == typeof(Task) || 
+                bool isAsync = returnType == typeof(Task) ||
                               (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>));
 
                 if (isAsync) {
@@ -103,7 +103,7 @@ namespace Belay.Core.Execution {
                     else {
                         // Task<T>
                         var genericType = returnType.GetGenericArguments()[0];
-                        var executeMethod = typeof(IEnhancedExecutor).GetMethod(nameof(IEnhancedExecutor.ExecuteAsync), 
+                        var executeMethod = typeof(IEnhancedExecutor).GetMethod(nameof(IEnhancedExecutor.ExecuteAsync),
                             new[] { typeof(MethodInfo), typeof(object), typeof(object[]), typeof(CancellationToken) })
                             ?.MakeGenericMethod(genericType);
 
@@ -117,7 +117,7 @@ namespace Belay.Core.Execution {
                         // Get result from completed task
                         var resultProperty = task.GetType().GetProperty("Result");
                         var result = resultProperty?.GetValue(task);
-                        
+
                         // Wrap result in Task<T>
                         var taskFromResult = typeof(Task).GetMethod(nameof(Task.FromResult))?.MakeGenericMethod(genericType);
                         return taskFromResult?.Invoke(null, new[] { result });
@@ -130,7 +130,7 @@ namespace Belay.Core.Execution {
                         return null;
                     }
                     else {
-                        var executeMethod = typeof(IEnhancedExecutor).GetMethod(nameof(IEnhancedExecutor.ExecuteAsync), 
+                        var executeMethod = typeof(IEnhancedExecutor).GetMethod(nameof(IEnhancedExecutor.ExecuteAsync),
                             new[] { typeof(MethodInfo), typeof(object), typeof(object[]), typeof(CancellationToken) })
                             ?.MakeGenericMethod(returnType);
 
@@ -161,7 +161,7 @@ namespace Belay.Core.Execution {
 
                 // Check if executor can handle this method
                 var canHandle = this.executor.CanHandle(m);
-                
+
                 this.logger?.LogTrace("Method {MethodName} can be handled: {CanHandle}", m.Name, canHandle);
                 return canHandle;
             });
@@ -252,7 +252,7 @@ namespace Belay.Core.Execution {
 
             // Should have methods with supported attributes
             var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance);
-            return methods.Any(m => 
+            return methods.Any(m =>
                 m.GetCustomAttribute<Belay.Attributes.TaskAttribute>() != null ||
                 m.GetCustomAttribute<Belay.Attributes.ThreadAttribute>() != null ||
                 m.GetCustomAttribute<Belay.Attributes.SetupAttribute>() != null ||

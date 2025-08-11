@@ -211,13 +211,13 @@ def makedirs(path):
             os.mkdir(current)
         except OSError:
             pass  # Directory might already exist
-makedirs('{normalizedPath.Replace("'", "\\\'")}') 
+makedirs('{normalizedPath.Replace("'", "\\\'")}')
 print('success')
 "
                 : $@"
 import os
 try:
-    os.mkdir('{normalizedPath.Replace("'", "\\\'")}') 
+    os.mkdir('{normalizedPath.Replace("'", "\\\'")}')
     print('success')
 except OSError as e:
     if e.errno == 17:  # EEXIST
@@ -266,12 +266,12 @@ def rmtree(path):
         print('success')
     except OSError as e:
         print(f'error: {{{{e}}}}')
-rmtree('{normalizedPath.Replace("'", "\\\'")}') 
+rmtree('{normalizedPath.Replace("'", "\\\'")}')
 "
                 : $@"
 import os
 try:
-    os.rmdir('{normalizedPath.Replace("'", "\\\'")}') 
+    os.rmdir('{normalizedPath.Replace("'", "\\\'")}')
     print('success')
 except OSError as e:
     if e.errno == 2:  # ENOENT

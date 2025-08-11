@@ -270,7 +270,7 @@ namespace Belay.Core.Execution {
         public Task<ExecutionContext<T>> ProcessAsync<T>(ExecutionContext<T> context) {
             // TODO: Implement method deployment logic
             // This would check if the method is deployed and deploy it if necessary
-            
+
             context.Logger.LogTrace("Deployment stage completed for method {MethodName}", context.Method.Name);
             return Task.FromResult(context);
         }

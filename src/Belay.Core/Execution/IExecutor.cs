@@ -27,19 +27,19 @@ namespace Belay.Core.Execution {
     ///     {
     ///         return method.HasAttribute&lt;TaskAttribute&gt;();
     ///     }
-    /// 
-    ///     public async Task&lt;T&gt; ExecuteAsync&lt;T&gt;(MethodInfo method, object? instance, 
+    ///
+    ///     public async Task&lt;T&gt; ExecuteAsync&lt;T&gt;(MethodInfo method, object? instance,
     ///         object?[]? parameters = null, CancellationToken cancellationToken = default)
     ///     {
     ///         var taskAttr = method.GetAttribute&lt;TaskAttribute&gt;();
-    ///         
+    ///
     ///         // Apply task-specific policies
     ///         if (taskAttr?.Exclusive == true)
     ///         {
     ///             // Acquire exclusive device lock
     ///             await AcquireExclusiveLock(cancellationToken);
     ///         }
-    /// 
+    ///
     ///         try
     ///         {
     ///             // Execute the method with timeout
@@ -49,8 +49,8 @@ namespace Belay.Core.Execution {
     ///             {
     ///                 timeoutCts.CancelAfter(taskAttr.TimeoutMs.Value);
     ///             }
-    /// 
-    ///             return await ExecuteMethodAsync&lt;T&gt;(method, instance, parameters, 
+    ///
+    ///             return await ExecuteMethodAsync&lt;T&gt;(method, instance, parameters,
     ///                 timeoutCts.Token);
     ///         }
     ///         finally
@@ -61,8 +61,8 @@ namespace Belay.Core.Execution {
     ///             }
     ///         }
     ///     }
-    /// 
-    ///     public async Task ExecuteAsync(MethodInfo method, object? instance, 
+    ///
+    ///     public async Task ExecuteAsync(MethodInfo method, object? instance,
     ///         object?[]? parameters = null, CancellationToken cancellationToken = default)
     ///     {
     ///         await ExecuteAsync&lt;object&gt;(method, instance, parameters, cancellationToken);
@@ -85,7 +85,7 @@ namespace Belay.Core.Execution {
     ///         ");
     ///     }
     /// }
-    /// 
+    ///
     /// // Executor automatically applies TaskAttribute policies
     /// var device = new SensorDevice();
     /// float temp = await device.ReadTemperatureAsync(); // Executed exclusively with 5s timeout
@@ -131,14 +131,14 @@ namespace Belay.Core.Execution {
     /// {
     ///     [Task]
     ///     public async Task ReadSensorDataAsync() { } // → "read_sensor_data_async"
-    ///     
+    ///
     ///     [Task(Name = "custom_sensor")]
     ///     public async Task ReadTemperatureAsync() { } // → "custom_sensor"
-    ///     
+    ///
     ///     [Thread(Name = "monitor_thread")]
     ///     public async Task StartMonitoringAsync() { } // → "monitor_thread"
     /// }
-    /// 
+    ///
     /// // Usage
     /// var method = typeof(ExampleDevice).GetMethod("ReadSensorDataAsync");
     /// string deviceName = method.GetDeviceMethodName(); // "read_sensor_data_async"

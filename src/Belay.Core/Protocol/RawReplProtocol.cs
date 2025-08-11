@@ -536,20 +536,20 @@ public class RawReplProtocol : IDisposable {
         else {
             response.IsSuccess = true;
             response.Output = output;
-            
+
             // Parse Raw REPL response format: "OK<content>\x04\x04>"
             string result = output;
-            
+
             // Remove "OK" prefix if present
             if (result.StartsWith("OK"))
             {
                 result = result.Substring(2);
             }
-            
+
             // Remove trailing control characters and prompt
             // Find the first \x04 character (start of end sequence)
             int firstControlCharIndex = result.IndexOf('\x04');
-            
+
             if (firstControlCharIndex >= 0)
             {
                 result = result.Substring(0, firstControlCharIndex);
@@ -558,7 +558,7 @@ public class RawReplProtocol : IDisposable {
             {
                 result = result.Substring(0, result.Length - 1);
             }
-            
+
             // Trim whitespace and control characters
             response.Result = result.Trim('\r', '\n', ' ', '\t');
         }

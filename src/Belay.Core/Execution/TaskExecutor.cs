@@ -206,7 +206,7 @@ namespace Belay.Core.Execution {
         public (bool IsWriteLockHeld, int CurrentReaderCount, int WaitingReaderCount, int WaitingWriterCount) GetExclusiveExecutionStats() {
             this.ThrowIfDisposed();
             return (
-                this.executionLock.IsWriteLockHeld, 
+                this.executionLock.IsWriteLockHeld,
                 this.executionLock.CurrentReadCount,
                 this.executionLock.WaitingReadCount,
                 this.executionLock.WaitingWriteCount

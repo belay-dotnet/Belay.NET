@@ -218,8 +218,8 @@ public class ReplProtocolMetrics
     /// <summary>
     /// Calculates the success rate as a percentage.
     /// </summary>
-    public double SuccessRate => 
-        SuccessfulOperations + FailedOperations == 0 ? 
-        100.0 : 
+    public double SuccessRate =>
+        SuccessfulOperations + FailedOperations == 0 ?
+        100.0 :
         (double)SuccessfulOperations / (SuccessfulOperations + FailedOperations) * 100.0;
 }

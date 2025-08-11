@@ -55,7 +55,7 @@ namespace Belay.Core.Execution {
             this.deploymentCache = cache ?? new MethodDeploymentCache(new MethodCacheConfiguration(), logger: Microsoft.Extensions.Logging.Abstractions.NullLogger<MethodDeploymentCache>.Instance);
             this.transactionManager = transactionManager ?? new TransactionManager(Microsoft.Extensions.Logging.Abstractions.NullLogger<TransactionManager>.Instance);
             this.pipeline = new ExecutionPipeline(logger);
-            
+
             this.InitializeDefaultSpecializedExecutors();
         }
 
@@ -173,7 +173,7 @@ namespace Belay.Core.Execution {
         /// <returns>Comprehensive execution statistics.</returns>
         public EnhancedExecutionStatistics GetExecutionStatistics() {
             this.ThrowIfDisposed();
-            
+
             return new EnhancedExecutionStatistics {
                 InterceptedMethodCount = this.interceptionCache.Count,
                 DeploymentCacheStatistics = this.deploymentCache.GetStatistics(),
@@ -187,11 +187,11 @@ namespace Belay.Core.Execution {
         /// </summary>
         public void ClearExecutionCache() {
             this.ThrowIfDisposed();
-            
+
             this.interceptionCache.Clear();
             this.deploymentCache.ClearAll();
             this.pipeline.ClearState();
-            
+
             this.Logger.LogDebug("Cleared enhanced executor caches and pipeline state");
         }
 
@@ -199,7 +199,7 @@ namespace Belay.Core.Execution {
             // Execute through the pipeline stages
             foreach (var stage in context.InterceptionContext.Pipeline) {
                 context = await stage.ProcessAsync(context).ConfigureAwait(false);
-                
+
                 // Allow pipeline stages to short-circuit execution
                 if (context.IsCompleted) {
                     return context.Result;

@@ -32,7 +32,7 @@ using Microsoft.Extensions.Logging;
 /// {
 ///     // Simple registration with defaults
 ///     services.AddBelay();
-/// 
+///
 ///     // With custom configuration
 ///     services.AddBelay(options => {
 ///         options.DefaultTimeoutMs = 10000;
@@ -54,7 +54,7 @@ using Microsoft.Extensions.Logging;
 ///     }
 ///   }
 /// }
-/// 
+///
 /// // Program.cs
 /// public void ConfigureServices(IServiceCollection services)
 /// {
@@ -70,7 +70,7 @@ using Microsoft.Extensions.Logging;
 ///         options.DefaultTimeoutMs = 30000;
 ///         options.EnableCaching = true;
 ///     });
-/// 
+///
 ///     // Add health checks for device monitoring
 ///     services.AddBelayHealthChecks(healthOptions => {
 ///         healthOptions.SystemHealthCheckTimeoutSeconds = 10;
@@ -78,34 +78,34 @@ using Microsoft.Extensions.Logging;
 ///         healthOptions.AddDeviceCheck("backup-sensor", "COM4", timeoutSeconds: 5);
 ///         healthOptions.AddDeviceCheck("test-subprocess", "micropython", timeoutSeconds: 15);
 ///     });
-/// 
+///
 ///     // Add custom executors
 ///     services.AddBelayExecutors();
 /// }
-/// 
+///
 /// // Usage in controllers/services
 /// public class SensorController : ControllerBase
 /// {
 ///     private readonly IDeviceFactory deviceFactory;
-/// 
+///
 ///     public SensorController(IDeviceFactory deviceFactory)
 ///     {
 ///         this.deviceFactory = deviceFactory;
 ///     }
-/// 
+///
 ///     [HttpGet("temperature")]
 ///     public async Task&lt;ActionResult&lt;float&gt;&gt; GetTemperature()
 ///     {
 ///         using var device = this.deviceFactory.CreateSerialDevice("COM3");
 ///         await device.ConnectAsync();
-/// 
+///
 ///         float temp = await device.ExecuteAsync&lt;float&gt;(@"
 ///             import machine
 ///             sensor = machine.ADC(machine.Pin(26))
 ///             reading = sensor.read_u16()
 ///             (reading * 3.3 / 65535) * 100
 ///         ");
-/// 
+///
 ///         return Ok(temp);
 ///     }
 /// }
@@ -116,26 +116,26 @@ using Microsoft.Extensions.Logging;
 /// {
 ///     private readonly IServiceScopeFactory scopeFactory;
 ///     private readonly ILogger&lt;DeviceMonitoringService&gt; logger;
-/// 
-///     public DeviceMonitoringService(IServiceScopeFactory scopeFactory, 
+///
+///     public DeviceMonitoringService(IServiceScopeFactory scopeFactory,
 ///         ILogger&lt;DeviceMonitoringService&gt; logger)
 ///     {
 ///         this.scopeFactory = scopeFactory;
 ///         this.logger = logger;
 ///     }
-/// 
+///
 ///     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 ///     {
 ///         while (!stoppingToken.IsCancellationRequested)
 ///         {
 ///             using var scope = this.scopeFactory.CreateScope();
 ///             var deviceFactory = scope.ServiceProvider.GetBelayDeviceFactory();
-/// 
+///
 ///             try
 ///             {
 ///                 using var device = deviceFactory.CreateSerialDevice("COM3");
 ///                 await device.ConnectAsync(stoppingToken);
-/// 
+///
 ///                 var reading = await device.ExecuteAsync&lt;float&gt;("read_sensors()", stoppingToken);
 ///                 this.logger.LogInformation("Sensor reading: {Reading}", reading);
 ///             }
@@ -143,12 +143,12 @@ using Microsoft.Extensions.Logging;
 ///             {
 ///                 this.logger.LogError(ex, "Failed to read sensors");
 ///             }
-/// 
+///
 ///             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
 ///         }
 ///     }
 /// }
-/// 
+///
 /// // Register background service
 /// services.AddHostedService&lt;DeviceMonitoringService&gt;();
 /// </code>

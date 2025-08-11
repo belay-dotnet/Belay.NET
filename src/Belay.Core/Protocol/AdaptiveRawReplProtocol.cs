@@ -49,7 +49,7 @@ public class AdaptiveRawReplProtocol : IDisposable
         this.configuration = configuration ?? new RawReplConfiguration();
         this.metrics = new ReplProtocolMetrics();
         this.protocolSemaphore = new SemaphoreSlim(1, 1);
-        
+
         this.currentState = RawReplState.Normal;
         this.adaptiveResponseTimeout = this.configuration.BaseResponseTimeout;
         this.adaptiveStartupDelay = this.configuration.StartupDelay;
@@ -120,7 +120,7 @@ public class AdaptiveRawReplProtocol : IDisposable
         try
         {
             var stopwatch = Stopwatch.StartNew();
-            
+
             if (configuration.EnableVerboseLogging)
             {
                 logger.LogDebug("Executing code with adaptive protocol: {Code}", code);
@@ -175,7 +175,7 @@ public class AdaptiveRawReplProtocol : IDisposable
         {
             try
             {
-                logger.LogDebug("Startup attempt {Attempt}/{MaxAttempts} with delay {Delay}ms", 
+                logger.LogDebug("Startup attempt {Attempt}/{MaxAttempts} with delay {Delay}ms",
                     attempt, maxAttempts, startupDelay.TotalMilliseconds);
 
                 await Task.Delay(startupDelay, cancellationToken);
@@ -190,24 +190,24 @@ public class AdaptiveRawReplProtocol : IDisposable
 
                 currentState = RawReplState.Normal;
                 logger.LogDebug("Basic REPL initialized successfully on attempt {Attempt}", attempt);
-                
+
                 // Record if extended startup was needed
                 if (attempt > 1 || startupDelay > configuration.StartupDelay)
                 {
                     detectedCapabilities!.RequiresExtendedStartup = true;
                     adaptiveStartupDelay = startupDelay;
                 }
-                
+
                 return;
             }
             catch (Exception ex) when (attempt < maxAttempts)
             {
                 logger.LogWarning("Startup attempt {Attempt} failed: {Error}. Increasing delays.", attempt, ex.Message);
-                
+
                 // Increase delays for next attempt
                 startupDelay = TimeSpan.FromMilliseconds(Math.Min(startupDelay.TotalMilliseconds * 1.5, configuration.MaxStartupDelay.TotalMilliseconds));
                 configuration.InterruptDelay = TimeSpan.FromMilliseconds(Math.Min(configuration.InterruptDelay.TotalMilliseconds * 1.5, 1000));
-                
+
                 detectedCapabilities!.RequiresExtendedStartup = true;
                 detectedCapabilities.RequiresExtendedInterruptDelay = true;
             }
@@ -274,7 +274,7 @@ public class AdaptiveRawReplProtocol : IDisposable
                 timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(1000));
 
                 var response = await ReadLineAsync(timeoutCts.Token);
-                
+
                 if (response.StartsWith('R'))
                 {
                     detectedCapabilities!.SupportsRawPasteMode = true;
@@ -284,10 +284,10 @@ public class AdaptiveRawReplProtocol : IDisposable
                     byte[] windowSizeBytes = new byte[2];
                     await stream.ReadExactlyAsync(windowSizeBytes, timeoutCts.Token);
                     ushort windowSizeIncrement = BitConverter.ToUInt16(windowSizeBytes, 0);
-                    
+
                     detectedCapabilities.PreferredWindowSize = windowSizeIncrement;
                     detectedCapabilities.MaxWindowSize = Math.Max(windowSizeIncrement, configuration.MaximumWindowSize);
-                    
+
                     logger.LogDebug("Detected window size increment: {WindowSize}", windowSizeIncrement);
 
                     // Exit raw-paste mode cleanly
@@ -343,7 +343,7 @@ public class AdaptiveRawReplProtocol : IDisposable
         {
             var averageTime = TimeSpan.FromMilliseconds(timings.Average(t => t.TotalMilliseconds));
             detectedCapabilities!.AverageResponseTime = averageTime;
-            
+
             // Adjust adaptive timeout based on measured performance
             var suggestedTimeout = TimeSpan.FromMilliseconds(averageTime.TotalMilliseconds * 5); // 5x average for safety
             if (suggestedTimeout > adaptiveResponseTimeout)
@@ -380,7 +380,7 @@ print('Flow control test completed')
 ";
 
             var response = await ExecuteWithRawPasteModeAsync(testCode, cancellationToken);
-            
+
             if (response.IsSuccess && response.Result?.Contains("Flow control test completed") == true)
             {
                 detectedCapabilities.HasReliableFlowControl = true;
@@ -431,7 +431,7 @@ print('Flow control test completed')
             logger.LogDebug("Disabled raw-paste mode based on capability detection");
         }
 
-        logger.LogDebug("Configuration applied: Timeout={Timeout}ms, WindowSize={WindowSize}, RawPaste={RawPaste}", 
+        logger.LogDebug("Configuration applied: Timeout={Timeout}ms, WindowSize={WindowSize}, RawPaste={RawPaste}",
             adaptiveResponseTimeout.TotalMilliseconds,
             configuration.PreferredWindowSize,
             configuration.EnableRawPasteAutoDetection);
@@ -440,7 +440,7 @@ print('Flow control test completed')
     private async Task<RawReplResponse> ExecuteWithRetryAsync(string code, CancellationToken cancellationToken)
     {
         Exception? lastException = null;
-        
+
         for (int attempt = 1; attempt <= configuration.MaxRetryAttempts; attempt++)
         {
             try
@@ -471,7 +471,7 @@ print('Flow control test completed')
                 }
                 else if (attempt < configuration.MaxRetryAttempts)
                 {
-                    logger.LogWarning("Execute attempt {Attempt} failed, will retry: {Error}", 
+                    logger.LogWarning("Execute attempt {Attempt} failed, will retry: {Error}",
                         attempt, response.Exception?.Message);
                     lastException = response.Exception;
                 }
@@ -559,7 +559,7 @@ print('Flow control test completed')
         {
             var alpha = 0.1; // Smoothing factor
             var newAverage = TimeSpan.FromMilliseconds(
-                alpha * duration.TotalMilliseconds + 
+                alpha * duration.TotalMilliseconds +
                 (1 - alpha) * metrics.AverageOperationTime.TotalMilliseconds
             );
             metrics.AverageOperationTime = newAverage;
@@ -569,7 +569,7 @@ print('Flow control test completed')
     }
 
     // Implementation of core protocol methods with adaptive enhancements
-    
+
     private async Task EnterRawModeAsync(CancellationToken cancellationToken)
     {
         if (currentState == RawReplState.Raw)
@@ -637,7 +637,7 @@ print('Flow control test completed')
 
             // Preprocess code for Raw REPL compatibility
             string processedCode = PreprocessCodeForRawRepl(code);
-            
+
             if (configuration.EnableVerboseLogging && processedCode != code)
             {
                 logger.LogDebug("Code transformed for Raw REPL: {OriginalCode} -> {ProcessedCode}", code, processedCode);
@@ -700,7 +700,7 @@ print('Flow control test completed')
 
             // Use configured preferred window size if available
             int effectiveWindowSize = configuration.PreferredWindowSize ?? windowSizeIncrement;
-            
+
             currentState = RawReplState.RawPaste;
             logger.LogDebug("Entered raw-paste mode with window size: {WindowSize}", effectiveWindowSize);
 
@@ -744,7 +744,7 @@ print('Flow control test completed')
 
             offset += chunkSize;
             remainingWindowSize -= chunkSize;
-            
+
             // Small delay to prevent overwhelming slow devices
             if (detectedCapabilities?.RequiresExtendedInterruptDelay == true && chunkSize > 64)
             {
@@ -758,11 +758,11 @@ print('Flow control test completed')
     private async Task<int> WaitForFlowControlAsync(CancellationToken cancellationToken)
     {
         byte[] buffer = new byte[1];
-        
+
         // Use adaptive timeout for flow control
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeoutCts.CancelAfter(adaptiveResponseTimeout);
-        
+
         await stream.ReadExactlyAsync(buffer, timeoutCts.Token);
 
         return buffer[0] switch
@@ -952,7 +952,7 @@ print('Flow control test completed')
         }
 
         var trimmedCode = code.Trim();
-        
+
         // Skip preprocessing for certain patterns:
         // 1. Already contains print statements
         // 2. Contains function definitions, imports, assignments, etc.
@@ -978,13 +978,13 @@ print('Flow control test completed')
         // This ensures Raw REPL will output the result
         return $"print({trimmedCode})";
     }
-    
+
     private static bool IsComparisonOperator(string code)
     {
-        return code.Contains("==") || 
-               code.Contains("!=") || 
-               code.Contains("<=") || 
-               code.Contains(">=") || 
+        return code.Contains("==") ||
+               code.Contains("!=") ||
+               code.Contains("<=") ||
+               code.Contains(">=") ||
                (code.Contains("<") && !code.Contains("=")) ||
                (code.Contains(">") && !code.Contains("="));
     }
@@ -1004,20 +1004,20 @@ print('Flow control test completed')
         {
             response.IsSuccess = true;
             response.Output = output;
-            
+
             // Parse Raw REPL response format: "OK<content>\x04\x04>"
             string result = output;
-            
+
             // Remove "OK" prefix if present
             if (result.StartsWith("OK"))
             {
                 result = result.Substring(2);
             }
-            
+
             // Remove trailing control characters and prompt
             // Find the first \x04 character (start of end sequence)
             int firstControlCharIndex = result.IndexOf('\x04');
-            
+
             if (firstControlCharIndex >= 0)
             {
                 result = result.Substring(0, firstControlCharIndex);
@@ -1026,7 +1026,7 @@ print('Flow control test completed')
             {
                 result = result.Substring(0, result.Length - 1);
             }
-            
+
             // Trim whitespace and control characters
             response.Result = result.Trim('\r', '\n', ' ', '\t');
         }

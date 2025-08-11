@@ -54,15 +54,15 @@ namespace Belay.Core.Transactions {
 
             try {
                 var result = await operation(transaction).ConfigureAwait(false);
-                
+
                 await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
                 this.logger.LogDebug("Transaction {TransactionId} committed successfully", transaction.TransactionId);
-                
+
                 return result;
             }
             catch (Exception ex) {
                 this.logger.LogWarning(ex, "Transaction {TransactionId} failed, initiating rollback", transaction.TransactionId);
-                
+
                 try {
                     await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
                     this.logger.LogDebug("Transaction {TransactionId} rolled back successfully", transaction.TransactionId);
@@ -71,7 +71,7 @@ namespace Belay.Core.Transactions {
                     this.logger.LogError(rollbackEx, "Failed to rollback transaction {TransactionId}", transaction.TransactionId);
                     // Don't mask the original exception
                 }
-                
+
                 throw;
             }
         }

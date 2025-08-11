@@ -38,7 +38,7 @@ namespace Belay.Core.Execution {
 
                 // Log creation
                 enhancedLogger.LogDebug("Created enhanced executor for device {DeviceType}", d.GetType().Name);
-                
+
                 return executor;
             });
         }

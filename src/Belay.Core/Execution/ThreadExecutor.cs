@@ -346,42 +346,42 @@ def {threadName}_wrapper():
     '''{threadName} thread wrapper with lifecycle management'''
     thread_id = '{threadId}'
     print(f'Thread {threadName} ({threadId}) starting')
-    
+
     try:
         # Thread control flags
         globals()['{threadName}_stop'] = False
         globals()['{threadName}_active'] = True
         globals()['{threadName}_last_heartbeat'] = time.ticks_ms()
-        
+
         # Runtime tracking
         start_time = time.ticks_ms()
         max_runtime = {maxRuntime}
         successful_runtime = 0
-        
+
         # Main execution loop
         iteration_count = 0
         while not globals().get('{threadName}_stop', False):
             try:
                 # Update heartbeat
                 globals()['{threadName}_last_heartbeat'] = time.ticks_ms()
-                
+
                 # Check runtime limit
                 current_time = time.ticks_ms()
                 elapsed = time.ticks_diff(current_time, start_time)
                 if max_runtime and elapsed > max_runtime:
                     print(f'Thread {threadName} exceeded max runtime ({maxRuntime}ms), stopping')
                     break
-                
+
                 # Execute user code
 {IndentCode(userCode, 16)}
-                
+
                 iteration_count += 1
                 successful_runtime = elapsed
-                
+
                 # Reset restart delay on successful execution
                 if iteration_count > 10:  # After 10 successful iterations
                     globals()['{threadName}_restart_delay'] = 1
-                    
+
             except Exception as user_ex:
                 print(f'Thread {threadName} user code error: ' + str(user_ex))
                 # Don't break the loop for user code errors - let auto-restart handle it
@@ -391,16 +391,16 @@ def {threadName}_wrapper():
                 else:
                     # Brief pause before next iteration
                     time.sleep(1)
-            
+
             # Brief yield to prevent monopolizing the CPU
             time.sleep_ms(10)
-            
+
             # Periodic stop check even if user code doesn't yield
             if iteration_count % 100 == 0:
                 if globals().get('{threadName}_stop', False):
                     print(f'Thread {threadName} received stop signal')
                     break
-                    
+
     except Exception as e:
         print(f'Thread {threadName} wrapper error: ' + str(e))
         if {autoRestart}:
@@ -409,9 +409,9 @@ def {threadName}_wrapper():
             restart_delay = globals().get('{threadName}_restart_delay', 1)
             restart_delay = min(restart_delay * 2, 60)  # Cap at 60 seconds
             globals()['{threadName}_restart_delay'] = restart_delay
-            
+
             print(f'Thread {threadName} restarting in ' + str(restart_delay) + ' seconds')
-            
+
             # Sleep with periodic stop checks
             sleep_end = time.ticks_ms() + (restart_delay * 1000)
             while time.ticks_ms() < sleep_end:
@@ -419,7 +419,7 @@ def {threadName}_wrapper():
                     print(f'Thread {threadName} stop requested during restart delay')
                     return
                 time.sleep_ms(100)
-            
+
             # Check if we should still restart
             if not globals().get('{threadName}_stop', False):
                 print(f'Thread {threadName} auto-restarting (attempt after ' + str(successful_runtime) + 'ms)')
