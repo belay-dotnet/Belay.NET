@@ -25,6 +25,13 @@ This file provides guidance to Claude Code when working on the Belay.NET project
 ### Documentation Submodule
 - The ./docs submodule _is_ the belay-dotnet.github.io repository so all updates to the docs website should be made directly there, comitted and pushed.
 
+### API Documentation Generation
+- **Primary Tool**: DocFX (Microsoft's official .NET documentation generator)
+- **Process**: .NET XML comments → DocFX metadata → HTML → Pandoc → Markdown → VitePress
+- **Benefits**: Native .NET support, proper example rendering, cross-references, industry standard
+- **Testing**: Use `docs/scripts/test-docfx.sh` to test locally before deployment
+- **Configuration**: `docs/docfx.json` controls generation behavior
+
 ### Architecture Principles
 - **Async-First**: All device communication uses Task-based async patterns
 - **Strong Typing**: Generic return types with compile-time safety
