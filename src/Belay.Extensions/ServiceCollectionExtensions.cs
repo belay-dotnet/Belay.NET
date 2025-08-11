@@ -17,6 +17,142 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Extension methods for registering Belay.NET services with dependency injection.
 /// </summary>
+/// <remarks>
+/// <para>
+/// These extensions provide multiple registration patterns for Belay.NET services,
+/// supporting both simple registration and comprehensive enterprise configurations
+/// with health checks, custom factories, and configuration binding.
+/// </para>
+/// </remarks>
+/// <example>
+/// <para><strong>Basic Registration</strong></para>
+/// <code>
+/// // Program.cs or Startup.cs
+/// public void ConfigureServices(IServiceCollection services)
+/// {
+///     // Simple registration with defaults
+///     services.AddBelay();
+/// 
+///     // With custom configuration
+///     services.AddBelay(options => {
+///         options.DefaultTimeoutMs = 10000;
+///         options.EnableCaching = true;
+///         options.MaxConcurrentOperations = 4;
+///     });
+/// }
+/// </code>
+/// <para><strong>Configuration-based Registration</strong></para>
+/// <code>
+/// // appsettings.json
+/// {
+///   "Belay": {
+///     "DefaultTimeoutMs": 15000,
+///     "EnableCaching": true,
+///     "DeviceDefaults": {
+///       "SerialBaudRate": 115200,
+///       "ConnectionRetries": 3
+///     }
+///   }
+/// }
+/// 
+/// // Program.cs
+/// public void ConfigureServices(IServiceCollection services)
+/// {
+///     services.AddBelay(Configuration, "Belay");
+/// }
+/// </code>
+/// <para><strong>Full Enterprise Setup with Health Checks</strong></para>
+/// <code>
+/// public void ConfigureServices(IServiceCollection services)
+/// {
+///     // Register all Belay services
+///     services.AddBelay(options => {
+///         options.DefaultTimeoutMs = 30000;
+///         options.EnableCaching = true;
+///     });
+/// 
+///     // Add health checks for device monitoring
+///     services.AddBelayHealthChecks(healthOptions => {
+///         healthOptions.SystemHealthCheckTimeoutSeconds = 10;
+///         healthOptions.AddDeviceCheck("primary-sensor", "COM3", timeoutSeconds: 5);
+///         healthOptions.AddDeviceCheck("backup-sensor", "COM4", timeoutSeconds: 5);
+///         healthOptions.AddDeviceCheck("test-subprocess", "micropython", timeoutSeconds: 15);
+///     });
+/// 
+///     // Add custom executors
+///     services.AddBelayExecutors();
+/// }
+/// 
+/// // Usage in controllers/services
+/// public class SensorController : ControllerBase
+/// {
+///     private readonly IDeviceFactory deviceFactory;
+/// 
+///     public SensorController(IDeviceFactory deviceFactory)
+///     {
+///         this.deviceFactory = deviceFactory;
+///     }
+/// 
+///     [HttpGet("temperature")]
+///     public async Task&lt;ActionResult&lt;float&gt;&gt; GetTemperature()
+///     {
+///         using var device = this.deviceFactory.CreateSerialDevice("COM3");
+///         await device.ConnectAsync();
+/// 
+///         float temp = await device.ExecuteAsync&lt;float&gt;(@"
+///             import machine
+///             sensor = machine.ADC(machine.Pin(26))
+///             reading = sensor.read_u16()
+///             (reading * 3.3 / 65535) * 100
+///         ");
+/// 
+///         return Ok(temp);
+///     }
+/// }
+/// </code>
+/// <para><strong>Background Service Integration</strong></para>
+/// <code>
+/// public class DeviceMonitoringService : BackgroundService
+/// {
+///     private readonly IServiceScopeFactory scopeFactory;
+///     private readonly ILogger&lt;DeviceMonitoringService&gt; logger;
+/// 
+///     public DeviceMonitoringService(IServiceScopeFactory scopeFactory, 
+///         ILogger&lt;DeviceMonitoringService&gt; logger)
+///     {
+///         this.scopeFactory = scopeFactory;
+///         this.logger = logger;
+///     }
+/// 
+///     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+///     {
+///         while (!stoppingToken.IsCancellationRequested)
+///         {
+///             using var scope = this.scopeFactory.CreateScope();
+///             var deviceFactory = scope.ServiceProvider.GetBelayDeviceFactory();
+/// 
+///             try
+///             {
+///                 using var device = deviceFactory.CreateSerialDevice("COM3");
+///                 await device.ConnectAsync(stoppingToken);
+/// 
+///                 var reading = await device.ExecuteAsync&lt;float&gt;("read_sensors()", stoppingToken);
+///                 this.logger.LogInformation("Sensor reading: {Reading}", reading);
+///             }
+///             catch (Exception ex)
+///             {
+///                 this.logger.LogError(ex, "Failed to read sensors");
+///             }
+/// 
+///             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+///         }
+///     }
+/// }
+/// 
+/// // Register background service
+/// services.AddHostedService&lt;DeviceMonitoringService&gt;();
+/// </code>
+/// </example>
 public static class ServiceCollectionExtensions {
     /// <summary>
     /// Adds all Belay.NET services to the service collection with default configuration.
