@@ -6,38 +6,60 @@ namespace Belay.Core.Communication;
 /// <summary>
 /// Represents the output received from a device.
 /// </summary>
-/// <inheritdoc/>
 public class DeviceOutputEventArgs(string output, bool isError = false) : EventArgs {
-    /// <inheritdoc/>
-    public string Output { get; }
+    /// <summary>
+    /// Gets the output text received from the device.
+    /// </summary>
+    /// <value>The raw string output from the device execution or communication.</value>
+    public string Output { get; } = output;
 
-    /// <inheritdoc/>
-    public bool IsError { get; }
+    /// <summary>
+    /// Gets a value indicating whether this output represents an error.
+    /// </summary>
+    /// <value>True if the output is from stderr or represents an error condition; otherwise, false.</value>
+    public bool IsError { get; } = isError;
 
-    /// <inheritdoc/>
-    public DateTime Timestamp { get; }
+    /// <summary>
+    /// Gets the timestamp when this output was received.
+    /// </summary>
+    /// <value>The UTC timestamp of when the output was captured.</value>
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
 }
 
 /// <summary>
 /// Represents a change in device connection state.
 /// </summary>
-/// <inheritdoc/>
 public class DeviceStateChangeEventArgs(DeviceConnectionState oldState, DeviceConnectionState newState,
     string? reason = null, Exception? exception = null) : EventArgs {
-    /// <inheritdoc/>
-    public DeviceConnectionState OldState { get; }
+    /// <summary>
+    /// Gets the previous connection state before the change.
+    /// </summary>
+    /// <value>The device connection state before the transition occurred.</value>
+    public DeviceConnectionState OldState { get; } = oldState;
 
-    /// <inheritdoc/>
-    public DeviceConnectionState NewState { get; }
+    /// <summary>
+    /// Gets the new connection state after the change.
+    /// </summary>
+    /// <value>The device connection state after the transition occurred.</value>
+    public DeviceConnectionState NewState { get; } = newState;
 
-    /// <inheritdoc/>
-    public string? Reason { get; }
+    /// <summary>
+    /// Gets the reason for the state change, if available.
+    /// </summary>
+    /// <value>A human-readable description of why the state changed, or null if no specific reason is available.</value>
+    public string? Reason { get; } = reason;
 
-    /// <inheritdoc/>
-    public Exception? Exception { get; }
+    /// <summary>
+    /// Gets the exception that caused the state change, if applicable.
+    /// </summary>
+    /// <value>The exception that triggered the state change, or null if the change was not due to an error.</value>
+    public Exception? Exception { get; } = exception;
 
-    /// <inheritdoc/>
-    public DateTime Timestamp { get; }
+    /// <summary>
+    /// Gets the timestamp when the state change occurred.
+    /// </summary>
+    /// <value>The UTC timestamp of when the state transition was detected.</value>
+    public DateTime Timestamp { get; } = DateTime.UtcNow;
 }
 
 /// <summary>
@@ -66,6 +88,54 @@ public enum DeviceConnectionState {
 /// <summary>
 /// Core interface for device communication implementations.
 /// </summary>
+/// <remarks>
+/// <para>
+/// This interface defines the standard contract for communicating with MicroPython
+/// devices through various transport mechanisms (serial, subprocess, network, etc.).
+/// All implementations handle the Raw REPL protocol for reliable code execution
+/// and file transfer operations.
+/// </para>
+/// </remarks>
+/// <example>
+/// <para><strong>Basic Usage</strong></para>
+/// <code>
+/// using IDeviceCommunication device = new SerialDeviceCommunication("COM3");
+/// 
+/// // Execute simple code
+/// string result = await device.ExecuteAsync("print('Hello from device!')");
+/// Console.WriteLine($"Device output: {result}");
+/// 
+/// // Execute with typed return
+/// float temperature = await device.ExecuteAsync&lt;float&gt;(@"
+///     import machine
+///     adc = machine.ADC(machine.Pin(26))
+///     reading = adc.read_u16()
+///     temperature = 27 - (reading * 3.3 / 65535 - 0.706) / 0.001721
+///     temperature
+/// ");
+/// 
+/// // File operations
+/// await device.PutFileAsync("config.json", "/config.json");
+/// byte[] data = await device.GetFileAsync("/sensor_data.csv");
+/// </code>
+/// <para><strong>Event Handling</strong></para>
+/// <code>
+/// device.OutputReceived += (sender, args) => {
+///     if (args.IsError) {
+///         Console.WriteLine($"Error: {args.Output}");
+///     } else {
+///         Console.WriteLine($"Output: {args.Output}");
+///     }
+/// };
+/// 
+/// device.StateChanged += (sender, args) => {
+///     Console.WriteLine($"State: {args.OldState} → {args.NewState}");
+///     if (args.Exception != null) {
+///         Console.WriteLine($"Error: {args.Exception.Message}");
+///     }
+/// };
+/// </code>
+/// </example>
 public interface IDeviceCommunication : IDisposable {
     /// <summary>
     /// Gets current connection state of the device.
