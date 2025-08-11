@@ -151,4 +151,148 @@ find docs/ -name "*.md" -exec grep -l "Documentation in Progress" {} \; | xargs 
 # Identify high-priority placeholders
 grep -r "URGENT\|CRITICAL\|High Priority" docs/ --include="*.md" -l
 ```
+
+## XML Documentation Standards
+
+Based on comprehensive code review, Belay.NET follows strict XML documentation standards to ensure high-quality API documentation generation. The project maintains **98% documentation coverage** but requires consistency improvements.
+
+### Required Standards for All Public Members
+
+#### Essential Tags (Required)
+- **`<summary>`** - Required for all public types and members - Brief, clear description
+- **`<param>`** - Required for all method parameters - Describe purpose and constraints  
+- **<returns>** - Required for all non-void methods - Describe return value and possible states
+- **`<typeparam>`** - Required for all generic type parameters - Explain type constraints
+- **`<exception>`** - Required for all thrown exceptions - Document when and why thrown
+
+#### Quality Enhancement Tags (Strongly Recommended)
+- **`<example>`** - **TARGET: 30% of public classes/methods** - Real-world, practical code samples
+- **`<remarks>`** - Complex functionality, architectural notes, usage guidelines
+- **`<seealso>`** - Cross-references to related types and methods
+
+### Documentation Templates
+
+#### Method Documentation Template
+```csharp
+/// <summary>
+/// Brief description of what the method does and its primary purpose.
+/// </summary>
+/// <param name="paramName">Description of parameter, including constraints and expected values.</param>
+/// <returns>Description of return value, including possible states or null conditions.</returns>
+/// <exception cref="ArgumentException">Thrown when parameter is invalid.</exception>
+/// <exception cref="InvalidOperationException">Thrown when object state prevents operation.</exception>
+/// <remarks>
+/// <para>
+/// Additional context about the method's behavior, performance considerations,
+/// or architectural significance.
+/// </para>
+/// </remarks>
+/// <example>
+/// <para><strong>Basic Usage</strong></para>
+/// <code>
+/// // Realistic, working example code
+/// var result = await SomeMethodAsync("example", CancellationToken.None);
+/// Console.WriteLine($"Result: {result}");
+/// </code>
+/// </example>
+```
+
+#### Class Documentation Template  
+```csharp
+/// <summary>
+/// Brief description of the class purpose and primary responsibility.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Detailed explanation of the class's role in the system architecture,
+/// key behaviors, and usage patterns.
+/// </para>
+/// <para>
+/// Key features and capabilities:
+/// <list type="bullet">
+/// <item><description>Feature 1 with brief explanation</description></item>
+/// <item><description>Feature 2 with brief explanation</description></item>
+/// </list>
+/// </para>
+/// </remarks>
+/// <example>
+/// <para><strong>Basic Setup</strong></para>
+/// <code>
+/// using var device = new DeviceType(connectionString);
+/// await device.ConnectAsync();
+/// </code>
+/// <para><strong>Advanced Usage</strong></para>
+/// <code>
+/// // More complex example showing real-world usage
+/// </code>
+/// </example>
+```
+
+#### Interface Documentation Template
+```csharp
+/// <summary>
+/// Defines the contract for [specific functionality].
+/// </summary>
+/// <remarks>
+/// <para>
+/// This interface establishes the standard behavior for [use case].
+/// Implementations should ensure [key requirements].
+/// </para>
+/// </remarks>
+```
+
+### Common Issues and Fixes
+
+#### ❌ INCORRECT: Misuse of inheritdoc
+```csharp
+/// <inheritdoc/>  // Wrong - property doesn't inherit
+public string Output { get; }
+```
+
+#### ✅ CORRECT: Proper property documentation  
+```csharp
+/// <summary>
+/// Gets the output received from the MicroPython device.
+/// </summary>
+/// <value>
+/// The raw string output, or empty string if no output received.
+/// </value>
+public string Output { get; }
+```
+
+#### ❌ INCORRECT: Missing parameter documentation
+```csharp
+/// <summary>Execute code on device.</summary>
+public async Task<string> ExecuteAsync(string code, CancellationToken token)
+```
+
+#### ✅ CORRECT: Complete method documentation
+```csharp
+/// <summary>
+/// Executes Python code on the connected MicroPython device.
+/// </summary>
+/// <param name="code">The Python code to execute on the device.</param>
+/// <param name="token">Cancellation token for the operation.</param>
+/// <returns>The output returned by the Python code execution.</returns>
+/// <exception cref="InvalidOperationException">Thrown when device is not connected.</exception>
+/// <exception cref="DeviceTimeoutException">Thrown when execution times out.</exception>
+public async Task<string> ExecuteAsync(string code, CancellationToken token)
+```
+
+### Quality Metrics and Enforcement
+
+- **Coverage Threshold**: 98% (currently achieved)
+- **Example Target**: 30% of public classes/methods (currently 2%)
+- **Deployment Blocking**: Enforced via CI/CD quality gates
+- **Gold Standard**: Belay.Attributes assembly (65% with examples)
+
+### High-Priority Documentation Debt
+
+Critical files requiring immediate attention:
+1. `SubprocessDeviceCommunication.cs` - Fix 15+ incorrectly used `<inheritdoc/>` tags
+2. `IDeviceCommunication.cs` - Add missing parameter/return documentation  
+3. `RawReplProtocol.cs` - Replace inheritdoc with proper property descriptions
+4. Core executor interfaces - Add practical examples for key functionality
+5. Service registration extensions - Add DI configuration examples
+
 - there is a RPI Pico micropython available for testing on tty: /dev/usb/tty-Board_in_FS_mode-e6614c311b7e6f35
