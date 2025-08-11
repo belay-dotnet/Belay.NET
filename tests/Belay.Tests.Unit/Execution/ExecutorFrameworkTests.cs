@@ -25,25 +25,25 @@ public class ExecutorFrameworkTests {
     private readonly Device device;
 
     public ExecutorFrameworkTests() {
-        this.mockCommunication = new Mock<IDeviceCommunication>();
-        this.mockSessionManager = new Mock<IDeviceSessionManager>();
-        this.mockLogger = new Mock<ILogger<Device>>();
-        
-        this.device = new Device(
-            this.mockCommunication.Object,
-            this.mockSessionManager.Object,
-            this.mockLogger.Object);
+        mockCommunication = new Mock<IDeviceCommunication>();
+        mockSessionManager = new Mock<IDeviceSessionManager>();
+        mockLogger = new Mock<ILogger<Device>>();
+
+        device = new Device(
+            mockCommunication.Object,
+            mockSessionManager.Object,
+            mockLogger.Object);
     }
 
     [Fact]
     public async Task ExecuteMethodAsync_WithTaskAttribute_UsesTaskExecutor() {
         // Arrange
         var method = typeof(TestMethods).GetMethod(nameof(TestMethods.TaskMethod))!;
-        this.mockCommunication.Setup(x => x.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+        mockCommunication.Setup(x => x.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ReturnsAsync("test_result");
 
         // Act
-        var result = await this.device.ExecuteMethodAsync<string>(method, null, new object[] { 42 });
+        var result = await device.ExecuteMethodAsync<string>(method, null, new object[] { 42 });
 
         // Assert
         Assert.Equal("test_result", result);
@@ -53,11 +53,11 @@ public class ExecutorFrameworkTests {
     public async Task ExecuteMethodAsync_WithSetupAttribute_UsesSetupExecutor() {
         // Arrange
         var method = typeof(TestMethods).GetMethod(nameof(TestMethods.SetupMethod))!;
-        this.mockCommunication.Setup(x => x.ExecuteAsync<object?>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+        mockCommunication.Setup(x => x.ExecuteAsync<object?>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ReturnsAsync((object?)null);
 
         // Act
-        await this.device.ExecuteMethodAsync(method);
+        await device.ExecuteMethodAsync(method);
 
         // Assert - No exception thrown means success
     }
@@ -66,11 +66,11 @@ public class ExecutorFrameworkTests {
     public async Task ExecuteMethodAsync_WithThreadAttribute_UsesThreadExecutor() {
         // Arrange
         var method = typeof(TestMethods).GetMethod(nameof(TestMethods.ThreadMethod))!;
-        this.mockCommunication.Setup(x => x.ExecuteAsync<object?>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+        mockCommunication.Setup(x => x.ExecuteAsync<object?>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ReturnsAsync((object?)null);
 
         // Act
-        await this.device.ExecuteMethodAsync(method);
+        await device.ExecuteMethodAsync(method);
 
         // Assert - No exception thrown means success
     }
@@ -79,11 +79,11 @@ public class ExecutorFrameworkTests {
     public async Task ExecuteMethodAsync_WithTeardownAttribute_UsesTeardownExecutor() {
         // Arrange
         var method = typeof(TestMethods).GetMethod(nameof(TestMethods.TeardownMethod))!;
-        this.mockCommunication.Setup(x => x.ExecuteAsync<object?>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
+        mockCommunication.Setup(x => x.ExecuteAsync<object?>(It.IsAny<string>(), It.IsAny<System.Threading.CancellationToken>()))
             .ReturnsAsync((object?)null);
 
         // Act
-        await this.device.ExecuteMethodAsync(method);
+        await device.ExecuteMethodAsync(method);
 
         // Assert - No exception thrown means success
     }
@@ -95,7 +95,7 @@ public class ExecutorFrameworkTests {
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => this.device.ExecuteMethodAsync<string>(method));
+            () => device.ExecuteMethodAsync<string>(method));
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public class ExecutorFrameworkTests {
         var method = typeof(TestMethods).GetMethod(nameof(TestMethods.TaskMethod))!;
 
         // Act
-        var canHandle = this.device.Task.CanHandle(method);
+        var canHandle = device.Task.CanHandle(method);
 
         // Assert
         Assert.True(canHandle);
@@ -116,7 +116,7 @@ public class ExecutorFrameworkTests {
         var method = typeof(TestMethods).GetMethod(nameof(TestMethods.SetupMethod))!;
 
         // Act
-        var canHandle = this.device.Setup.CanHandle(method);
+        var canHandle = device.Setup.CanHandle(method);
 
         // Assert
         Assert.True(canHandle);
@@ -128,15 +128,19 @@ public class ExecutorFrameworkTests {
 /// </summary>
 public class TestMethods {
     [Task]
+    [PythonCode("42")]
     public string TaskMethod(int value) => "task_result";
 
     [Setup]
+    [PythonCode("print('Setup complete')")]
     public void SetupMethod() { }
 
     [Thread]
+    [PythonCode("import _thread; _thread.start_new_thread(lambda: print('Thread running'), ())")]
     public void ThreadMethod() { }
 
     [Teardown]
+    [PythonCode("print('Teardown complete')")]
     public void TeardownMethod() { }
 
     public string MethodWithoutAttribute() => "no_attribute";
