@@ -18,11 +18,6 @@ public class BelayConfiguration {
     public CommunicationConfiguration Communication { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the session configuration.
-    /// </summary>
-    public SessionConfiguration Session { get; set; } = new();
-
-    /// <summary>
     /// Gets or sets the executor configuration.
     /// </summary>
     public ExecutorConfiguration Executor { get; set; } = new();
@@ -131,31 +126,6 @@ public class RawReplConfiguration {
     /// Gets or sets the maximum retries for protocol operations.
     /// </summary>
     public int MaxRetries { get; set; } = 3;
-}
-
-/// <summary>
-/// Configuration for session management.
-/// </summary>
-public class SessionConfiguration {
-    /// <summary>
-    /// Gets or sets the default session timeout in milliseconds.
-    /// </summary>
-    public int DefaultSessionTimeoutMs { get; set; } = 300000; // 5 minutes
-
-    /// <summary>
-    /// Gets or sets the maximum concurrent sessions.
-    /// </summary>
-    public int MaxConcurrentSessions { get; set; } = 10;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether session cleanup is enabled.
-    /// </summary>
-    public bool EnableSessionCleanup { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the session cleanup interval in milliseconds.
-    /// </summary>
-    public int SessionCleanupIntervalMs { get; set; } = 60000; // 1 minute
 }
 
 /// <summary>

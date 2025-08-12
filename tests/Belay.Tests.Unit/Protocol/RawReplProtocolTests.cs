@@ -23,10 +23,10 @@ public class RawReplProtocolTests {
         using var stream = new MemoryStream();
         var protocol = new RawReplProtocol(stream, NullLogger<RawReplProtocol>.Instance);
 
-        // Act - Using reflection to access private method
+        // Act - Using reflection to access private static method
         var parseMethod = typeof(RawReplProtocol)
-            .GetMethod("ParseResponse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var result = (RawReplResponse)parseMethod!.Invoke(protocol, new object[] { input })!;
+            .GetMethod("ParseResponse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var result = (RawReplResponse)parseMethod!.Invoke(null, new object[] { input })!;
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -43,10 +43,10 @@ public class RawReplProtocolTests {
         using var stream = new MemoryStream();
         var protocol = new RawReplProtocol(stream, NullLogger<RawReplProtocol>.Instance);
 
-        // Act
+        // Act - Using reflection to access private static method
         var parseMethod = typeof(RawReplProtocol)
-            .GetMethod("ParseResponse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var result = (RawReplResponse)parseMethod!.Invoke(protocol, new object[] { errorOutput })!;
+            .GetMethod("ParseResponse", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var result = (RawReplResponse)parseMethod!.Invoke(null, new object[] { errorOutput })!;
 
         // Assert
         Assert.False(result.IsSuccess);

@@ -164,15 +164,15 @@ namespace Belay.Tests.Unit.Execution {
         /// </summary>
         public class TestMethods {
             [Task]
-            public static string TaskMethod() => "print('Task method executed')";
+            public static string TaskMethod() => "'Task method executed'";
 
             [Task(Cache = true)]
-            public static string CachedMethod() => "print('Cached method executed')";
+            public static string CachedMethod() => "'Cached method executed'";
 
             [Task]
-            public static string SimpleCalculation(int a, int b) => $"print({a} + {b})";  // TimeoutMs cannot be set as attribute parameter
+            public static string SimpleCalculation(int a, int b) => $"{a} + {b}";  // Returns the actual calculation
 
-            public static string PlainMethod() => "print('Plain method')";
+            public static string PlainMethod() => "'Plain method'";
         }
 
         /// <summary>
@@ -183,10 +183,24 @@ namespace Belay.Tests.Unit.Execution {
             Task TestTaskMethod();
 
             [Task]
-            Task<int> TestCalculation(int a, int b);  // TimeoutMs cannot be set as attribute parameter
+            Task<int> TestCalculation(int a, int b);
 
             [Setup]
             Task Initialize();
+        }
+        
+        /// <summary>
+        /// Implementation of test interface for proxy testing.
+        /// </summary>
+        public class TestInterfaceImpl : ITestInterface {
+            [Task]
+            public Task TestTaskMethod() => Task.FromResult("'Test task executed'");
+
+            [Task]
+            public Task<int> TestCalculation(int a, int b) => Task.FromResult(a + b);
+
+            [Setup]
+            public Task Initialize() => Task.CompletedTask;
         }
     }
 

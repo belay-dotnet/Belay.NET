@@ -18,8 +18,6 @@ public class BelayConfigurationTests {
         Assert.That(config.Device.DefaultCommandTimeoutMs, Is.EqualTo(30000));
         Assert.That(config.Communication.Serial.DefaultBaudRate, Is.EqualTo(115200));
         Assert.That(config.Communication.Serial.ReadTimeoutMs, Is.EqualTo(1000));
-        Assert.That(config.Session.DefaultSessionTimeoutMs, Is.EqualTo(300000));
-        Assert.That(config.Session.MaxConcurrentSessions, Is.EqualTo(10));
         Assert.That(config.Executor.DefaultTaskTimeoutMs, Is.EqualTo(30000));
         Assert.That(config.Executor.MaxCacheSize, Is.EqualTo(1000));
         Assert.That(config.Executor.EnableCachingByDefault, Is.False);
@@ -83,11 +81,8 @@ public class BelayConfigurationTests {
         // Act
         config.Device.DefaultConnectionTimeoutMs = 15000;
         config.Communication.Serial.DefaultBaudRate = 9600;
-        config.Session.MaxConcurrentSessions = 20;
-
         // Assert
         Assert.That(config.Device.DefaultConnectionTimeoutMs, Is.EqualTo(15000));
         Assert.That(config.Communication.Serial.DefaultBaudRate, Is.EqualTo(9600));
-        Assert.That(config.Session.MaxConcurrentSessions, Is.EqualTo(20));
     }
 }

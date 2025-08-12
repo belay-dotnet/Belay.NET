@@ -527,37 +527,45 @@ public class RawReplProtocol : IDisposable {
     private static RawReplResponse ParseResponse(string output) {
         var response = new RawReplResponse();
 
-        // Simple response parsing - in a full implementation this would be more sophisticated
-        if (output.Contains("Traceback") || output.Contains("Error")) {
+        // Check for error responses first
+        if (output.Contains("Traceback") || output.Contains("Error") || output.Contains("Exception")) {
             response.IsSuccess = false;
             response.ErrorOutput = output;
             response.Exception = new Exception($"Device execution error: {output}");
+            return response;
         }
-        else {
-            response.IsSuccess = true;
-            response.Output = output;
 
-            // Parse Raw REPL response format: "OK<content>\x04\x04>"
-            string result = output;
+        // Success case - preserve original output and extract result
+        response.IsSuccess = true;
+        response.Output = output;
 
-            // Remove "OK" prefix if present
-            if (result.StartsWith("OK")) {
-                result = result.Substring(2);
-            }
+        // Parse result from output
+        string result = output;
 
+        // Handle different response formats
+        if (result.StartsWith("OK")) {
+            // Raw REPL response format: "OK<content>\x04\x04>" or "OK>"
+            result = result.Substring(2);
+            
             // Remove trailing control characters and prompt
-            // Find the first \x04 character (start of end sequence)
             int firstControlCharIndex = result.IndexOf('\x04');
-
             if (firstControlCharIndex >= 0) {
                 result = result.Substring(0, firstControlCharIndex);
             }
             else if (result.EndsWith('>')) {
                 result = result.Substring(0, result.Length - 1);
             }
-
-            // Trim whitespace and control characters
-            response.Result = result.Trim('\r', '\n', ' ', '\t');
+            
+            // Trim line ending characters but preserve content
+            response.Result = result.TrimEnd('\r', '\n');
+        }
+        else if (output.EndsWith('>')) {
+            // Direct output without OK prefix (e.g., "test without OK prefix>")
+            response.Result = output.Substring(0, output.Length - 1);
+        }
+        else {
+            // Other formats - return as-is
+            response.Result = output;
         }
 
         return response;

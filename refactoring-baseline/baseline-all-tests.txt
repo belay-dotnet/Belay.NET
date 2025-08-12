@@ -1,0 +1,1229 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Belay.Attributes -> /home/corona/belay.net/src/Belay.Attributes/bin/Debug/net8.0/Belay.Attributes.dll
+  Belay.Core -> /home/corona/belay.net/src/Belay.Core/bin/Debug/net8.0/Belay.Core.dll
+  Belay.Extensions -> /home/corona/belay.net/src/Belay.Extensions/bin/Debug/net8.0/Belay.Extensions.dll
+  Belay.Tests.Unit -> /home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0/Belay.Tests.Unit.dll
+Test run for /home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0/Belay.Tests.Unit.dll (.NETCoreApp,Version=v8.0)
+VSTest version 17.11.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+/home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0/Belay.Tests.Unit.dll
+NUnit Adapter 4.5.0.0: Test execution started
+Running all tests in /home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0/Belay.Tests.Unit.dll
+   NUnit3TestExecutor discovered 145 of 145 NUnit test cases using Current Discovery mode, Non-Explicit run
+  Passed Constructor_WithGenericTypes_WorksCorrectly [38 ms]
+  Passed Constructor_WithoutExpiration_UsesDefaultExpiration [4 ms]
+  Passed Constructor_WithValue_CreatesEntry [3 ms]
+  Passed GetRemainingLifetime_WhenExpired_ReturnsZero [10 ms]
+  Passed GetRemainingLifetime_WhenNotExpired_ReturnsPositiveTimeSpan [1 ms]
+  Passed GetValue_ReturnsValueAsObject [2 ms]
+  Passed IsExpired_WhenExpired_ReturnsTrue [10 ms]
+  Passed IsExpired_WhenNotExpired_ReturnsFalse [< 1 ms]
+  Passed UpdateLastAccessed_UpdatesTimestamp [1 ms]
+  Passed Constructor_WithValidParameters_CreatesKey [19 ms]
+  Passed Equals_WithDifferentDeviceId_ReturnsFalse [1 ms]
+  Passed Equals_WithDifferentFirmwareVersion_ReturnsFalse [< 1 ms]
+  Passed Equals_WithDifferentMethodSignature_ReturnsFalse [< 1 ms]
+  Passed Equals_WithSameValues_ReturnsTrue [< 1 ms]
+  Passed GetHashCode_WithDifferentValues_ReturnsDifferentHashCode [< 1 ms]
+  Passed GetHashCode_WithSameValues_ReturnsSameHashCode [< 1 ms]
+  Passed OperatorEquals_WithDifferentValues_ReturnsFalse [< 1 ms]
+  Passed OperatorEquals_WithSameValues_ReturnsTrue [< 1 ms]
+  Passed ToString_ReturnsFormattedString [1 ms]
+  Passed ClearAll_RemovesAllEntries [61 ms]
+  Passed Dispose_DoesNotThrow [12 ms]
+  Passed Dispose_MultipleTimes_DoesNotThrow [5 ms]
+  Passed Get_WhenEntryIsExpired_ReturnsDefault [11 ms]
+  Passed Get_WhenKeyDoesNotExist_ReturnsDefault [< 1 ms]
+  Passed GetStatistics_TracksHitsAndMisses [1 ms]
+  Passed Remove_WhenKeyDoesNotExist_ReturnsFalse [< 1 ms]
+  Passed Remove_WhenKeyExists_RemovesEntryAndReturnsTrue [< 1 ms]
+  Passed Set_And_Get_WhenKeyExists_ReturnsValue [< 1 ms]
+  Passed Set_WithGenericTypes_WorksCorrectly [2 ms]
+  Failed ConnectAsync_SerialCommunication_ShouldCallConnectAsync [378 ms]
+  Error Message:
+   System.ArgumentException : Can not instantiate proxy of class: Belay.Core.Communication.SerialDeviceCommunication.
+Could not find a constructor that would match given arguments:
+System.String
+System.Int32
+System.Int32
+ (Parameter 'constructorArguments')
+  ----> System.MissingMethodException : Constructor on type 'Castle.Proxies.SerialDeviceCommunicationProxy' not found.
+  Stack Trace:
+     at Castle.DynamicProxy.ProxyGenerator.CreateClassProxyInstance(Type proxyType, List`1 proxyArguments, Type classToProxy, Object[] constructorArguments)
+   at Castle.DynamicProxy.ProxyGenerator.CreateClassProxy(Type classToProxy, Type[] additionalInterfacesToProxy, ProxyGenerationOptions options, Object[] constructorArguments, IInterceptor[] interceptors)
+   at Moq.CastleProxyFactory.CreateProxy(Type mockType, IInterceptor interceptor, Type[] interfaces, Object[] arguments) in /_/src/Moq/Interception/CastleProxyFactory.cs:line 110
+   at Moq.Mock`1.InitializeInstance() in /_/src/Moq/Mock`1.cs:line 502
+   at Moq.Mock`1.OnGetObject() in /_/src/Moq/Mock`1.cs:line 516
+   at Moq.Mock.get_Object() in /_/src/Moq/Mock.cs:line 180
+   at Moq.Mock`1.get_Object() in /_/src/Moq/Mock`1.cs:line 453
+   at Belay.Tests.Unit.DeviceTests.ConnectAsync_SerialCommunication_ShouldCallConnectAsync() in /home/corona/belay.net/tests/Belay.Tests.Unit/DeviceTests.cs:line 120
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.<>c__DisplayClass4_0.<PerformWork>b__0()
+   at NUnit.Framework.Internal.ContextUtils.<>c__DisplayClass1_0`1.<DoIsolated>b__0(Object _)
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated(ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated[T](Func`1 func)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.PerformWork()
+--MissingMethodException
+   at System.RuntimeType.CreateInstanceImpl(BindingFlags bindingAttr, Binder binder, Object[] args, CultureInfo culture)
+   at Castle.DynamicProxy.ProxyGenerator.CreateClassProxyInstance(Type proxyType, List`1 proxyArguments, Type classToProxy, Object[] constructorArguments)
+
+  Passed Device_Constructor_ShouldInitializeCorrectly [122 ms]
+  Passed Device_Constructor_WithNullCommunication_ShouldThrowArgumentNullException [21 ms]
+  Failed DisconnectAsync_SerialCommunication_ShouldCallDisconnectAsync [8 ms]
+  Error Message:
+   System.ArgumentException : Can not instantiate proxy of class: Belay.Core.Communication.SerialDeviceCommunication.
+Could not find a constructor that would match given arguments:
+System.String
+System.Int32
+System.Int32
+ (Parameter 'constructorArguments')
+  ----> System.MissingMethodException : Constructor on type 'Castle.Proxies.SerialDeviceCommunicationProxy' not found.
+  Stack Trace:
+     at Castle.DynamicProxy.ProxyGenerator.CreateClassProxyInstance(Type proxyType, List`1 proxyArguments, Type classToProxy, Object[] constructorArguments)
+   at Castle.DynamicProxy.ProxyGenerator.CreateClassProxy(Type classToProxy, Type[] additionalInterfacesToProxy, ProxyGenerationOptions options, Object[] constructorArguments, IInterceptor[] interceptors)
+   at Moq.CastleProxyFactory.CreateProxy(Type mockType, IInterceptor interceptor, Type[] interfaces, Object[] arguments) in /_/src/Moq/Interception/CastleProxyFactory.cs:line 110
+   at Moq.Mock`1.InitializeInstance() in /_/src/Moq/Mock`1.cs:line 502
+   at Moq.Mock`1.OnGetObject() in /_/src/Moq/Mock`1.cs:line 516
+   at Moq.Mock.get_Object() in /_/src/Moq/Mock.cs:line 180
+   at Moq.Mock`1.get_Object() in /_/src/Moq/Mock`1.cs:line 453
+   at Belay.Tests.Unit.DeviceTests.DisconnectAsync_SerialCommunication_ShouldCallDisconnectAsync() in /home/corona/belay.net/tests/Belay.Tests.Unit/DeviceTests.cs:line 135
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.<>c__DisplayClass4_0.<PerformWork>b__0()
+   at NUnit.Framework.Internal.ContextUtils.<>c__DisplayClass1_0`1.<DoIsolated>b__0(Object _)
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated(ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated[T](Func`1 func)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.PerformWork()
+--MissingMethodException
+   at System.RuntimeType.CreateInstanceImpl(BindingFlags bindingAttr, Binder binder, Object[] args, CultureInfo culture)
+   at Castle.DynamicProxy.ProxyGenerator.CreateClassProxyInstance(Type proxyType, List`1 proxyArguments, Type classToProxy, Object[] constructorArguments)
+
+  Passed Dispose_MultipleCallsToDispose_ShouldNotThrow [11 ms]
+  Passed ExecuteAsync_DisposedDevice_ShouldThrowObjectDisposedException [24 ms]
+  Passed ExecuteAsync_InvalidCode_ShouldThrowArgumentException("") [15 ms]
+  Passed ExecuteAsync_InvalidCode_ShouldThrowArgumentException("   ") [2 ms]
+  Passed ExecuteAsync_InvalidCode_ShouldThrowArgumentException(null) [2 ms]
+  Passed ExecuteAsync_ValidCode_ShouldCallCommunicationLayer [19 ms]
+  Passed FromConnectionString_InvalidConnectionString_ShouldThrowArgumentException("") [1 ms]
+  Passed FromConnectionString_InvalidConnectionString_ShouldThrowArgumentException("   ") [< 1 ms]
+  Passed FromConnectionString_InvalidConnectionString_ShouldThrowArgumentException(null) [< 1 ms]
+  Passed FromConnectionString_MalformedConnectionString_ShouldThrowArgumentException("invalidformat") [< 1 ms]
+  Passed FromConnectionString_MalformedConnectionString_ShouldThrowArgumentException("serial") [< 1 ms]
+  Passed FromConnectionString_MalformedConnectionString_ShouldThrowArgumentException("serial:") [1 ms]
+  Passed FromConnectionString_MalformedConnectionString_ShouldThrowArgumentException(":COM3") [< 1 ms]
+  Passed FromConnectionString_UnsupportedConnectionType_ShouldThrowArgumentException [21 ms]
+  Passed FromConnectionString_ValidConnectionStrings_ShouldCreateDevice("serial:COM3") [6 ms]
+  Passed FromConnectionString_ValidConnectionStrings_ShouldCreateDevice("serial:/dev/ttyUSB0") [1 ms]
+  Passed FromConnectionString_ValidConnectionStrings_ShouldCreateDevice("subprocess:micropython") [7 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithBasicCode_ExecutesSuccessfully [31 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithEmptyCode_ThrowsArgumentException [10 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithNullCode_ThrowsArgumentException [< 1 ms]
+  Failed ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation [144 ms]
+  Error Message:
+     Expected: <System.OperationCanceledException>
+  But was:  null
+
+  Stack Trace:
+     at Belay.Tests.Unit.Execution.SetupExecutorTests.ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/SetupExecutorTests.cs:line 115
+
+1)    at Belay.Tests.Unit.Execution.SetupExecutorTests.ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/SetupExecutorTests.cs:line 115
+
+
+  Passed Constructor_WithNullDevice_ThrowsArgumentNullException [8 ms]
+  Passed Constructor_WithNullLogger_ThrowsArgumentNullException [1 ms]
+  Passed Constructor_WithNullSessionManager_ThrowsArgumentNullException [< 1 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithBasicCode_ExecutesSuccessfully [30 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithConcurrentCalls_HandlesExclusiveExecution [86 ms]
+  Failed ApplyPoliciesAndExecuteAsync_WithEmptyCode_ThrowsArgumentException [2 ms]
+  Error Message:
+     Expected: String containing "Python code cannot be null or empty"
+  But was:  "Code cannot be null or empty (Parameter 'code')"
+
+  Stack Trace:
+     at Belay.Tests.Unit.Execution.TaskExecutorTests.ApplyPoliciesAndExecuteAsync_WithEmptyCode_ThrowsArgumentException() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TaskExecutorTests.cs:line 103
+
+1)    at Belay.Tests.Unit.Execution.TaskExecutorTests.ApplyPoliciesAndExecuteAsync_WithEmptyCode_ThrowsArgumentException() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TaskExecutorTests.cs:line 103
+
+
+  Failed ApplyPoliciesAndExecuteAsync_WithNullCode_ThrowsArgumentException [3 ms]
+  Error Message:
+     Expected: <System.ArgumentException>
+  But was:  <System.NullReferenceException: Object reference not set to an instance of an object.
+   at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext() in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 113
+--- End of stack trace from previous location ---
+   at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs:line 160
+   at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 106
+   at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod) in /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs:line 66
+   at Belay.Tests.Unit.Execution.TaskExecutorTests.<ApplyPoliciesAndExecuteAsync_WithNullCode_ThrowsArgumentException>b__10_0() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TaskExecutorTests.cs:line 87
+   at NUnit.Framework.Assert.Throws(IResolveConstraint expression, TestDelegate code, String message, Object[] args)>
+
+  Stack Trace:
+     at Belay.Tests.Unit.Execution.TaskExecutorTests.ApplyPoliciesAndExecuteAsync_WithNullCode_ThrowsArgumentException() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TaskExecutorTests.cs:line 86
+
+1)    at Belay.Tests.Unit.Execution.TaskExecutorTests.ApplyPoliciesAndExecuteAsync_WithNullCode_ThrowsArgumentException() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TaskExecutorTests.cs:line 86
+
+
+  Failed ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation [101 ms]
+  Error Message:
+     Expected: <System.OperationCanceledException>
+  But was:  null
+
+  Stack Trace:
+     at Belay.Tests.Unit.Execution.TaskExecutorTests.ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TaskExecutorTests.cs:line 118
+
+1)    at Belay.Tests.Unit.Execution.TaskExecutorTests.ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TaskExecutorTests.cs:line 118
+
+
+  Passed ClearCache_RemovesExecutedMethods [2 ms]
+  Passed Constructor_WithNullDevice_ThrowsArgumentNullException [< 1 ms]
+  Passed Constructor_WithNullLogger_ThrowsArgumentNullException [< 1 ms]
+  Passed Constructor_WithNullSessionManager_ThrowsArgumentNullException [< 1 ms]
+  Failed GetExecutedMethods_AfterExecution_ContainsMethod [5 ms]
+  Error Message:
+     Expected: some item equal to "TestMethod"
+  But was:  <empty>
+
+  Stack Trace:
+     at Belay.Tests.Unit.Execution.TaskExecutorTests.GetExecutedMethods_AfterExecution_ContainsMethod() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TaskExecutorTests.cs:line 176
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.<>c__DisplayClass4_0.<PerformWork>b__0()
+   at NUnit.Framework.Internal.ContextUtils.<>c__DisplayClass1_0`1.<DoIsolated>b__0(Object _)
+
+1)    at Belay.Tests.Unit.Execution.TaskExecutorTests.GetExecutedMethods_AfterExecution_ContainsMethod() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TaskExecutorTests.cs:line 176
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at Belay.Tests.Unit.Execution.TaskExecutorTests.GetExecutedMethods_AfterExecution_ContainsMethod()
+
+
+  Passed GetExecutedMethods_InitiallyEmpty [< 1 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithBasicCode_ExecutesSuccessfully [7 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithEmptyCode_ThrowsArgumentException [8 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithNullCode_ThrowsArgumentException [< 1 ms]
+  Failed ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation [104 ms]
+  Error Message:
+     Expected: <System.OperationCanceledException>
+  But was:  null
+
+  Stack Trace:
+     at Belay.Tests.Unit.Execution.TeardownExecutorTests.ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TeardownExecutorTests.cs:line 115
+
+1)    at Belay.Tests.Unit.Execution.TeardownExecutorTests.ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/TeardownExecutorTests.cs:line 115
+
+
+  Passed Constructor_WithNullDevice_ThrowsArgumentNullException [< 1 ms]
+  Passed Constructor_WithNullLogger_ThrowsArgumentNullException [< 1 ms]
+  Passed Constructor_WithNullSessionManager_ThrowsArgumentNullException [< 1 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithBasicCode_ExecutesSuccessfully [4 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithEmptyCode_ThrowsArgumentException [< 1 ms]
+  Passed ApplyPoliciesAndExecuteAsync_WithNullCode_ThrowsArgumentException [< 1 ms]
+  Failed ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation [102 ms]
+  Error Message:
+     Expected: <System.OperationCanceledException>
+  But was:  null
+
+  Stack Trace:
+     at Belay.Tests.Unit.Execution.ThreadExecutorTests.ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/ThreadExecutorTests.cs:line 216
+
+1)    at Belay.Tests.Unit.Execution.ThreadExecutorTests.ApplyPoliciesAndExecuteAsync_WithTimeout_AppliesCancellation() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/ThreadExecutorTests.cs:line 216
+
+
+  Failed CheckThreadHealthAsync_ExecutesSuccessfully [3 ms]
+  Error Message:
+   NSubstitute.Exceptions.CouldNotSetReturnDueToTypeMismatchException : Can not return value of type Task`1 for IDeviceCommunication.ExecuteAsync (expected type Task`1).
+
+Make sure you called Returns() after calling your substitute (for example: mySub.SomeMethod().Returns(value)),
+and that you are not configuring other substitutes within Returns() (for example, avoid this: mySub.SomeMethod().Returns(ConfigOtherSub())).
+
+If you substituted for a class rather than an interface, check that the call to your substitute was on a virtual/abstract member.
+Return values cannot be configured for non-virtual/non-abstract members.
+
+Correct use:
+	mySub.SomeMethod().Returns(returnValue);
+
+Potentially problematic use:
+	mySub.SomeMethod().Returns(ConfigOtherSub());
+Instead try:
+	var returnValue = ConfigOtherSub();
+	mySub.SomeMethod().Returns(returnValue);
+
+  Stack Trace:
+     at NSubstitute.Core.ConfigureCall.CheckResultIsCompatibleWithCall(IReturn valueToReturn, ICallSpecification spec)
+   at NSubstitute.Core.ConfigureCall.SetResultForLastCall(IReturn valueToReturn, MatchArgs matchArgs, PendingSpecificationInfo pendingSpecInfo)
+   at NSubstitute.Core.CallRouter.LastCallShouldReturn(IReturn returnValue, MatchArgs matchArgs, PendingSpecificationInfo pendingSpecInfo)
+   at NSubstitute.Core.ThreadLocalContext.LastCallShouldReturn(IReturn value, MatchArgs matchArgs)
+   at NSubstitute.SubstituteExtensions.ConfigureReturn[T](MatchArgs matchArgs, T returnThis, T[] returnThese)
+   at NSubstitute.SubstituteExtensions.Returns[T](T value, T returnThis, T[] returnThese)
+   at Belay.Tests.Unit.Execution.ThreadExecutorTests.CheckThreadHealthAsync_ExecutesSuccessfully() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/ThreadExecutorTests.cs:line 136
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.<>c__DisplayClass4_0.<PerformWork>b__0()
+   at NUnit.Framework.Internal.ContextUtils.<>c__DisplayClass1_0`1.<DoIsolated>b__0(Object _)
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated(ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated[T](Func`1 func)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.PerformWork()
+
+  Failed ClearCacheAsync_ExecutesSuccessfully [15 ms]
+  Error Message:
+   NSubstitute.Exceptions.ReceivedCallsException : Expected to receive exactly 1 call matching:
+	ExecuteAsync(any String, any CancellationToken)
+Actually received no matching calls.
+
+  Stack Trace:
+     at NSubstitute.Core.ReceivedCallsExceptionThrower.Throw(ICallSpecification callSpecification, IEnumerable`1 matchingCalls, IEnumerable`1 nonMatchingCalls, Quantity requiredQuantity)
+   at NSubstitute.Routing.Handlers.CheckReceivedCallsHandler.Handle(ICall call)
+   at NSubstitute.Routing.Route.Handle(ICall call)
+   at NSubstitute.Core.CallRouter.Route(ICall call)
+   at NSubstitute.Proxies.CastleDynamicProxy.CastleForwardingInterceptor.Intercept(IInvocation invocation)
+   at Castle.DynamicProxy.AbstractInvocation.Proceed()
+   at NSubstitute.Proxies.CastleDynamicProxy.ProxyIdInterceptor.Intercept(IInvocation invocation)
+   at Castle.DynamicProxy.AbstractInvocation.Proceed()
+   at Castle.Proxies.ObjectProxy.ExecuteAsync(String code, CancellationToken cancellationToken)
+   at Belay.Tests.Unit.Execution.ThreadExecutorTests.ClearCacheAsync_ExecutesSuccessfully() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/ThreadExecutorTests.cs:line 202
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.<>c__DisplayClass4_0.<PerformWork>b__0()
+   at NUnit.Framework.Internal.ContextUtils.<>c__DisplayClass1_0`1.<DoIsolated>b__0(Object _)
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated(ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated[T](Func`1 func)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.PerformWork()
+
+  Passed Constructor_WithNullDevice_ThrowsArgumentNullException [2 ms]
+  Passed Constructor_WithNullLogger_ThrowsArgumentNullException [< 1 ms]
+  Passed Constructor_WithNullSessionManager_ThrowsArgumentNullException [< 1 ms]
+  Failed StopAllThreadsAsync_ReturnsStoppedCount [22 ms]
+  Error Message:
+   NSubstitute.Exceptions.ReceivedCallsException : Expected to receive exactly 3 calls matching:
+	ExecuteAsync<Boolean>(any String, any CancellationToken)
+Actually received no matching calls.
+
+  Stack Trace:
+     at NSubstitute.Core.ReceivedCallsExceptionThrower.Throw(ICallSpecification callSpecification, IEnumerable`1 matchingCalls, IEnumerable`1 nonMatchingCalls, Quantity requiredQuantity)
+   at NSubstitute.Routing.Handlers.CheckReceivedCallsHandler.Handle(ICall call)
+   at NSubstitute.Routing.Route.Handle(ICall call)
+   at NSubstitute.Core.CallRouter.Route(ICall call)
+   at NSubstitute.Proxies.CastleDynamicProxy.CastleForwardingInterceptor.Intercept(IInvocation invocation)
+   at Castle.DynamicProxy.AbstractInvocation.Proceed()
+   at NSubstitute.Proxies.CastleDynamicProxy.ProxyIdInterceptor.Intercept(IInvocation invocation)
+   at Castle.DynamicProxy.AbstractInvocation.Proceed()
+   at Castle.Proxies.ObjectProxy.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+   at Belay.Tests.Unit.Execution.ThreadExecutorTests.StopAllThreadsAsync_ReturnsStoppedCount() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/ThreadExecutorTests.cs:line 194
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.<>c__DisplayClass4_0.<PerformWork>b__0()
+   at NUnit.Framework.Internal.ContextUtils.<>c__DisplayClass1_0`1.<DoIsolated>b__0(Object _)
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated(ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated[T](Func`1 func)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.PerformWork()
+
+  Passed StopThreadAsync_WithInvalidThreadName_ReturnsFalse [2 ms]
+  Failed StopThreadAsync_WithValidThreadName_StopsSuccessfully [3 ms]
+  Error Message:
+     Expected: True
+  But was:  False
+
+  Stack Trace:
+     at Belay.Tests.Unit.Execution.ThreadExecutorTests.StopThreadAsync_WithValidThreadName_StopsSuccessfully() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/ThreadExecutorTests.cs:line 115
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.<>c__DisplayClass4_0.<PerformWork>b__0()
+   at NUnit.Framework.Internal.ContextUtils.<>c__DisplayClass1_0`1.<DoIsolated>b__0(Object _)
+
+1)    at Belay.Tests.Unit.Execution.ThreadExecutorTests.StopThreadAsync_WithValidThreadName_StopsSuccessfully() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/ThreadExecutorTests.cs:line 115
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at Belay.Tests.Unit.Execution.ThreadExecutorTests.StopThreadAsync_WithValidThreadName_StopsSuccessfully()
+
+
+  Passed BelayConfiguration_CanBeModified [4 ms]
+  Passed BelayConfiguration_DefaultValues_AreSetCorrectly [1 ms]
+  Passed DeviceDiscoveryConfiguration_DefaultValues_AreSetCorrectly [< 1 ms]
+  Passed ExceptionHandlingConfiguration_DefaultValues_AreSetCorrectly [10 ms]
+  Passed RawReplConfiguration_DefaultValues_AreSetCorrectly [2 ms]
+  Passed RetryConfiguration_DefaultValues_AreSetCorrectly [3 ms]
+  Passed AddBelay_WithActionConfiguration_ConfiguresOptions [86 ms]
+  Passed AddBelay_WithDefaultConfiguration_RegistersAllServices [33 ms]
+  Passed AddBelay_WithIConfiguration_BindsConfiguration [38 ms]
+  Passed GetBelayDeviceFactory_ReturnsDeviceFactory [4 ms]
+  Passed GetBelayExecutorFactory_ReturnsExecutorFactory [2 ms]
+  Passed Constructor_WithNullCommunication_ThrowsArgumentNullException [1 ms]
+  Passed Constructor_WithNullLogger_ThrowsArgumentNullException [1 ms]
+  Passed Constructor_WithValidParameters_InitializesCorrectly [3 ms]
+  Passed GetMemoryInfoAsync_WithInvalidResponse_ReturnsDefaultMemoryInfo [8 ms]
+  Passed GetMemoryInfoAsync_WithValidResponse_ReturnsMemoryInfo [9 ms]
+  Passed RefreshCapabilitiesAsync_DetectsPerformanceProfile [35 ms]
+  Passed RefreshCapabilitiesAsync_WhenDisconnected_ThrowsDeviceConnectionException [4 ms]
+  Failed RefreshCapabilitiesAsync_WithValidDevice_DetectsBasicInfo [5 ms]
+  Error Message:
+   Belay.Core.Exceptions.DeviceConnectionException : Cannot refresh capabilities while device is disconnected
+  ----> System.InvalidOperationException : Operation is not valid due to the current state of the object.
+  Stack Trace:
+     at Belay.Core.Sessions.DeviceCapabilities.RefreshCapabilitiesAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceCapabilities.cs:line 118
+   at Belay.Tests.Unit.Sessions.DeviceCapabilitiesTests.RefreshCapabilitiesAsync_WithValidDevice_DetectsBasicInfo() in /home/corona/belay.net/tests/Belay.Tests.Unit/Sessions/DeviceCapabilitiesTests.cs:line 76
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(Func`1 invoke)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.<>c__DisplayClass4_0.<PerformWork>b__0()
+   at NUnit.Framework.Internal.ContextUtils.<>c__DisplayClass1_0`1.<DoIsolated>b__0(Object _)
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated(ContextCallback callback, Object state)
+   at NUnit.Framework.Internal.ContextUtils.DoIsolated[T](Func`1 func)
+   at NUnit.Framework.Internal.Execution.SimpleWorkItem.PerformWork()
+--InvalidOperationException
+
+
+  Passed SupportsFeature_MapsCorrectly(GPIO,GPIO) [< 1 ms]
+  Passed SupportsFeature_MapsCorrectly(I2C,I2C) [< 1 ms]
+  Passed SupportsFeature_MapsCorrectly(WiFi,WiFi) [< 1 ms]
+  Passed SupportsFeature_WithSupportedFeature_ReturnsTrue [< 1 ms]
+  Passed Constructor_WithNullLoggerFactory_ThrowsArgumentNullException [32 ms]
+  Passed Constructor_WithValidLoggerFactory_SetsStateToInactive [8 ms]
+  Passed CreateSessionAsync_WithNullCommunication_ThrowsArgumentNullException [10 ms]
+  Passed CreateSessionAsync_WithValidCommunication_ReturnsSession [21 ms]
+  Passed DeviceCapabilities_WhenDetected_AreExposed [8 ms]
+  Passed DisposeAsync_CleansUpSessionsAndResources [10 ms]
+  Passed EndSessionAsync_WithValidSessionId_EndsSession [14 ms]
+  Passed ExecuteInSessionAsync_WithAction_ExecutesSuccessfully [15 ms]
+  Passed ExecuteInSessionAsync_WithFunction_ExecutesSuccessfully [7 ms]
+  Passed GetOrCreateSessionAsync_WhenCurrentSessionExists_ReturnsExistingSession [7 ms]
+  Passed GetOrCreateSessionAsync_WhenNoCurrentSession_CreatesNewSession [7 ms]
+  Passed GetSessionStatsAsync_ReturnsCorrectStatistics [8 ms]
+  Passed ClearCache_RemovesAllCachedEntries [11 ms]
+  Passed Constructor_WithNoCapabilities_SetsFileSystemNotSupported [1 ms]
+  Passed Constructor_WithNullSessionId_ThrowsArgumentNullException [2 ms]
+  Passed Constructor_WithValidParameters_InitializesCorrectly [1 ms]
+  Passed CurrentDirectory_SetInvalidPath_ThrowsArgumentException(null) [3 ms]
+  Passed CurrentDirectory_SetInvalidPath_ThrowsArgumentException("") [1 ms]
+  Passed CurrentDirectory_SetInvalidPath_ThrowsArgumentException("   ") [< 1 ms]
+  Passed CurrentDirectory_SetValidPath_UpdatesCurrentDirectory [< 1 ms]
+  Passed FileMetadata_WithValidData_InitializesCorrectly [3 ms]
+  Passed FileSystemCapabilities_EnumValues_WorkCorrectly(BasicFileOperations) [< 1 ms]
+  Passed FileSystemCapabilities_EnumValues_WorkCorrectly(DirectoryOperations) [< 1 ms]
+  Passed FileSystemCapabilities_EnumValues_WorkCorrectly(FileMetadata) [< 1 ms]
+  Passed FileSystemCapabilities_EnumValues_WorkCorrectly(BasicFileOperations, DirectoryOperations) [< 1 ms]
+  Passed GetFileMetadataAsync_WithCachedFile_ReturnsCachedData [3 ms]
+  Passed GetFileMetadataAsync_WithUncachedFile_ReturnsNull [2 ms]
+  Passed InvalidateCacheAsync_WithNullPath_DoesNotThrow [8 ms]
+  Passed InvalidateCacheAsync_WithValidPath_RemovesCachedEntry [1 ms]
+  Passed ListDirectoryAsync_WithCachedEntries_ReturnsCachedData [14 ms]
+  Passed ListDirectoryAsync_WithoutCache_ReturnsEmptyList [3 ms]
+  Passed RefreshDirectoryAsync_WithInvalidPath_ThrowsArgumentException(null) [4 ms]
+  Passed RefreshDirectoryAsync_WithInvalidPath_ThrowsArgumentException("") [1 ms]
+  Passed RefreshDirectoryAsync_WithInvalidPath_ThrowsArgumentException("   ") [1 ms]
+NUnit Adapter 4.5.0.0: Test execution complete
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.4.5+1caef2f33e (64-bit .NET 8.0.19)
+[xUnit.net 00:00:01.17]   Discovering: Belay.Tests.Unit
+[xUnit.net 00:00:01.30]   Discovered:  Belay.Tests.Unit
+[xUnit.net 00:00:01.30]   Starting:    Belay.Tests.Unit
+  Passed RefreshDirectoryAsync_WithValidPath_ClearsMatchingCacheEntries [4 ms]
+  Passed Belay.Core.Tests.MethodInterceptionTests.DeviceProxyFactory_CanProxy_ShouldReturnTrueForValidInterface [15 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldNotWrapComplexStatements(input: "if True:\n    pass") [15 ms]
+  Passed Belay.Tests.Unit.Execution.ExecutorFrameworkTests.TaskExecutor_CanHandle_ReturnsTrueForTaskAttribute [34 ms]
+[xUnit.net 00:00:01.47]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OK\x04\x04>", expected: "") [FAIL]
+[xUnit.net 00:00:01.48]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.48]       Stack Trace:
+[xUnit.net 00:00:01.48]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(29,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected)
+[xUnit.net 00:00:01.48]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+[xUnit.net 00:00:01.48]            at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OK\x04\x04>", expected: "") [12 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 29
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldNotWrapComplexStatements(input: "def foo(): pass") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldNotWrapComplexStatements(input: "x = 5") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldNotWrapComplexStatements(input: "import sys") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldNotWrapComplexStatements(input: "class Test: pass") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldNotWrapComplexStatements(input: "for i in range(5): pass") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldNotWrapComplexStatements(input: "from math import pi") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldNotWrapComplexStatements(input: "print('hello')") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapComparisonExpressions(input: "x < y") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapComparisonExpressions(input: "value <= 10") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapComparisonExpressions(input: "result >= 0") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapComparisonExpressions(input: "a > b") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapComparisonExpressions(input: "x == 5") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapComparisonExpressions(input: "a != b") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKtest1\r\n\x04\x04>", expected: "test1") [5 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKhello world\r\n\x04\x04>", expected: "hello world") [1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OK\x04\x04>", expected: "") [10 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OK4\r\n\x04\x04>", expected: "4") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "test without OK prefix>", expected: "test without OK prefix") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKmultiline\nresponse\r\n\x04\x04>", expected: "multiline\nresponse") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OK>", expected: "") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKrp2\r\n\x04\x04>", expected: "rp2") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapSimpleExpressions(input: "math.pi", expected: "print(math.pi)") [6 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapSimpleExpressions(input: "2+2", expected: "print(2+2)") [< 1 ms]
+[xUnit.net 00:00:01.50]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKtest1\r\n\x04\x04>", expected: "test1") [FAIL]
+[xUnit.net 00:00:01.50]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.50]       Stack Trace:
+[xUnit.net 00:00:01.50]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(29,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected)
+[xUnit.net 00:00:01.50]            at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+[xUnit.net 00:00:01.50]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.51]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKmultiline\nresponse\r\n\x04\x04>", expected: "multiline\nresponse") [FAIL]
+[xUnit.net 00:00:01.51]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.51]       Stack Trace:
+[xUnit.net 00:00:01.51]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(29,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected)
+[xUnit.net 00:00:01.51]            at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+[xUnit.net 00:00:01.51]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapSimpleExpressions(input: "1", expected: "print(1)") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapSimpleExpressions(input: "len('hello')", expected: "print(len('hello'))") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldWrapSimpleExpressions(input: "sys.platform", expected: "print(sys.platform)") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(errorOutput: "Error: Something went wrong") [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(errorOutput: "Traceback (most recent call last):\n  File \"<stdi"...) [< 1 ms]
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(errorOutput: "Exception: Test exception") [< 1 ms]
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKtest1\r\n\x04\x04>", expected: "test1") [8 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 29
+   at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKmultiline\nresponse\r\n\x04\x04>", expected: "multiline\nresponse") [< 1 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 29
+   at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.51]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKrp2\r\n\x04\x04>", expected: "rp2") [FAIL]
+[xUnit.net 00:00:01.51]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.51]       Stack Trace:
+[xUnit.net 00:00:01.51]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(29,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected)
+[xUnit.net 00:00:01.51]            at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+[xUnit.net 00:00:01.51]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.51]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "test without OK prefix>", expected: "test without OK prefix") [FAIL]
+[xUnit.net 00:00:01.51]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.51]       Stack Trace:
+[xUnit.net 00:00:01.51]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(29,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected)
+[xUnit.net 00:00:01.51]            at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+[xUnit.net 00:00:01.51]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.52]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OK>", expected: "") [FAIL]
+[xUnit.net 00:00:01.52]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.52]       Stack Trace:
+[xUnit.net 00:00:01.52]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(29,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected)
+[xUnit.net 00:00:01.52]            at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+[xUnit.net 00:00:01.52]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.52]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OK4\r\n\x04\x04>", expected: "4") [FAIL]
+[xUnit.net 00:00:01.52]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.52]       Stack Trace:
+[xUnit.net 00:00:01.52]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(29,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected)
+[xUnit.net 00:00:01.52]            at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+[xUnit.net 00:00:01.52]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.52]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKhello world\r\n\x04\x04>", expected: "hello world") [FAIL]
+[xUnit.net 00:00:01.52]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.52]       Stack Trace:
+[xUnit.net 00:00:01.52]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(29,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected)
+[xUnit.net 00:00:01.52]            at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+[xUnit.net 00:00:01.52]            at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.53]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(errorOutput: "Error: Something went wrong") [FAIL]
+[xUnit.net 00:00:01.53]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.53]       Stack Trace:
+[xUnit.net 00:00:01.53]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(49,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(String errorOutput)
+[xUnit.net 00:00:01.53]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+[xUnit.net 00:00:01.53]            at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKrp2\r\n\x04\x04>", expected: "rp2") [< 1 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 29
+   at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "test without OK prefix>", expected: "test without OK prefix") [< 1 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 29
+   at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Passed Belay.Core.Tests.MethodInterceptionTests.CreateProxy_WithValidInterface_ShouldSucceed [31 ms]
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OK>", expected: "") [< 1 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 29
+   at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OK4\r\n\x04\x04>", expected: "4") [< 1 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 29
+   at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(input: "OKhello world\r\n\x04\x04>", expected: "hello world") [< 1 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(String input, String expected) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 29
+   at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldCorrectlyExtractContent(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(errorOutput: "Error: Something went wrong") [< 1 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(String errorOutput) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 49
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldHandleEmptyInput [6 ms]
+[xUnit.net 00:00:01.53]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(errorOutput: "Traceback (most recent call last):\n  File \"<stdi"...) [FAIL]
+[xUnit.net 00:00:01.53]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.53]       Stack Trace:
+[xUnit.net 00:00:01.53]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(49,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(String errorOutput)
+[xUnit.net 00:00:01.54]            at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(Object, Span`1)
+[xUnit.net 00:00:01.54]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.54]     Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(errorOutput: "Exception: Test exception") [FAIL]
+[xUnit.net 00:00:01.54]       System.NullReferenceException : Object reference not set to an instance of an object.
+[xUnit.net 00:00:01.54]       Stack Trace:
+[xUnit.net 00:00:01.54]         /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs(49,0): at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(String errorOutput)
+[xUnit.net 00:00:01.54]            at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(Object, Span`1)
+[xUnit.net 00:00:01.54]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+[xUnit.net 00:00:01.62]     Belay.Tests.Unit.Execution.EnhancedExecutorTests.ExecuteAsync_WithCachedMethod_UsesCaching [FAIL]
+[xUnit.net 00:00:01.62]       Belay.Core.Communication.DeviceConnectionException : Failed to start MicroPython subprocess
+[xUnit.net 00:00:01.62]       ---- System.ComponentModel.Win32Exception : An error occurred trying to start process 'micropython' with working directory '/home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0'. No such file or directory
+[xUnit.net 00:00:01.62]       Stack Trace:
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(164,0): at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(383,0): at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(245,0): at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(294,0): at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Device.cs(293,0): at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(737,0): at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(119,0): at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext()
+[xUnit.net 00:00:01.62]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs(160,0): at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(106,0): at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs(66,0): at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(296,0): at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(221,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(213,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(101,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/EnhancedExecutorTests.cs(79,0): at Belay.Tests.Unit.Execution.EnhancedExecutorTests.ExecuteAsync_WithCachedMethod_UsesCaching()
+[xUnit.net 00:00:01.62]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.62]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:01.62]            at System.Diagnostics.Process.ForkAndExecProcess(ProcessStartInfo startInfo, String resolvedFilename, String[] argv, String[] envp, String cwd, Boolean setCredentials, UInt32 userId, UInt32 groupId, UInt32[] groups, Int32& stdinFd, Int32& stdoutFd, Int32& stderrFd, Boolean usesTerminal, Boolean throwOnNoExec)
+[xUnit.net 00:00:01.62]            at System.Diagnostics.Process.StartCore(ProcessStartInfo startInfo)
+[xUnit.net 00:00:01.62]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(129,0): at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:01.62]       Output:
+[xUnit.net 00:00:01.62]         [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+[xUnit.net 00:00:01.62]         [Debug] Belay.Core.Sessions.DeviceSession: Created device session session_1754954155691_70ef8116
+[xUnit.net 00:00:01.64]         [Information] Belay.Core.Sessions.DeviceSessionManager: Created session session_1754954155691_70ef8116
+[xUnit.net 00:00:01.64]         [Error] Belay.Core.Sessions.DeviceSessionManager: Error executing operation in session session_1754954155691_70ef8116
+[xUnit.net 00:00:01.64]         Exception: Belay.Core.Communication.DeviceConnectionException: Failed to start MicroPython subprocess
+[xUnit.net 00:00:01.64]          ---> System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'micropython' with working directory '/home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0'. No such file or directory
+[xUnit.net 00:00:01.64]            at System.Diagnostics.Process.ForkAndExecProcess(ProcessStartInfo startInfo, String resolvedFilename, String[] argv, String[] envp, String cwd, Boolean setCredentials, UInt32 userId, UInt32 groupId, UInt32[] groups, Int32& stdinFd, Int32& stdoutFd, Int32& stderrFd, Boolean usesTerminal, Boolean throwOnNoExec)
+[xUnit.net 00:00:01.64]            at System.Diagnostics.Process.StartCore(ProcessStartInfo startInfo)
+[xUnit.net 00:00:01.64]            at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 129
+[xUnit.net 00:00:01.64]            --- End of inner exception stack trace ---
+[xUnit.net 00:00:01.64]            at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 164
+[xUnit.net 00:00:01.64]            at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 383
+[xUnit.net 00:00:01.64]            at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 245
+[xUnit.net 00:00:01.64]            at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 294
+[xUnit.net 00:00:01.64]            at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Device.cs:line 293
+[xUnit.net 00:00:01.64]            at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 737
+[xUnit.net 00:00:01.64]            at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext() in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 119
+[xUnit.net 00:00:01.64]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.64]            at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs:line 160
+[xUnit.net 00:00:01.64]         [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 1 active sessions
+[xUnit.net 00:00:01.64]         [Debug] Belay.Core.Sessions.DeviceSession: Disposing device session session_1754954155691_70ef8116
+[xUnit.net 00:00:01.64]         [Error] Belay.Core.Sessions.ResourceTracker: Error during resource tracker disposal for session session_1754954155691_70ef8116
+[xUnit.net 00:00:01.64]         Exception: System.ObjectDisposedException: Cannot access a disposed object.
+[xUnit.net 00:00:01.64]         Object name: 'ResourceTracker'.
+[xUnit.net 00:00:01.64]            at Belay.Core.Sessions.ResourceTracker.ThrowIfDisposed() in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 353
+[xUnit.net 00:00:01.64]            at Belay.Core.Sessions.ResourceTracker.CleanupResourcesAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 202
+[xUnit.net 00:00:01.64]            at Belay.Core.Sessions.ResourceTracker.DisposeAsync() in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 261
+[xUnit.net 00:00:01.64]         [Debug] Belay.Core.Sessions.ResourceTracker: Resource tracker disposed for session session_1754954155691_70ef8116
+[xUnit.net 00:00:01.64]         [Information] Belay.Core.Sessions.DeviceSession: Disposed device session session_1754954155691_70ef8116
+[xUnit.net 00:00:01.64]         [Information] Belay.Core.Sessions.DeviceSessionManager: Cleaned up session session_1754954155691_70ef8116 during disposal
+[xUnit.net 00:00:01.64]         [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+[xUnit.net 00:00:01.64]         [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+  Passed Belay.Tests.Unit.Protocol.AdaptiveRawReplProtocolTests.PreprocessCodeForRawRepl_ShouldHandleNullInput [< 1 ms]
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(errorOutput: "Traceback (most recent call last):\n  File \"<stdi"...) [< 1 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(String errorOutput) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 49
+   at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Failed Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(errorOutput: "Exception: Test exception") [< 1 ms]
+  Error Message:
+   System.NullReferenceException : Object reference not set to an instance of an object.
+  Stack Trace:
+     at Belay.Tests.Unit.Protocol.RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(String errorOutput) in /home/corona/belay.net/tests/Belay.Tests.Unit/Protocol/RawReplProtocolTests.cs:line 49
+   at InvokeStub_RawReplProtocolTests.ParseResponse_ShouldHandleErrorResponses(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+  Passed Belay.Tests.Unit.Execution.ExecutorFrameworkTests.ExecuteMethodAsync_WithoutAttribute_ThrowsInvalidOperationException [42 ms]
+  Passed Belay.Tests.Unit.Execution.ExecutorFrameworkTests.ExecuteMethodAsync_WithThreadAttribute_UsesThreadExecutor [37 ms]
+  Passed Belay.Tests.Unit.Execution.EnhancedExecutorTests.GetExecutionStatistics_ReturnsValidStatistics [45 ms]
+  Standard Output Messages:
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 0 active sessions
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+ [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+
+
+  Passed Belay.Tests.Unit.Execution.EnhancedExecutorTests.DeviceProxy_CanProxyInterface [5 ms]
+  Standard Output Messages:
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 0 active sessions
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+ [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+
+
+  Failed Belay.Tests.Unit.Execution.EnhancedExecutorTests.ExecuteAsync_WithCachedMethod_UsesCaching [65 ms]
+  Error Message:
+   Belay.Core.Communication.DeviceConnectionException : Failed to start MicroPython subprocess
+---- System.ComponentModel.Win32Exception : An error occurred trying to start process 'micropython' with working directory '/home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0'. No such file or directory
+  Stack Trace:
+     at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 164
+   at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 383
+   at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 245
+   at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 294
+   at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Device.cs:line 293
+   at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 737
+   at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext() in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 119
+--- End of stack trace from previous location ---
+   at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs:line 160
+   at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 106
+   at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod) in /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs:line 66
+   at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 296
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 221
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 213
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 101
+   at Belay.Tests.Unit.Execution.EnhancedExecutorTests.ExecuteAsync_WithCachedMethod_UsesCaching() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/EnhancedExecutorTests.cs:line 79
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at System.Diagnostics.Process.ForkAndExecProcess(ProcessStartInfo startInfo, String resolvedFilename, String[] argv, String[] envp, String cwd, Boolean setCredentials, UInt32 userId, UInt32 groupId, UInt32[] groups, Int32& stdinFd, Int32& stdoutFd, Int32& stderrFd, Boolean usesTerminal, Boolean throwOnNoExec)
+   at System.Diagnostics.Process.StartCore(ProcessStartInfo startInfo)
+   at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 129
+  Standard Output Messages:
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+ [Debug] Belay.Core.Sessions.DeviceSession: Created device session session_1754954155691_70ef8116
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Created session session_1754954155691_70ef8116
+ [Error] Belay.Core.Sessions.DeviceSessionManager: Error executing operation in session session_1754954155691_70ef8116
+ Exception: Belay.Core.Communication.DeviceConnectionException: Failed to start MicroPython subprocess
+  ---> System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'micropython' with working directory '/home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0'. No such file or directory
+    at System.Diagnostics.Process.ForkAndExecProcess(ProcessStartInfo startInfo, String resolvedFilename, String[] argv, String[] envp, String cwd, Boolean setCredentials, UInt32 userId, UInt32 groupId, UInt32[] groups, Int32& stdinFd, Int32& stdoutFd, Int32& stderrFd, Boolean usesTerminal, Boolean throwOnNoExec)
+    at System.Diagnostics.Process.StartCore(ProcessStartInfo startInfo)
+    at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 129
+    --- End of inner exception stack trace ---
+    at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 164
+    at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 383
+    at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 245
+    at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 294
+    at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Device.cs:line 293
+    at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 737
+    at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext() in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 119
+ --- End of stack trace from previous location ---
+    at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs:line 160
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 1 active sessions
+ [Debug] Belay.Core.Sessions.DeviceSession: Disposing device session session_1754954155691_70ef8116
+ [Error] Belay.Core.Sessions.ResourceTracker: Error during resource tracker disposal for session session_1754954155691_70ef8116
+ Exception: System.ObjectDisposedException: Cannot access a disposed object.
+ Object name: 'ResourceTracker'.
+    at Belay.Core.Sessions.ResourceTracker.ThrowIfDisposed() in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 353
+    at Belay.Core.Sessions.ResourceTracker.CleanupResourcesAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 202
+    at Belay.Core.Sessions.ResourceTracker.DisposeAsync() in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 261
+ [Debug] Belay.Core.Sessions.ResourceTracker: Resource tracker disposed for session session_1754954155691_70ef8116
+ [Information] Belay.Core.Sessions.DeviceSession: Disposed device session session_1754954155691_70ef8116
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Cleaned up session session_1754954155691_70ef8116 during disposal
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+ [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+
+
+[xUnit.net 00:00:01.67]     Belay.Tests.Unit.Execution.EnhancedExecutorTests.DeviceProxy_ExecutesMethodsCorrectly [FAIL]
+[xUnit.net 00:00:01.67]       Belay.Core.Exceptions.DeviceExecutionException : Method 'TestTaskMethod' failed in proxy: Unable to generate Python code for method 'TestTaskMethod'. Methods must either: 1) Return a Python code string when invoked, 2) Have a PythonCode attribute with embedded code, 3) Be deployed to the device beforehand, or 4) Be simple expressions (not yet implemented).
+[xUnit.net 00:00:01.67]       ---- System.InvalidOperationException : Unable to generate Python code for method 'TestTaskMethod'. Methods must either: 1) Return a Python code string when invoked, 2) Have a PythonCode attribute with embedded code, 3) Be deployed to the device beforehand, or 4) Be simple expressions (not yet implemented).
+[xUnit.net 00:00:01.67]       Stack Trace:
+[xUnit.net 00:00:01.67]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(191,0): at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args)
+[xUnit.net 00:00:01.67]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(85,0): at Belay.Core.Execution.DeviceProxy`1.Invoke(MethodInfo targetMethod, Object[] args)
+[xUnit.net 00:00:01.67]            at generatedProxy_2.TestTaskMethod()
+[xUnit.net 00:00:01.67]         /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/EnhancedExecutorTests.cs(137,0): at Belay.Tests.Unit.Execution.EnhancedExecutorTests.DeviceProxy_ExecutesMethodsCorrectly()
+[xUnit.net 00:00:01.67]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.67]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:01.67]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(349,0): at Belay.Core.Execution.BaseExecutor.GeneratePythonMethodCall(MethodInfo method, Object instance, Object[] parameters)
+[xUnit.net 00:00:01.67]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(289,0): at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.67]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(221,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context)
+[xUnit.net 00:00:01.67]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(213,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context)
+[xUnit.net 00:00:01.67]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(101,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.67]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(308,0): at Belay.Core.Execution.BaseExecutor.ExecuteAsync(MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.67]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(102,0): at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args)
+[xUnit.net 00:00:01.67]       Output:
+[xUnit.net 00:00:01.67]         [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+[xUnit.net 00:00:01.67]         [Debug] EnhancedExecutorTests: Created device proxy for type ITestInterface
+[xUnit.net 00:00:01.67]         [Trace] EnhancedExecutorTests: Intercepting method call: TestTaskMethod
+[xUnit.net 00:00:01.67]         [Trace] EnhancedExecutorTests: Method TestTaskMethod can be handled: True
+[xUnit.net 00:00:01.68]         [Error] EnhancedExecutorTests: Failed to execute method TestTaskMethod through proxy
+[xUnit.net 00:00:01.68]         Exception: System.InvalidOperationException: Unable to generate Python code for method 'TestTaskMethod'. Methods must either: 1) Return a Python code string when invoked, 2) Have a PythonCode attribute with embedded code, 3) Be deployed to the device beforehand, or 4) Be simple expressions (not yet implemented).
+[xUnit.net 00:00:01.68]            at Belay.Core.Execution.BaseExecutor.GeneratePythonMethodCall(MethodInfo method, Object instance, Object[] parameters) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 349
+[xUnit.net 00:00:01.68]            at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 289
+[xUnit.net 00:00:01.68]            at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 221
+[xUnit.net 00:00:01.68]            at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 213
+[xUnit.net 00:00:01.68]            at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 101
+[xUnit.net 00:00:01.68]            at Belay.Core.Execution.BaseExecutor.ExecuteAsync(MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 308
+[xUnit.net 00:00:01.68]            at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 102
+[xUnit.net 00:00:01.68]         [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 0 active sessions
+[xUnit.net 00:00:01.68]         [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+[xUnit.net 00:00:01.68]         [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+[xUnit.net 00:00:01.71]     Belay.Tests.Unit.Execution.EnhancedExecutorTests.ExecuteAsync_WithTaskMethod_ExecutesSuccessfully [FAIL]
+[xUnit.net 00:00:01.71]       Belay.Core.Communication.DeviceConnectionException : Failed to start MicroPython subprocess
+[xUnit.net 00:00:01.71]       ---- System.ComponentModel.Win32Exception : An error occurred trying to start process 'micropython' with working directory '/home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0'. No such file or directory
+[xUnit.net 00:00:01.71]       Stack Trace:
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(164,0): at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(383,0): at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(245,0): at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(294,0): at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Device.cs(293,0): at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(737,0): at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(119,0): at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext()
+[xUnit.net 00:00:01.71]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs(160,0): at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(106,0): at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs(66,0): at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(296,0): at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(221,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(213,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(101,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:01.71]         /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/EnhancedExecutorTests.cs(66,0): at Belay.Tests.Unit.Execution.EnhancedExecutorTests.ExecuteAsync_WithTaskMethod_ExecutesSuccessfully()
+[xUnit.net 00:00:01.71]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.72]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:01.72]            at System.Diagnostics.Process.ForkAndExecProcess(ProcessStartInfo startInfo, String resolvedFilename, String[] argv, String[] envp, String cwd, Boolean setCredentials, UInt32 userId, UInt32 groupId, UInt32[] groups, Int32& stdinFd, Int32& stdoutFd, Int32& stderrFd, Boolean usesTerminal, Boolean throwOnNoExec)
+[xUnit.net 00:00:01.72]            at System.Diagnostics.Process.StartCore(ProcessStartInfo startInfo)
+[xUnit.net 00:00:01.72]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(129,0): at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:01.72]       Output:
+[xUnit.net 00:00:01.72]         [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+[xUnit.net 00:00:01.72]         [Debug] Belay.Core.Sessions.DeviceSession: Created device session session_1754954155801_3811a1e6
+[xUnit.net 00:00:01.72]         [Information] Belay.Core.Sessions.DeviceSessionManager: Created session session_1754954155801_3811a1e6
+[xUnit.net 00:00:01.72]         [Error] Belay.Core.Sessions.DeviceSessionManager: Error executing operation in session session_1754954155801_3811a1e6
+[xUnit.net 00:00:01.72]         Exception: Belay.Core.Communication.DeviceConnectionException: Failed to start MicroPython subprocess
+[xUnit.net 00:00:01.72]          ---> System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'micropython' with working directory '/home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0'. No such file or directory
+[xUnit.net 00:00:01.72]            at System.Diagnostics.Process.ForkAndExecProcess(ProcessStartInfo startInfo, String resolvedFilename, String[] argv, String[] envp, String cwd, Boolean setCredentials, UInt32 userId, UInt32 groupId, UInt32[] groups, Int32& stdinFd, Int32& stdoutFd, Int32& stderrFd, Boolean usesTerminal, Boolean throwOnNoExec)
+[xUnit.net 00:00:01.72]            at System.Diagnostics.Process.StartCore(ProcessStartInfo startInfo)
+[xUnit.net 00:00:01.72]            at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 129
+[xUnit.net 00:00:01.72]            --- End of inner exception stack trace ---
+[xUnit.net 00:00:01.72]            at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 164
+[xUnit.net 00:00:01.72]            at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 383
+[xUnit.net 00:00:01.72]            at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 245
+[xUnit.net 00:00:01.72]            at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 294
+[xUnit.net 00:00:01.72]            at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Device.cs:line 293
+[xUnit.net 00:00:01.72]            at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 737
+[xUnit.net 00:00:01.72]            at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext() in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 119
+[xUnit.net 00:00:01.72]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:01.72]            at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs:line 160
+[xUnit.net 00:00:01.72]         [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 1 active sessions
+[xUnit.net 00:00:01.72]         [Debug] Belay.Core.Sessions.DeviceSession: Disposing device session session_1754954155801_3811a1e6
+[xUnit.net 00:00:01.72]         [Error] Belay.Core.Sessions.ResourceTracker: Error during resource tracker disposal for session session_1754954155801_3811a1e6
+[xUnit.net 00:00:01.72]         Exception: System.ObjectDisposedException: Cannot access a disposed object.
+[xUnit.net 00:00:01.72]         Object name: 'ResourceTracker'.
+[xUnit.net 00:00:01.72]            at Belay.Core.Sessions.ResourceTracker.ThrowIfDisposed() in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 353
+[xUnit.net 00:00:01.72]            at Belay.Core.Sessions.ResourceTracker.CleanupResourcesAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 202
+[xUnit.net 00:00:01.72]            at Belay.Core.Sessions.ResourceTracker.DisposeAsync() in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 261
+[xUnit.net 00:00:01.72]         [Debug] Belay.Core.Sessions.ResourceTracker: Resource tracker disposed for session session_1754954155801_3811a1e6
+[xUnit.net 00:00:01.72]         [Information] Belay.Core.Sessions.DeviceSession: Disposed device session session_1754954155801_3811a1e6
+[xUnit.net 00:00:01.72]         [Information] Belay.Core.Sessions.DeviceSessionManager: Cleaned up session session_1754954155801_3811a1e6 during disposal
+[xUnit.net 00:00:01.72]         [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+[xUnit.net 00:00:01.72]         [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+  Passed Belay.Tests.Unit.Execution.EnhancedExecutorTests.CanHandle_WithoutAttributes_ReturnsFalse [21 ms]
+  Standard Output Messages:
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 0 active sessions
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+ [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+
+
+  Failed Belay.Tests.Unit.Execution.EnhancedExecutorTests.DeviceProxy_ExecutesMethodsCorrectly [31 ms]
+  Error Message:
+   Belay.Core.Exceptions.DeviceExecutionException : Method 'TestTaskMethod' failed in proxy: Unable to generate Python code for method 'TestTaskMethod'. Methods must either: 1) Return a Python code string when invoked, 2) Have a PythonCode attribute with embedded code, 3) Be deployed to the device beforehand, or 4) Be simple expressions (not yet implemented).
+---- System.InvalidOperationException : Unable to generate Python code for method 'TestTaskMethod'. Methods must either: 1) Return a Python code string when invoked, 2) Have a PythonCode attribute with embedded code, 3) Be deployed to the device beforehand, or 4) Be simple expressions (not yet implemented).
+  Stack Trace:
+     at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 191
+   at Belay.Core.Execution.DeviceProxy`1.Invoke(MethodInfo targetMethod, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 85
+   at generatedProxy_2.TestTaskMethod()
+   at Belay.Tests.Unit.Execution.EnhancedExecutorTests.DeviceProxy_ExecutesMethodsCorrectly() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/EnhancedExecutorTests.cs:line 137
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at Belay.Core.Execution.BaseExecutor.GeneratePythonMethodCall(MethodInfo method, Object instance, Object[] parameters) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 349
+   at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 289
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 221
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 213
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 101
+   at Belay.Core.Execution.BaseExecutor.ExecuteAsync(MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 308
+   at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 102
+  Standard Output Messages:
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+ [Debug] EnhancedExecutorTests: Created device proxy for type ITestInterface
+ [Trace] EnhancedExecutorTests: Intercepting method call: TestTaskMethod
+ [Trace] EnhancedExecutorTests: Method TestTaskMethod can be handled: True
+ [Error] EnhancedExecutorTests: Failed to execute method TestTaskMethod through proxy
+ Exception: System.InvalidOperationException: Unable to generate Python code for method 'TestTaskMethod'. Methods must either: 1) Return a Python code string when invoked, 2) Have a PythonCode attribute with embedded code, 3) Be deployed to the device beforehand, or 4) Be simple expressions (not yet implemented).
+    at Belay.Core.Execution.BaseExecutor.GeneratePythonMethodCall(MethodInfo method, Object instance, Object[] parameters) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 349
+    at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 289
+    at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 221
+    at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 213
+    at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 101
+    at Belay.Core.Execution.BaseExecutor.ExecuteAsync(MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 308
+    at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 102
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 0 active sessions
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+ [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+
+
+  Passed Belay.Tests.Unit.Execution.EnhancedExecutorTests.ClearExecutionCache_ClearsAllCaches [8 ms]
+  Standard Output Messages:
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 0 active sessions
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+ [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+
+
+  Passed Belay.Tests.Unit.Execution.EnhancedExecutorTests.CanHandle_WithTaskAttribute_ReturnsTrue [2 ms]
+  Standard Output Messages:
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 0 active sessions
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+ [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+
+
+  Failed Belay.Tests.Unit.Execution.EnhancedExecutorTests.ExecuteAsync_WithTaskMethod_ExecutesSuccessfully [30 ms]
+  Error Message:
+   Belay.Core.Communication.DeviceConnectionException : Failed to start MicroPython subprocess
+---- System.ComponentModel.Win32Exception : An error occurred trying to start process 'micropython' with working directory '/home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0'. No such file or directory
+  Stack Trace:
+     at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 164
+   at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 383
+   at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 245
+   at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 294
+   at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Device.cs:line 293
+   at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 737
+   at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext() in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 119
+--- End of stack trace from previous location ---
+   at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs:line 160
+   at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 106
+   at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod) in /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs:line 66
+   at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 296
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 221
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 213
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 101
+   at Belay.Tests.Unit.Execution.EnhancedExecutorTests.ExecuteAsync_WithTaskMethod_ExecutesSuccessfully() in /home/corona/belay.net/tests/Belay.Tests.Unit/Execution/EnhancedExecutorTests.cs:line 66
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at System.Diagnostics.Process.ForkAndExecProcess(ProcessStartInfo startInfo, String resolvedFilename, String[] argv, String[] envp, String cwd, Boolean setCredentials, UInt32 userId, UInt32 groupId, UInt32[] groups, Int32& stdinFd, Int32& stdoutFd, Int32& stderrFd, Boolean usesTerminal, Boolean throwOnNoExec)
+   at System.Diagnostics.Process.StartCore(ProcessStartInfo startInfo)
+   at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 129
+  Standard Output Messages:
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+ [Debug] Belay.Core.Sessions.DeviceSession: Created device session session_1754954155801_3811a1e6
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Created session session_1754954155801_3811a1e6
+ [Error] Belay.Core.Sessions.DeviceSessionManager: Error executing operation in session session_1754954155801_3811a1e6
+ Exception: Belay.Core.Communication.DeviceConnectionException: Failed to start MicroPython subprocess
+  ---> System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'micropython' with working directory '/home/corona/belay.net/tests/Belay.Tests.Unit/bin/Debug/net8.0'. No such file or directory
+    at System.Diagnostics.Process.ForkAndExecProcess(ProcessStartInfo startInfo, String resolvedFilename, String[] argv, String[] envp, String cwd, Boolean setCredentials, UInt32 userId, UInt32 groupId, UInt32[] groups, Int32& stdinFd, Int32& stdoutFd, Int32& stderrFd, Boolean usesTerminal, Boolean throwOnNoExec)
+    at System.Diagnostics.Process.StartCore(ProcessStartInfo startInfo)
+    at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 129
+    --- End of inner exception stack trace ---
+    at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 164
+    at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 383
+    at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 245
+    at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 294
+    at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Device.cs:line 293
+    at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 737
+    at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext() in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 119
+ --- End of stack trace from previous location ---
+    at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs:line 160
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 1 active sessions
+ [Debug] Belay.Core.Sessions.DeviceSession: Disposing device session session_1754954155801_3811a1e6
+ [Error] Belay.Core.Sessions.ResourceTracker: Error during resource tracker disposal for session session_1754954155801_3811a1e6
+ Exception: System.ObjectDisposedException: Cannot access a disposed object.
+ Object name: 'ResourceTracker'.
+    at Belay.Core.Sessions.ResourceTracker.ThrowIfDisposed() in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 353
+    at Belay.Core.Sessions.ResourceTracker.CleanupResourcesAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 202
+    at Belay.Core.Sessions.ResourceTracker.DisposeAsync() in /home/corona/belay.net/src/Belay.Core/Sessions/ResourceTracker.cs:line 261
+ [Debug] Belay.Core.Sessions.ResourceTracker: Resource tracker disposed for session session_1754954155801_3811a1e6
+ [Information] Belay.Core.Sessions.DeviceSession: Disposed device session session_1754954155801_3811a1e6
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Cleaned up session session_1754954155801_3811a1e6 during disposal
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+ [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+
+
+  Passed Belay.Tests.Unit.Execution.EnhancedExecutorTests.EnhancedDevice_WrapsDeviceCorrectly [6 ms]
+  Standard Output Messages:
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+ [Debug] EnhancedExecutorTests: Enhanced device wrapper disposed
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 0 active sessions
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+ [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+
+
+  Passed Belay.Tests.Unit.Execution.EnhancedExecutorTests.DeviceProxy_CannotProxyConcreteClass [2 ms]
+  Standard Output Messages:
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Device session manager created
+ [Information] Belay.Core.Sessions.DeviceSessionManager: Shutting down session manager with 0 active sessions
+ [Debug] Belay.Core.Sessions.DeviceSessionManager: Session manager disposed
+ [Debug] Belay.Core.Caching.MethodDeploymentCache: MethodDeploymentCache disposed successfully
+
+
+  Belay.Sync -> /home/corona/belay.net/src/Belay.Sync/bin/Debug/net8.0/Belay.Sync.dll
+/home/corona/belay.net/tests/Belay.Tests.Subprocess/SubprocessCommunicationTests.cs(271,13): error CS0246: The type or namespace name 'SubprocessDeviceCommunication' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Subprocess/Belay.Tests.Subprocess.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Subprocess/SubprocessCommunicationTests.cs(11,22): error CS0246: The type or namespace name 'ILoggerFactory' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Subprocess/Belay.Tests.Subprocess.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Subprocess/SubprocessCommunicationTests.cs(12,27): error CS0246: The type or namespace name 'SubprocessDeviceCommunication' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Subprocess/Belay.Tests.Subprocess.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(29,31): error CS0103: The name 'MicroPythonUnixPort' does not exist in the current context [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(31,13): error CS0103: The name 'MicroPythonUnixPort' does not exist in the current context [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(32,31): error CS0103: The name 'MicroPythonUnixPort' does not exist in the current context [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(26,31): error CS0103: The name 'MicroPythonUnixPort' does not exist in the current context [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(28,13): error CS0103: The name 'MicroPythonUnixPort' does not exist in the current context [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(29,31): error CS0103: The name 'MicroPythonUnixPort' does not exist in the current context [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(43,23): error CS1061: 'DeviceConnectionState' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'DeviceConnectionState' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(55,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/Sync/DeviceFileSystemIntegrationTests.cs(41,25): error CS1061: 'ILoggingBuilder' does not contain a definition for 'AddXUnit' and no accessible extension method 'AddXUnit' accepting a first argument of type 'ILoggingBuilder' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(67,17): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/Sync/DeviceFileSystemIntegrationTests.cs(53,34): error CS1503: Argument 1: cannot convert from 'string' to 'Belay.Core.Communication.IDeviceCommunication' [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(45,22): error CS0246: The type or namespace name 'Stopwatch' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(87,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(96,29): error CS0246: The type or namespace name 'StringBuilder' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(69,22): error CS0246: The type or namespace name 'Stopwatch' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(72,29): error CS0246: The type or namespace name 'StringBuilder' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(99,22): error CS0246: The type or namespace name 'Stopwatch' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(123,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/Hardware/Esp32ProtocolValidationTests.cs(62,69): error CS1503: Argument 2: cannot convert from 'byte[]' to 'System.Predicate<byte>' [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(135,22): error CS0246: The type or namespace name 'Stopwatch' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(147,20): error CS1061: 'int' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'int' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/Hardware/Esp32ProtocolValidationTests.cs(87,60): error CS1503: Argument 2: cannot convert from 'byte[]' to 'System.Predicate<byte>' [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(122,17): error CS1061: 'List<string>' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'List<string>' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/Hardware/Esp32ProtocolValidationTests.cs(112,61): error CS1503: Argument 2: cannot convert from 'byte[]' to 'System.Predicate<byte>' [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(160,22): error CS0246: The type or namespace name 'Stopwatch' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(134,19): error CS1061: 'Func<Task>' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'Func<Task>' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(147,19): error CS1061: 'Func<Task>' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'Func<Task>' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(163,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(175,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/Hardware/Esp32ProtocolValidationTests.cs(137,75): error CS1503: Argument 2: cannot convert from 'byte[]' to 'System.Predicate<byte>' [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(192,22): error CS0246: The type or namespace name 'Stopwatch' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(210,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(187,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(188,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(189,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(190,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(191,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(211,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(218,22): error CS0246: The type or namespace name 'Stopwatch' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(244,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(226,19): error CS1061: 'int' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'int' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(227,21): error CS1061: 'double' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'double' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(228,20): error CS1061: 'bool' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'bool' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(229,22): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(246,16): error CS1061: 'Dictionary<string, object>' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'Dictionary<string, object>' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(247,16): error CS1061: 'Dictionary<string, object>' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'Dictionary<string, object>' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(248,16): error CS1061: 'Dictionary<string, object>' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'Dictionary<string, object>' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/Hardware/Esp32ProtocolValidationTests.cs(171,68): error CS1503: Argument 2: cannot convert from 'byte[]' to 'System.Predicate<byte>' [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(263,16): error CS1061: 'int' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'int' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(252,22): error CS0246: The type or namespace name 'Stopwatch' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(276,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/RawReplProtocolTests.cs(283,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(284,22): error CS0246: The type or namespace name 'Stopwatch' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(308,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(315,22): error CS0246: The type or namespace name 'Stopwatch' could not be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/PerformanceBenchmarks.cs(329,16): error CS1061: 'string' does not contain a definition for 'Should' and no accessible extension method 'Should' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/Subprocess/SubprocessCommunicationTests.cs(253,27): error CS1061: 'SubprocessDeviceCommunication' does not contain a definition for 'DisconnectAsync' and no accessible extension method 'DisconnectAsync' accepting a first argument of type 'SubprocessDeviceCommunication' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+/home/corona/belay.net/tests/Belay.Tests.Integration/Subprocess/SubprocessCommunicationTests.cs(258,27): error CS1061: 'SubprocessDeviceCommunication' does not contain a definition for 'ConnectAsync' and no accessible extension method 'ConnectAsync' accepting a first argument of type 'SubprocessDeviceCommunication' could be found (are you missing a using directive or an assembly reference?) [/home/corona/belay.net/tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj]
+  Passed Belay.Tests.Unit.Execution.ExecutorFrameworkTests.ExecuteMethodAsync_WithTeardownAttribute_UsesTeardownExecutor [10 s]
+[xUnit.net 00:00:18.38]     Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithMultipleParameters_ShouldWork [FAIL]
+[xUnit.net 00:00:18.38]       Belay.Core.Exceptions.DeviceExecutionException : Method 'FormatMessageAsync' failed in proxy: Subprocess is already started
+[xUnit.net 00:00:18.38]       ---- System.InvalidOperationException : Subprocess is already started
+[xUnit.net 00:00:18.38]       Stack Trace:
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(191,0): at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(85,0): at Belay.Core.Execution.DeviceProxy`1.Invoke(MethodInfo targetMethod, Object[] args)
+[xUnit.net 00:00:18.38]            at generatedProxy_1.FormatMessageAsync(String, Int32)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs(145,0): at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithMultipleParameters_ShouldWork()
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs(161,0): at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithMultipleParameters_ShouldWork()
+[xUnit.net 00:00:18.38]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:18.38]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(118,0): at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(383,0): at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(245,0): at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(294,0): at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Device.cs(293,0): at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(737,0): at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(119,0): at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext()
+[xUnit.net 00:00:18.38]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs(160,0): at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(106,0): at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs(66,0): at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(296,0): at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(221,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(213,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(101,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:18.38]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(121,0): at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args)
+  Failed Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithMultipleParameters_ShouldWork [16 s]
+  Error Message:
+   Belay.Core.Exceptions.DeviceExecutionException : Method 'FormatMessageAsync' failed in proxy: Subprocess is already started
+---- System.InvalidOperationException : Subprocess is already started
+  Stack Trace:
+     at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 191
+   at Belay.Core.Execution.DeviceProxy`1.Invoke(MethodInfo targetMethod, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 85
+   at generatedProxy_1.FormatMessageAsync(String, Int32)
+   at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithMultipleParameters_ShouldWork() in /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs:line 145
+   at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithMultipleParameters_ShouldWork() in /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs:line 161
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 118
+   at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 383
+   at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 245
+   at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 294
+   at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Device.cs:line 293
+   at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 737
+   at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext() in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 119
+--- End of stack trace from previous location ---
+   at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs:line 160
+   at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 106
+   at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod) in /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs:line 66
+   at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 296
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 221
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 213
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 101
+   at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 121
+[xUnit.net 00:00:35.03]     Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithParameterSubstitution_ShouldWork [FAIL]
+[xUnit.net 00:00:35.03]       Belay.Core.Exceptions.DeviceExecutionException : Method 'DoubleValueAsync' failed in proxy: Subprocess is already started
+[xUnit.net 00:00:35.03]       ---- System.InvalidOperationException : Subprocess is already started
+[xUnit.net 00:00:35.03]       Stack Trace:
+[xUnit.net 00:00:35.03]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(191,0): at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args)
+[xUnit.net 00:00:35.03]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(85,0): at Belay.Core.Execution.DeviceProxy`1.Invoke(MethodInfo targetMethod, Object[] args)
+[xUnit.net 00:00:35.03]            at generatedProxy_1.DoubleValueAsync(Int32)
+[xUnit.net 00:00:35.03]         /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs(115,0): at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithParameterSubstitution_ShouldWork()
+[xUnit.net 00:00:35.03]         /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs(131,0): at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithParameterSubstitution_ShouldWork()
+[xUnit.net 00:00:35.03]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:35.03]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:35.03]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(118,0): at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:35.03]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(383,0): at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:35.03]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(245,0): at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(294,0): at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Device.cs(293,0): at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(737,0): at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(119,0): at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext()
+[xUnit.net 00:00:35.04]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs(160,0): at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(106,0): at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs(66,0): at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(296,0): at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(221,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(213,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(101,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:35.04]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(121,0): at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args)
+  Failed Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithParameterSubstitution_ShouldWork [16 s]
+  Error Message:
+   Belay.Core.Exceptions.DeviceExecutionException : Method 'DoubleValueAsync' failed in proxy: Subprocess is already started
+---- System.InvalidOperationException : Subprocess is already started
+  Stack Trace:
+     at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 191
+   at Belay.Core.Execution.DeviceProxy`1.Invoke(MethodInfo targetMethod, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 85
+   at generatedProxy_1.DoubleValueAsync(Int32)
+   at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithParameterSubstitution_ShouldWork() in /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs:line 115
+   at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithParameterSubstitution_ShouldWork() in /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs:line 131
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 118
+   at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 383
+   at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 245
+   at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 294
+   at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Device.cs:line 293
+   at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 737
+   at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext() in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 119
+--- End of stack trace from previous location ---
+   at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs:line 160
+   at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 106
+   at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod) in /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs:line 66
+   at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 296
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 221
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 213
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 101
+   at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 121
+  Passed Belay.Core.Tests.MethodInterceptionTests.GetEnhancedExecutor_ShouldReturnValidExecutor [1 ms]
+[xUnit.net 00:00:51.70]     Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithSimpleReturn_ShouldWork [FAIL]
+[xUnit.net 00:00:51.70]       Belay.Core.Exceptions.DeviceExecutionException : Method 'GetGreetingAsync' failed in proxy: Subprocess is already started
+[xUnit.net 00:00:51.70]       ---- System.InvalidOperationException : Subprocess is already started
+[xUnit.net 00:00:51.70]       Stack Trace:
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(191,0): at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(85,0): at Belay.Core.Execution.DeviceProxy`1.Invoke(MethodInfo targetMethod, Object[] args)
+[xUnit.net 00:00:51.70]            at generatedProxy_1.GetGreetingAsync()
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs(84,0): at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithSimpleReturn_ShouldWork()
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs(101,0): at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithSimpleReturn_ShouldWork()
+[xUnit.net 00:00:51.70]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:51.70]         ----- Inner Stack Trace -----
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(118,0): at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(383,0): at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(245,0): at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs(294,0): at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Device.cs(293,0): at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(737,0): at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(119,0): at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext()
+[xUnit.net 00:00:51.70]         --- End of stack trace from previous location ---
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs(160,0): at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(106,0): at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs(66,0): at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs(296,0): at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(221,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(213,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs(101,0): at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken)
+[xUnit.net 00:00:51.70]         /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs(121,0): at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args)
+  Failed Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithSimpleReturn_ShouldWork [16 s]
+  Error Message:
+   Belay.Core.Exceptions.DeviceExecutionException : Method 'GetGreetingAsync' failed in proxy: Subprocess is already started
+---- System.InvalidOperationException : Subprocess is already started
+  Stack Trace:
+     at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 191
+   at Belay.Core.Execution.DeviceProxy`1.Invoke(MethodInfo targetMethod, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 85
+   at generatedProxy_1.GetGreetingAsync()
+   at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithSimpleReturn_ShouldWork() in /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs:line 84
+   at Belay.Core.Tests.MethodInterceptionTests.MethodInterception_WithSimpleReturn_ShouldWork() in /home/corona/belay.net/tests/Belay.Tests.Unit/MethodInterceptionTests.cs:line 101
+--- End of stack trace from previous location ---
+----- Inner Stack Trace -----
+   at Belay.Core.Communication.SubprocessDeviceCommunication.StartAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 118
+   at Belay.Core.Communication.SubprocessDeviceCommunication.EnsureConnectedAsync(CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 383
+   at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync(String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 245
+   at Belay.Core.Communication.SubprocessDeviceCommunication.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Communication/SubprocessDeviceCommunication.cs:line 294
+   at Belay.Core.Device.ExecuteAsync[T](String code, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Device.cs:line 293
+   at Belay.Core.Execution.BaseExecutor.ExecuteWithSessionOptimizationAsync[T](IDeviceSession session, String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 737
+   at Belay.Core.Execution.BaseExecutor.<>c__DisplayClass22_0`1.<<ExecuteOnDeviceAsync>b__0>d.MoveNext() in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 119
+--- End of stack trace from previous location ---
+   at Belay.Core.Sessions.DeviceSessionManager.ExecuteInSessionAsync[T](IDeviceCommunication communication, Func`2 operation, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Sessions/DeviceSessionManager.cs:line 160
+   at Belay.Core.Execution.BaseExecutor.ExecuteOnDeviceAsync[T](String pythonCode, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 106
+   at Belay.Core.Execution.TaskExecutor.ApplyPoliciesAndExecuteAsync[T](String pythonCode, CancellationToken cancellationToken, String callingMethod) in /home/corona/belay.net/src/Belay.Core/Execution/TaskExecutor.cs:line 66
+   at Belay.Core.Execution.BaseExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/BaseExecutor.cs:line 296
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteWithDefaultStrategy[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 221
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteThroughPipelineAsync[T](ExecutionContext`1 context) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 213
+   at Belay.Core.Execution.EnhancedExecutor.ExecuteAsync[T](MethodInfo method, Object instance, Object[] parameters, CancellationToken cancellationToken) in /home/corona/belay.net/src/Belay.Core/Execution/EnhancedExecutor.cs:line 101
+   at Belay.Core.Execution.DeviceProxy`1.ExecuteMethodAsync(MethodInfo method, Object[] args) in /home/corona/belay.net/src/Belay.Core/Execution/DeviceProxy.cs:line 121
+  Passed Belay.Core.Tests.MethodInterceptionTests.DeviceProxyFactory_CanProxy_ShouldReturnFalseForInvalidType [< 1 ms]
+  Passed Belay.Core.Tests.MethodInterceptionTests.GetEnhancedExecutor_Statistics_ShouldReturnValidData [3 ms]

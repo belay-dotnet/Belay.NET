@@ -5,7 +5,6 @@ namespace Belay.Extensions;
 
 using Belay.Core.Exceptions;
 using Belay.Core.Extensions;
-using Belay.Core.Sessions;
 using Belay.Extensions.Configuration;
 using Belay.Extensions.Factories;
 using Belay.Extensions.HealthChecks;
@@ -209,14 +208,9 @@ public static class ServiceCollectionExtensions {
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddBelayCore(this IServiceCollection services) {
-        // Session management - Scoped for proper isolation between requests
-        services.AddScoped<IDeviceSessionManager, DeviceSessionManager>();
-        services.AddSingleton<IResourceTracker, ResourceTracker>();
-
-        // Device context and session state are scoped to match session lifecycle
-        services.AddScoped<IDeviceContext, DeviceContext>();
-        services.AddScoped<ISessionState, SessionState>();
-
+        // Note: Session management services removed in favor of simplified architecture
+        // Device instances now use simplified DeviceState for tracking instead of sessions
+        // No core services needed in simplified architecture - all services are stateless factories
         return services;
     }
 
@@ -271,17 +265,17 @@ public static class ServiceCollectionExtensions {
 
     /// <summary>
     /// Adds Belay.NET executor services as singletons.
+    /// Note: In the simplified architecture, executors are accessed directly from Device instances
+    /// rather than being created through dependency injection.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddBelayExecutors(this IServiceCollection services) {
-        // Note: Executors are registered as transient since they are tied to specific devices
-        // Users typically get executors through the ExecutorFactory
-        services.AddTransient<Belay.Core.Execution.TaskExecutor>();
-        services.AddTransient<Belay.Core.Execution.SetupExecutor>();
-        services.AddTransient<Belay.Core.Execution.TeardownExecutor>();
-        services.AddTransient<Belay.Core.Execution.ThreadExecutor>();
-
+        // Note: Simplified executors are now created and managed by Device instances.
+        // This method is maintained for backward compatibility but doesn't register
+        // the old session-based executors since they've been replaced by simplified versions.
+        // Users should access executors through Device.Task, Device.Setup, Device.Thread, Device.Teardown
+        // or through the IExecutorFactory.GetXxxExecutor() methods.
         return services;
     }
 

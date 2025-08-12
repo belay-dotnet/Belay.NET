@@ -55,7 +55,6 @@ public static class DiUsageExample {
         services.AddBelay(config => {
             config.Device.DefaultConnectionTimeoutMs = 10000;
             config.Communication.Serial.DefaultBaudRate = 115200;
-            config.Session.MaxConcurrentSessions = 5;
         });
 
         // Add health checks with device connectivity tests
@@ -112,12 +111,13 @@ public static class DiUsageExample {
                 var result = await device.ExecuteAsync<int>("2 + 3");
                 this._logger.LogInformation("Calculation result: {Result}", result);
 
-                // Create executors using the factory
-                using var taskExecutor = this._executorFactory.CreateTaskExecutor(device);
+                // Get executors using the factory (though in the simplified architecture,
+                // you can also directly use device.Task, device.Setup, etc.)
+                var taskExecutor = this._executorFactory.GetTaskExecutor(device);
+                this._logger.LogDebug("Task executor type: {ExecutorType}", taskExecutor.GetType().Name);
 
-                // Use executor for more complex operations
-                var complexResult = await taskExecutor.ApplyPoliciesAndExecuteAsync<string>(
-                    "import sys; sys.version");
+                // Note: In the simplified architecture, you typically use Device methods directly:
+                var complexResult = await device.ExecuteAsync<string>("import sys; sys.version");
                 this._logger.LogInformation("Python version: {Version}", complexResult);
             }
             catch (Exception ex) {
@@ -166,12 +166,6 @@ public static class ConfigurationExample {
             "WindowSize": 256,
             "MaxRetries": 3
           }
-        },
-        "Session": {
-          "DefaultSessionTimeoutMs": 300000,
-          "MaxConcurrentSessions": 10,
-          "EnableSessionCleanup": true,
-          "SessionCleanupIntervalMs": 60000
         },
         "Executor": {
           "DefaultTaskTimeoutMs": 30000,

@@ -3,7 +3,6 @@
 
 namespace Belay.Extensions.HealthChecks;
 
-using Belay.Core.Sessions;
 using Belay.Extensions.Factories;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -12,39 +11,26 @@ using Microsoft.Extensions.Logging;
 /// Health check for Belay.NET system components.
 /// </summary>
 public class BelayHealthCheck : IHealthCheck {
-    private readonly IDeviceSessionManager _sessionManager;
     private readonly IDeviceFactory _deviceFactory;
     private readonly ILogger<BelayHealthCheck> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BelayHealthCheck"/> class.
     /// </summary>
-    /// <param name="sessionManager">The session manager.</param>
     /// <param name="deviceFactory">The device factory.</param>
     /// <param name="logger">The logger.</param>
     public BelayHealthCheck(
-        IDeviceSessionManager sessionManager,
         IDeviceFactory deviceFactory,
         ILogger<BelayHealthCheck> logger) {
-        this._sessionManager = sessionManager;
         this._deviceFactory = deviceFactory;
         this._logger = logger;
     }
 
     /// <inheritdoc/>
-    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default) {
+    public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default) {
         try {
             var data = new Dictionary<string, object>();
             var warnings = new List<string>();
-
-            // Check session manager
-            if (await this.CheckSessionManager(data, warnings, cancellationToken).ConfigureAwait(false)) {
-                data["session_manager"] = "healthy";
-            }
-            else {
-                warnings.Add("Session manager check failed");
-                data["session_manager"] = "degraded";
-            }
 
             // Check device factory
             if (this.CheckDeviceFactory(data, warnings)) {
@@ -57,43 +43,19 @@ public class BelayHealthCheck : IHealthCheck {
 
             data["check_timestamp"] = DateTimeOffset.UtcNow;
             data["warnings"] = warnings.ToArray();
+            data["architecture"] = "simplified"; // Indicate we're using simplified architecture
 
             if (warnings.Count == 0) {
                 this._logger.LogDebug("Belay health check passed");
-                return HealthCheckResult.Healthy("Belay.NET components are healthy", data);
+                return Task.FromResult(HealthCheckResult.Healthy("Belay.NET components are healthy", data));
             }
 
-            if (warnings.Count <= 1) {
-                this._logger.LogWarning("Belay health check passed with warnings: {Warnings}", string.Join(", ", warnings));
-                return HealthCheckResult.Degraded("Belay.NET components are degraded", null, data);
-            }
-
-            this._logger.LogError("Belay health check failed with multiple issues: {Warnings}", string.Join(", ", warnings));
-            return HealthCheckResult.Unhealthy("Belay.NET components are unhealthy", null, data);
+            this._logger.LogWarning("Belay health check passed with warnings: {Warnings}", string.Join(", ", warnings));
+            return Task.FromResult(HealthCheckResult.Degraded("Belay.NET components are degraded", null, data));
         }
         catch (Exception ex) {
             this._logger.LogError(ex, "Belay health check threw an exception");
-            return HealthCheckResult.Unhealthy("Belay.NET health check failed with exception", ex);
-        }
-    }
-
-    private async Task<bool> CheckSessionManager(Dictionary<string, object> data, List<string> warnings, CancellationToken cancellationToken) {
-        try {
-            var stats = await this._sessionManager.GetSessionStatsAsync(cancellationToken).ConfigureAwait(false);
-            data["active_sessions"] = stats.ActiveSessionCount;
-            data["total_sessions"] = stats.TotalSessionCount;
-            data["max_sessions"] = stats.MaxSessionCount;
-
-            if (stats.ActiveSessionCount > stats.MaxSessionCount * 0.8) {
-                warnings.Add($"High session usage: {stats.ActiveSessionCount}/{stats.MaxSessionCount}");
-            }
-
-            return true;
-        }
-        catch (Exception ex) {
-            this._logger.LogWarning(ex, "Session manager health check failed");
-            data["session_manager_error"] = ex.Message;
-            return false;
+            return Task.FromResult(HealthCheckResult.Unhealthy("Belay.NET health check failed with exception", ex));
         }
     }
 

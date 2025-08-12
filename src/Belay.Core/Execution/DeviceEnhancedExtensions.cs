@@ -19,7 +19,8 @@ namespace Belay.Core.Execution {
 
         /// <summary>
         /// Gets or creates an enhanced executor for this device.
-        /// The enhanced executor provides advanced method interception and pipeline processing.
+        /// The enhanced executor provides advanced method interception and execution capabilities
+        /// with direct device communication.
         /// </summary>
         /// <param name="device">The device to get the enhanced executor for.</param>
         /// <param name="logger">Optional logger for the enhanced executor.</param>
@@ -33,7 +34,6 @@ namespace Belay.Core.Execution {
                 var enhancedLogger = (logger as ILogger<EnhancedExecutor>) ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<EnhancedExecutor>.Instance;
                 var executor = new EnhancedExecutor(
                     d,
-                    d.Sessions,
                     enhancedLogger);
 
                 // Log creation
@@ -230,7 +230,7 @@ namespace Belay.Core.Execution {
         /// <summary>
         /// Gets the current connection state of the device.
         /// </summary>
-        public DeviceConnectionState State => this.device.State;
+        public DeviceConnectionState State => this.device.ConnectionState;
 
         /// <inheritdoc />
         public void Dispose() {

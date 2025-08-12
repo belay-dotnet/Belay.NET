@@ -246,11 +246,8 @@ namespace Belay.Core.Execution {
                 throw new ArgumentException($"Type {typeof(T).Name} must be an interface or abstract class to be proxied");
             }
 
-            // Create enhanced executor
-            var enhancedExecutor = new EnhancedExecutor(
-                device,
-                device.Sessions,
-                logger as ILogger<EnhancedExecutor> ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<EnhancedExecutor>.Instance);
+            // Create simplified enhanced executor without session management dependencies
+            var enhancedExecutor = device.GetEnhancedExecutor(logger);
 
             // Create and return proxy
             return DeviceProxy<T>.Create(enhancedExecutor, logger);

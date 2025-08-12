@@ -5,7 +5,6 @@ namespace Belay.Extensions.Factories;
 
 using Belay.Core;
 using Belay.Core.Communication;
-using Belay.Core.Sessions;
 using Belay.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -15,27 +14,27 @@ using Microsoft.Extensions.Options;
 /// </summary>
 internal class DeviceFactory : IDeviceFactory {
     private readonly ICommunicatorFactory _communicatorFactory;
-    private readonly IDeviceSessionManager _sessionManager;
     private readonly ILogger<Device> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeviceFactory"/> class.
     /// </summary>
     /// <param name="communicatorFactory">The communicator factory.</param>
-    /// <param name="sessionManager">The session manager.</param>
     /// <param name="logger">The logger for device instances.</param>
+    /// <param name="loggerFactory">The logger factory for executor loggers.</param>
     public DeviceFactory(
         ICommunicatorFactory communicatorFactory,
-        IDeviceSessionManager sessionManager,
-        ILogger<Device> logger) {
+        ILogger<Device> logger,
+        ILoggerFactory loggerFactory) {
         this._communicatorFactory = communicatorFactory;
-        this._sessionManager = sessionManager;
         this._logger = logger;
+        this._loggerFactory = loggerFactory;
     }
 
     /// <inheritdoc/>
     public Device CreateDevice(IDeviceCommunication communicator) {
-        return new Device(communicator, this._sessionManager, this._logger);
+        return new Device(communicator, this._logger, this._loggerFactory);
     }
 
     /// <inheritdoc/>
@@ -90,56 +89,36 @@ internal class CommunicatorFactory : ICommunicatorFactory {
 
 /// <summary>
 /// Default implementation of executor factory.
+/// Provides access to simplified executors from the Device instance.
 /// </summary>
 internal class ExecutorFactory : IExecutorFactory {
-    private readonly IDeviceSessionManager _sessionManager;
-    private readonly ILogger<Belay.Core.Execution.TaskExecutor> _taskLogger;
-    private readonly ILogger<Belay.Core.Execution.SetupExecutor> _setupLogger;
-    private readonly ILogger<Belay.Core.Execution.TeardownExecutor> _teardownLogger;
-    private readonly ILogger<Belay.Core.Execution.ThreadExecutor> _threadLogger;
-    private readonly Belay.Core.Exceptions.IErrorMapper? _errorMapper;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ExecutorFactory"/> class.
     /// </summary>
-    /// <param name="sessionManager">The session manager.</param>
-    /// <param name="taskLogger">Logger for task executors.</param>
-    /// <param name="setupLogger">Logger for setup executors.</param>
-    /// <param name="teardownLogger">Logger for teardown executors.</param>
-    /// <param name="threadLogger">Logger for thread executors.</param>
-    /// <param name="errorMapper">Optional error mapper.</param>
-    public ExecutorFactory(
-        IDeviceSessionManager sessionManager,
-        ILogger<Belay.Core.Execution.TaskExecutor> taskLogger,
-        ILogger<Belay.Core.Execution.SetupExecutor> setupLogger,
-        ILogger<Belay.Core.Execution.TeardownExecutor> teardownLogger,
-        ILogger<Belay.Core.Execution.ThreadExecutor> threadLogger,
-        Belay.Core.Exceptions.IErrorMapper? errorMapper = null) {
-        this._sessionManager = sessionManager;
-        this._taskLogger = taskLogger;
-        this._setupLogger = setupLogger;
-        this._teardownLogger = teardownLogger;
-        this._threadLogger = threadLogger;
-        this._errorMapper = errorMapper;
+    public ExecutorFactory() {
     }
 
     /// <inheritdoc/>
-    public Belay.Core.Execution.TaskExecutor CreateTaskExecutor(Device device) {
-        return new Belay.Core.Execution.TaskExecutor(device, this._sessionManager, this._taskLogger, this._errorMapper);
+    public Belay.Core.Execution.IExecutor GetTaskExecutor(Device device) {
+        // Return the simplified task executor from the device instance
+        return device.Task;
     }
 
     /// <inheritdoc/>
-    public Belay.Core.Execution.SetupExecutor CreateSetupExecutor(Device device) {
-        return new Belay.Core.Execution.SetupExecutor(device, this._sessionManager, this._setupLogger);
+    public Belay.Core.Execution.IExecutor GetSetupExecutor(Device device) {
+        // Return the simplified setup executor from the device instance
+        return device.Setup;
     }
 
     /// <inheritdoc/>
-    public Belay.Core.Execution.TeardownExecutor CreateTeardownExecutor(Device device) {
-        return new Belay.Core.Execution.TeardownExecutor(device, this._sessionManager, this._teardownLogger);
+    public Belay.Core.Execution.IExecutor GetTeardownExecutor(Device device) {
+        // Return the simplified teardown executor from the device instance
+        return device.Teardown;
     }
 
     /// <inheritdoc/>
-    public Belay.Core.Execution.ThreadExecutor CreateThreadExecutor(Device device) {
-        return new Belay.Core.Execution.ThreadExecutor(device, this._sessionManager, this._threadLogger);
+    public Belay.Core.Execution.IExecutor GetThreadExecutor(Device device) {
+        // Return the simplified thread executor from the device instance
+        return device.Thread;
     }
 }

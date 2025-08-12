@@ -5,6 +5,7 @@ namespace Belay.Extensions.Factories;
 
 using Belay.Core;
 using Belay.Core.Communication;
+using Belay.Core.Execution;
 
 /// <summary>
 /// Factory for creating device instances with dependency injection.
@@ -57,33 +58,34 @@ public interface ICommunicatorFactory {
 
 /// <summary>
 /// Factory for creating executor instances.
+/// Provides access to the simplified executors from Device instances.
 /// </summary>
 public interface IExecutorFactory {
     /// <summary>
-    /// Creates a task executor instance.
+    /// Gets the task executor instance from the device.
     /// </summary>
     /// <param name="device">The device instance.</param>
-    /// <returns>A configured task executor.</returns>
-    Belay.Core.Execution.TaskExecutor CreateTaskExecutor(Device device);
+    /// <returns>The device's task executor.</returns>
+    IExecutor GetTaskExecutor(Device device);
 
     /// <summary>
-    /// Creates a setup executor instance.
+    /// Gets the setup executor instance from the device.
     /// </summary>
     /// <param name="device">The device instance.</param>
-    /// <returns>A configured setup executor.</returns>
-    Belay.Core.Execution.SetupExecutor CreateSetupExecutor(Device device);
+    /// <returns>The device's setup executor.</returns>
+    IExecutor GetSetupExecutor(Device device);
 
     /// <summary>
-    /// Creates a teardown executor instance.
+    /// Gets the teardown executor instance from the device.
     /// </summary>
     /// <param name="device">The device instance.</param>
-    /// <returns>A configured teardown executor.</returns>
-    Belay.Core.Execution.TeardownExecutor CreateTeardownExecutor(Device device);
+    /// <returns>The device's teardown executor.</returns>
+    IExecutor GetTeardownExecutor(Device device);
 
     /// <summary>
-    /// Creates a thread executor instance.
+    /// Gets the thread executor instance from the device.
     /// </summary>
     /// <param name="device">The device instance.</param>
-    /// <returns>A configured thread executor.</returns>
-    Belay.Core.Execution.ThreadExecutor CreateThreadExecutor(Device device);
+    /// <returns>The device's thread executor.</returns>
+    IExecutor GetThreadExecutor(Device device);
 }
