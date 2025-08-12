@@ -1,8 +1,7 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Belay.Core
-{
+namespace Belay.Core {
     using System;
     using System.Collections.Generic;
     using System.Threading;
@@ -29,8 +28,7 @@ namespace Belay.Core
     /// </list>
     /// </para>
     /// </remarks>
-    public static class SimplifiedCapabilityDetection
-    {
+    public static class SimplifiedCapabilityDetection {
         /// <summary>
         /// Detects device capabilities using a single batched Python script execution.
         /// </summary>
@@ -44,7 +42,7 @@ namespace Belay.Core
         /// <code>
         /// var capabilities = await SimplifiedCapabilityDetection.DetectAsync(
         ///     communication, logger, cancellationToken);
-        /// 
+        ///
         /// Console.WriteLine($"Platform: {capabilities.Platform}");
         /// Console.WriteLine($"Features: {capabilities.SupportedFeatures}");
         /// Console.WriteLine($"Memory: {capabilities.AvailableMemory} bytes");
@@ -53,22 +51,18 @@ namespace Belay.Core
         public static async Task<SimpleDeviceCapabilities> DetectAsync(
             IDeviceCommunication communication,
             ILogger? logger = null,
-            CancellationToken cancellationToken = default)
-        {
-            if (communication == null)
-            {
+            CancellationToken cancellationToken = default) {
+            if (communication == null) {
                 throw new ArgumentNullException(nameof(communication));
             }
 
-            if (communication.State != DeviceConnectionState.Connected)
-            {
+            if (communication.State != DeviceConnectionState.Connected) {
                 throw new InvalidOperationException("Device must be connected before capability detection");
             }
 
             logger?.LogDebug("Starting batched capability detection");
 
-            try
-            {
+            try {
                 // Execute the batched capability detection script
                 var detectionResult = await communication.ExecuteAsync<Dictionary<string, object>>(
                     BatchedCapabilityDetectionScript,
@@ -76,26 +70,25 @@ namespace Belay.Core
 
                 // Parse the results into SimpleDeviceCapabilities
                 var capabilities = ParseDetectionResults(detectionResult, logger);
-                
-                logger?.LogDebug("Capability detection completed: Platform={Platform}, Features={FeatureCount}, Memory={Memory}",
+
+                logger?.LogDebug(
+                    "Capability detection completed: Platform={Platform}, Features={FeatureCount}, Memory={Memory}",
                     capabilities.Platform,
                     CountFeatureFlags(capabilities.SupportedFeatures),
                     capabilities.AvailableMemory);
 
                 return capabilities;
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException))
-            {
+            catch (Exception ex) when (!(ex is OperationCanceledException)) {
                 logger?.LogWarning(ex, "Capability detection failed, returning minimal capabilities");
-                
+
                 // Return minimal capabilities on failure
-                return new SimpleDeviceCapabilities
-                {
+                return new SimpleDeviceCapabilities {
                     Platform = "unknown",
                     Version = "unknown",
                     SupportedFeatures = SimpleDeviceFeatureSet.None,
                     AvailableMemory = 0,
-                    DetectionComplete = true // Mark complete even on failure
+                    DetectionComplete = true, // Mark complete even on failure
                 };
             }
         }
@@ -181,47 +174,37 @@ result
         /// <returns>A parsed SimpleDeviceCapabilities object.</returns>
         private static SimpleDeviceCapabilities ParseDetectionResults(
             Dictionary<string, object> detectionResult,
-            ILogger? logger)
-        {
+            ILogger? logger) {
             var capabilities = new SimpleDeviceCapabilities();
 
             // Parse platform information
-            if (detectionResult.TryGetValue("platform", out var platformObj) && platformObj is string platform)
-            {
+            if (detectionResult.TryGetValue("platform", out var platformObj) && platformObj is string platform) {
                 capabilities.Platform = platform;
             }
 
-            if (detectionResult.TryGetValue("version", out var versionObj) && versionObj is string version)
-            {
+            if (detectionResult.TryGetValue("version", out var versionObj) && versionObj is string version) {
                 capabilities.Version = version;
             }
 
             // Parse memory information
-            if (detectionResult.TryGetValue("memory", out var memoryObj))
-            {
-                if (memoryObj is int memoryInt)
-                {
+            if (detectionResult.TryGetValue("memory", out var memoryObj)) {
+                if (memoryObj is int memoryInt) {
                     capabilities.AvailableMemory = memoryInt;
                 }
-                else if (memoryObj is long memoryLong)
-                {
+                else if (memoryObj is long memoryLong) {
                     capabilities.AvailableMemory = (int)Math.Min(memoryLong, int.MaxValue);
                 }
-                else if (int.TryParse(memoryObj.ToString(), out var memoryParsed))
-                {
+                else if (int.TryParse(memoryObj.ToString(), out var memoryParsed)) {
                     capabilities.AvailableMemory = memoryParsed;
                 }
             }
 
             // Parse feature flags
-            if (detectionResult.TryGetValue("features", out var featuresObj) && featuresObj is IEnumerable<object> features)
-            {
+            if (detectionResult.TryGetValue("features", out var featuresObj) && featuresObj is IEnumerable<object> features) {
                 var supportedFeatures = SimpleDeviceFeatureSet.None;
 
-                foreach (var feature in features)
-                {
-                    if (feature?.ToString() is string featureName)
-                    {
+                foreach (var feature in features) {
+                    if (feature?.ToString() is string featureName) {
                         supportedFeatures |= MapFeatureNameToFlag(featureName, logger);
                     }
                 }
@@ -239,10 +222,8 @@ result
         /// <param name="featureName">The feature name from the detection script.</param>
         /// <param name="logger">Optional logger for diagnostic output.</param>
         /// <returns>The corresponding SimpleDeviceFeatureSet flag.</returns>
-        private static SimpleDeviceFeatureSet MapFeatureNameToFlag(string featureName, ILogger? logger)
-        {
-            return featureName?.ToLowerInvariant() switch
-            {
+        private static SimpleDeviceFeatureSet MapFeatureNameToFlag(string featureName) {
+            return featureName?.ToLowerInvariant() switch {
                 "gpio" => SimpleDeviceFeatureSet.GPIO,
                 "adc" => SimpleDeviceFeatureSet.ADC,
                 "pwm" => SimpleDeviceFeatureSet.PWM,
@@ -258,7 +239,7 @@ result
                 "touch" => SimpleDeviceFeatureSet.TouchSensor,
                 "display" => SimpleDeviceFeatureSet.Display,
                 "audio" => SimpleDeviceFeatureSet.Audio,
-                _ => SimpleDeviceFeatureSet.None
+                _ => SimpleDeviceFeatureSet.None,
             };
         }
 
@@ -267,17 +248,15 @@ result
         /// </summary>
         /// <param name="features">The feature set to count.</param>
         /// <returns>The number of individual features enabled.</returns>
-        private static int CountFeatureFlags(SimpleDeviceFeatureSet features)
-        {
+        private static int CountFeatureFlags(SimpleDeviceFeatureSet features) {
             var count = 0;
             var value = (int)features;
-            
-            while (value > 0)
-            {
+
+            while (value > 0) {
                 count += value & 1;
                 value >>= 1;
             }
-            
+
             return count;
         }
     }

@@ -1,8 +1,7 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Belay.Core
-{
+namespace Belay.Core {
     using System;
     using Belay.Core.Communication;
 
@@ -32,15 +31,14 @@ namespace Belay.Core
     /// <code>
     /// using var device = Device.FromConnectionString("subprocess:micropython");
     /// await device.ConnectAsync();
-    /// 
+    ///
     /// // Check device state
     /// Console.WriteLine($"Platform: {device.State.Capabilities?.Platform}");
     /// Console.WriteLine($"Features: {device.State.Capabilities?.SupportedFeatures}");
     /// Console.WriteLine($"Connection: {device.State.ConnectionState}");
     /// </code>
     /// </example>
-    public sealed class DeviceState
-    {
+    public sealed class DeviceState {
         /// <summary>
         /// Gets or sets the detected device capabilities.
         /// </summary>
@@ -94,8 +92,7 @@ namespace Belay.Core
         /// device.State.CompleteOperation();
         /// </code>
         /// </example>
-        public void SetCurrentOperation(string? operationName)
-        {
+        public void SetCurrentOperation(string? operationName) {
             this.CurrentOperation = operationName;
         }
 
@@ -106,8 +103,7 @@ namespace Belay.Core
         /// This method clears the current operation and records the completion time
         /// for monitoring and diagnostic purposes.
         /// </remarks>
-        public void CompleteOperation()
-        {
+        public void CompleteOperation() {
             this.CurrentOperation = null;
             this.LastOperationTime = DateTime.UtcNow;
         }
@@ -119,8 +115,7 @@ namespace Belay.Core
         /// This method resets both current operation and last operation time,
         /// typically used when clearing cache or resetting device state.
         /// </remarks>
-        public void ClearExecutionHistory()
-        {
+        public void ClearExecutionHistory() {
             this.CurrentOperation = null;
             this.LastOperationTime = null;
         }
@@ -129,8 +124,7 @@ namespace Belay.Core
         /// Gets a summary of the current device state.
         /// </summary>
         /// <returns>A formatted string containing key state information.</returns>
-        public override string ToString()
-        {
+        public override string ToString() {
             var operation = this.CurrentOperation != null ? $"Operation: {this.CurrentOperation}" : "Idle";
             var platform = this.Capabilities?.Platform ?? "Unknown";
             return $"DeviceState [{this.ConnectionState}] Platform: {platform}, {operation}";
@@ -157,8 +151,7 @@ namespace Belay.Core
     /// </list>
     /// </para>
     /// </remarks>
-    public sealed class SimpleDeviceCapabilities
-    {
+    public sealed class SimpleDeviceCapabilities {
         /// <summary>
         /// Gets or sets the MicroPython platform identifier.
         /// </summary>
@@ -215,8 +208,7 @@ namespace Belay.Core
         /// }
         /// </code>
         /// </example>
-        public bool SupportsFeature(SimpleDeviceFeatureSet feature)
-        {
+        public bool SupportsFeature(SimpleDeviceFeatureSet feature) {
             return this.SupportedFeatures.HasFlag(feature);
         }
 
@@ -224,8 +216,7 @@ namespace Belay.Core
         /// Returns a string representation of the device capabilities.
         /// </summary>
         /// <returns>A formatted string showing platform, version, and feature count.</returns>
-        public override string ToString()
-        {
+        public override string ToString() {
             var featureCount = CountFlags(this.SupportedFeatures);
             var status = this.DetectionComplete ? "Complete" : "Pending";
             return $"DeviceCapabilities [{status}] Platform: {this.Platform ?? "Unknown"}, " +
@@ -233,12 +224,10 @@ namespace Belay.Core
                    $"Memory: {this.AvailableMemory} bytes";
         }
 
-        private static int CountFlags(SimpleDeviceFeatureSet flags)
-        {
+        private static int CountFlags(SimpleDeviceFeatureSet flags) {
             var count = 0;
             var value = (int)flags;
-            while (value > 0)
-            {
+            while (value > 0) {
                 count += value & 1;
                 value >>= 1;
             }
@@ -256,8 +245,7 @@ namespace Belay.Core
     /// in a single batched operation for optimal performance.
     /// </remarks>
     [Flags]
-    public enum SimpleDeviceFeatureSet
-    {
+    public enum SimpleDeviceFeatureSet {
         /// <summary>No features detected or supported.</summary>
         None = 0,
 

@@ -1,8 +1,7 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Belay.Tests.Unit.Execution
-{
+namespace Belay.Tests.Unit.Execution {
     using System;
     using System.Collections.Generic;
     using System.Threading;
@@ -19,47 +18,42 @@ namespace Belay.Tests.Unit.Execution
     /// These tests validate the simplified executor approach using DeviceState instead of sessions.
     /// </summary>
     [TestFixture]
-    public class RefactoredThreadExecutorTests
-    {
+    public class RefactoredThreadExecutorTests {
         private Mock<IDeviceCommunication> mockCommunication = null!;
         private Mock<ILogger> mockLogger = null!;
         private TestableThreadExecutor executor = null!;
 
         [SetUp]
-        public void SetUp()
-        {
-            this.mockCommunication = new Mock<IDeviceCommunication>();
-            this.mockLogger = new Mock<ILogger>();
+        public void SetUp() {
+            mockCommunication = new Mock<IDeviceCommunication>();
+            mockLogger = new Mock<ILogger>();
 
             // Mock device is connected and supports threading
-            this.mockCommunication.Setup(c => c.State).Returns(DeviceConnectionState.Connected);
+            mockCommunication.Setup(c => c.State).Returns(DeviceConnectionState.Connected);
 
-            this.executor = new TestableThreadExecutor(this.mockCommunication.Object, this.mockLogger.Object);
+            executor = new TestableThreadExecutor(mockCommunication.Object, mockLogger.Object);
         }
 
         [Test]
-        public void Constructor_WithNullCommunication_ThrowsArgumentNullException()
-        {
+        public void Constructor_WithNullCommunication_ThrowsArgumentNullException() {
             // Act & Assert
             FluentActions
-                .Invoking(() => new TestableThreadExecutor(null!, this.mockLogger.Object))
+                .Invoking(() => new TestableThreadExecutor(null!, mockLogger.Object))
                 .Should().ThrowExactly<ArgumentNullException>()
                 .WithParameterName("communication");
         }
 
         [Test]
-        public void Constructor_WithNullLogger_ThrowsArgumentNullException()
-        {
+        public void Constructor_WithNullLogger_ThrowsArgumentNullException() {
             // Act & Assert
             FluentActions
-                .Invoking(() => new TestableThreadExecutor(this.mockCommunication.Object, null!))
+                .Invoking(() => new TestableThreadExecutor(mockCommunication.Object, null!))
                 .Should().ThrowExactly<ArgumentNullException>()
                 .WithParameterName("logger");
         }
 
         [Test]
-        public async Task StartThreadAsync_WithBasicCode_StartsSuccessfully()
-        {
+        public async Task StartThreadAsync_WithBasicCode_StartsSuccessfully() {
             // Arrange
             const string pythonCode = """
                 import _thread
@@ -74,159 +68,150 @@ namespace Belay.Tests.Unit.Execution
                 """;
             const string expectedThreadId = "thread_001";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedThreadId);
 
             // Act
-            var result = await this.executor.StartThreadAsync<string>(pythonCode, "WorkerThread");
+            var result = await executor.StartThreadAsync<string>(pythonCode, "WorkerThread");
 
             // Assert
             result.Should().Be(expectedThreadId);
-            this.executor.ActiveThreadCount.Should().Be(1);
-            this.mockCommunication.Verify(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            executor.ActiveThreadCount.Should().Be(1);
+            mockCommunication.Verify(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
-        public async Task StartThreadAsync_WithNullCode_ThrowsArgumentException()
-        {
+        public async Task StartThreadAsync_WithNullCode_ThrowsArgumentException() {
             // Act & Assert
             await FluentActions
-                .Invoking(async () => await this.executor.StartThreadAsync<string>(null!, "test"))
+                .Invoking(async () => await executor.StartThreadAsync<string>(null!, "test"))
                 .Should().ThrowAsync<ArgumentException>()
                 .WithMessage("*Python code cannot be null or empty*")
                 .WithParameterName("pythonCode");
         }
 
         [Test]
-        public async Task StartThreadAsync_TracksThreadOperation_InDeviceState()
-        {
+        public async Task StartThreadAsync_TracksThreadOperation_InDeviceState() {
             // Arrange
             const string pythonCode = "import _thread; _thread.start_new_thread(lambda: None, ())";
             const string threadName = "TestThread";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(async () =>
-                {
+                .Returns(async () => {
                     await Task.Delay(10); // Small delay to ensure operation tracking is visible
                     return "thread_id";
                 });
 
             // Act
-            var task = this.executor.StartThreadAsync<string>(pythonCode, threadName);
+            var task = executor.StartThreadAsync<string>(pythonCode, threadName);
 
             // Assert - operation should be tracked during execution
-            this.executor.State.CurrentOperation.Should().Be($"StartThread:{threadName}");
+            executor.State.CurrentOperation.Should().Be($"StartThread:{threadName}");
 
             var result = await task;
 
             // Assert - operation should be completed after execution
             result.Should().Be("thread_id");
-            this.executor.State.CurrentOperation.Should().BeNull();
-            this.executor.State.LastOperationTime.Should().NotBeNull();
+            executor.State.CurrentOperation.Should().BeNull();
+            executor.State.LastOperationTime.Should().NotBeNull();
         }
 
         [Test]
-        public async Task StopThreadAsync_WithValidThreadName_StopsSuccessfully()
-        {
+        public async Task StopThreadAsync_WithValidThreadName_StopsSuccessfully() {
             // Arrange
             const string threadName = "WorkerThread";
             const string threadId = "thread_001";
 
             // Start a thread first
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(threadId);
 
-            await this.executor.StartThreadAsync<string>("test_code", threadName);
+            await executor.StartThreadAsync<string>("test_code", threadName);
 
             // Mock stop operation
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<bool>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             // Act
-            var result = await this.executor.StopThreadAsync(threadName);
+            var result = await executor.StopThreadAsync(threadName);
 
             // Assert
             result.Should().BeTrue();
-            this.executor.ActiveThreadCount.Should().Be(0);
-            this.mockCommunication.Verify(c => c.ExecuteAsync<bool>(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            executor.ActiveThreadCount.Should().Be(0);
+            mockCommunication.Verify(c => c.ExecuteAsync<bool>(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
-        public async Task StopThreadAsync_WithInvalidThreadName_ReturnsFalse()
-        {
+        public async Task StopThreadAsync_WithInvalidThreadName_ReturnsFalse() {
             // Arrange
             const string threadName = "NonExistentThread";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<bool>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(false);
 
             // Act
-            var result = await this.executor.StopThreadAsync(threadName);
+            var result = await executor.StopThreadAsync(threadName);
 
             // Assert
             result.Should().BeFalse();
-            this.executor.ActiveThreadCount.Should().Be(0);
+            executor.ActiveThreadCount.Should().Be(0);
         }
 
         [Test]
-        public async Task StopAllThreadsAsync_WithMultipleThreads_StopsAllThreads()
-        {
+        public async Task StopAllThreadsAsync_WithMultipleThreads_StopsAllThreads() {
             // Arrange - Start multiple threads
             var threadNames = new[] { "Thread1", "Thread2", "Thread3" };
-            
-            this.mockCommunication
+
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("thread_id");
 
-            foreach (var threadName in threadNames)
-            {
-                await this.executor.StartThreadAsync<string>("test_code", threadName);
+            foreach (var threadName in threadNames) {
+                await executor.StartThreadAsync<string>("test_code", threadName);
             }
 
             // Mock stop operations
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<bool>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
             // Act
-            var stoppedCount = await this.executor.StopAllThreadsAsync();
+            var stoppedCount = await executor.StopAllThreadsAsync();
 
             // Assert
             stoppedCount.Should().Be(3);
-            this.executor.ActiveThreadCount.Should().Be(0);
+            executor.ActiveThreadCount.Should().Be(0);
         }
 
         [Test]
-        public async Task CheckThreadHealthAsync_WithActiveThreads_ReturnsHealthStatus()
-        {
+        public async Task CheckThreadHealthAsync_WithActiveThreads_ReturnsHealthStatus() {
             // Arrange
             const string threadName = "HealthCheckThread";
-            var healthStatus = new Dictionary<string, object>
-            {
+            var healthStatus = new Dictionary<string, object> {
                 ["active_threads"] = 1,
                 ["memory_usage"] = 12345,
                 ["cpu_usage"] = 15.5
             };
 
             // Start a thread
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("thread_id");
 
-            await this.executor.StartThreadAsync<string>("test_code", threadName);
+            await executor.StartThreadAsync<string>("test_code", threadName);
 
             // Mock health check
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<Dictionary<string, object>>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(healthStatus);
 
             // Act
-            var result = await this.executor.CheckThreadHealthAsync();
+            var result = await executor.CheckThreadHealthAsync();
 
             // Assert
             result.Should().NotBeNull();
@@ -235,57 +220,52 @@ namespace Belay.Tests.Unit.Execution
         }
 
         [Test]
-        public async Task StartThreadAsync_WithThreadingNotSupported_ThrowsNotSupportedException()
-        {
+        public async Task StartThreadAsync_WithThreadingNotSupported_ThrowsNotSupportedException() {
             // Arrange
-            var capabilities = new SimpleDeviceCapabilities
-            {
+            var capabilities = new SimpleDeviceCapabilities {
                 Platform = "basic_device",
                 SupportedFeatures = SimpleDeviceFeatureSet.GPIO, // No threading support
                 DetectionComplete = true
             };
 
-            this.executor.State.Capabilities = capabilities;
+            executor.State.Capabilities = capabilities;
 
             // Act & Assert
             await FluentActions
-                .Invoking(async () => await this.executor.StartThreadAsync<string>("test_code", "TestThread"))
+                .Invoking(async () => await executor.StartThreadAsync<string>("test_code", "TestThread"))
                 .Should().ThrowAsync<NotSupportedException>()
                 .WithMessage("*Threading is not supported on this device*");
         }
 
         [Test]
-        public async Task StartThreadAsync_WithThreadingSupported_ExecutesSuccessfully()
-        {
+        public async Task StartThreadAsync_WithThreadingSupported_ExecutesSuccessfully() {
             // Arrange
-            var capabilities = new SimpleDeviceCapabilities
-            {
+            var capabilities = new SimpleDeviceCapabilities {
                 Platform = "esp32",
                 SupportedFeatures = SimpleDeviceFeatureSet.GPIO | SimpleDeviceFeatureSet.Threading,
                 DetectionComplete = true
             };
 
-            this.executor.State.Capabilities = capabilities;
+            executor.State.Capabilities = capabilities;
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("thread_id");
 
             // Act
-            var result = await this.executor.StartThreadAsync<string>("test_code", "TestThread");
+            var result = await executor.StartThreadAsync<string>("test_code", "TestThread");
 
             // Assert
             result.Should().Be("thread_id");
         }
 
         [Test]
-        public async Task StartThreadAsync_WithCancellation_PropagatesCancellation()
-        {
+        public async Task StartThreadAsync_WithCancellation_PropagatesCancellation() {
             // Arrange
             const string pythonCode = "import time; time.sleep(10); start_thread()";
             using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns<string, CancellationToken>((_, token) => Task.FromCanceled<string>(token));
 
@@ -293,37 +273,35 @@ namespace Belay.Tests.Unit.Execution
 
             // Act & Assert
             await FluentActions
-                .Invoking(async () => await this.executor.StartThreadAsync<string>(pythonCode, "TestThread", cts.Token))
+                .Invoking(async () => await executor.StartThreadAsync<string>(pythonCode, "TestThread", cts.Token))
                 .Should().ThrowAsync<TaskCanceledException>();
         }
 
         [Test]
-        public void State_InitialState_IsCorrect()
-        {
+        public void State_InitialState_IsCorrect() {
             // Assert
-            this.executor.State.Should().NotBeNull();
-            this.executor.State.Capabilities.Should().BeNull();
-            this.executor.State.CurrentOperation.Should().BeNull();
-            this.executor.State.LastOperationTime.Should().BeNull();
-            this.executor.State.ConnectionState.Should().Be(DeviceConnectionState.Connected);
-            this.executor.ActiveThreadCount.Should().Be(0);
+            executor.State.Should().NotBeNull();
+            executor.State.Capabilities.Should().BeNull();
+            executor.State.CurrentOperation.Should().BeNull();
+            executor.State.LastOperationTime.Should().BeNull();
+            executor.State.ConnectionState.Should().Be(DeviceConnectionState.Connected);
+            executor.ActiveThreadCount.Should().Be(0);
         }
 
         [Test]
-        public async Task ClearThreadCacheAsync_RemovesThreadHistory()
-        {
+        public async Task ClearThreadCacheAsync_RemovesThreadHistory() {
             // Arrange - Start a thread to create cache entries
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("thread_id");
 
-            await this.executor.StartThreadAsync<string>("test_code", "CacheThread");
+            await executor.StartThreadAsync<string>("test_code", "CacheThread");
 
             // Act
-            await this.executor.ClearThreadCacheAsync();
+            await executor.ClearThreadCacheAsync();
 
             // Assert - Thread history should be reset
-            this.executor.ActiveThreadCount.Should().Be(0);
+            executor.ActiveThreadCount.Should().Be(0);
         }
     }
 
@@ -331,138 +309,118 @@ namespace Belay.Tests.Unit.Execution
     /// Testable implementation of ThreadExecutor for the refactored architecture.
     /// This represents how ThreadExecutor would work without session management dependencies.
     /// </summary>
-    public class TestableThreadExecutor
-    {
+    public class TestableThreadExecutor {
         private readonly IDeviceCommunication communication;
         private readonly ILogger logger;
         private readonly Dictionary<string, string> activeThreads = new();
 
         public DeviceState State { get; } = new DeviceState();
-        public int ActiveThreadCount => this.activeThreads.Count;
+        public int ActiveThreadCount => activeThreads.Count;
 
-        public TestableThreadExecutor(IDeviceCommunication communication, ILogger logger)
-        {
+        public TestableThreadExecutor(IDeviceCommunication communication, ILogger logger) {
             this.communication = communication ?? throw new ArgumentNullException(nameof(communication));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Initialize state with connection state from communication
-            this.State.ConnectionState = this.communication.State;
+            State.ConnectionState = this.communication.State;
         }
 
         public async Task<T> StartThreadAsync<T>(
             string pythonCode,
             string threadName,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             // Validate input
-            if (string.IsNullOrWhiteSpace(pythonCode))
-            {
+            if (string.IsNullOrWhiteSpace(pythonCode)) {
                 throw new ArgumentException("Python code cannot be null or empty", nameof(pythonCode));
             }
 
-            if (string.IsNullOrWhiteSpace(threadName))
-            {
+            if (string.IsNullOrWhiteSpace(threadName)) {
                 throw new ArgumentException("Thread name cannot be null or empty", nameof(threadName));
             }
 
             // Check threading capability
-            if (this.State.Capabilities?.DetectionComplete == true &&
-                !this.State.Capabilities.SupportsFeature(SimpleDeviceFeatureSet.Threading))
-            {
+            if (State.Capabilities?.DetectionComplete == true &&
+                !State.Capabilities.SupportsFeature(SimpleDeviceFeatureSet.Threading)) {
                 throw new NotSupportedException("Threading is not supported on this device platform");
             }
 
             // Track operation in state
-            this.State.SetCurrentOperation($"StartThread:{threadName}");
+            State.SetCurrentOperation($"StartThread:{threadName}");
 
-            try
-            {
-                this.logger.LogDebug("Starting thread '{ThreadName}' with code: {Code}", 
+            try {
+                logger.LogDebug("Starting thread '{ThreadName}' with code: {Code}",
                     threadName, pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
 
                 // Execute thread start code
-                var result = await this.ExecuteWithThreadPoliciesAsync<T>(pythonCode, cancellationToken);
+                var result = await ExecuteWithThreadPoliciesAsync<T>(pythonCode, cancellationToken);
 
                 // Track active thread
-                this.activeThreads[threadName] = result?.ToString() ?? "unknown_id";
+                activeThreads[threadName] = result?.ToString() ?? "unknown_id";
 
-                this.logger.LogDebug("Thread '{ThreadName}' started successfully", threadName);
+                logger.LogDebug("Thread '{ThreadName}' started successfully", threadName);
 
                 return result;
             }
-            finally
-            {
+            finally {
                 // Complete operation tracking
-                this.State.CompleteOperation();
+                State.CompleteOperation();
             }
         }
 
         public async Task<bool> StopThreadAsync(
             string threadName,
-            CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(threadName))
-            {
+            CancellationToken cancellationToken = default) {
+            if (string.IsNullOrWhiteSpace(threadName)) {
                 throw new ArgumentException("Thread name cannot be null or empty", nameof(threadName));
             }
 
             // Track operation in state
-            this.State.SetCurrentOperation($"StopThread:{threadName}");
+            State.SetCurrentOperation($"StopThread:{threadName}");
 
-            try
-            {
-                this.logger.LogDebug("Stopping thread '{ThreadName}'", threadName);
+            try {
+                logger.LogDebug("Stopping thread '{ThreadName}'", threadName);
 
                 // Generate stop thread code
                 var stopCode = $"stop_thread('{threadName}')";
-                var result = await this.communication.ExecuteAsync<bool>(stopCode, cancellationToken);
+                var result = await communication.ExecuteAsync<bool>(stopCode, cancellationToken);
 
-                if (result)
-                {
-                    this.activeThreads.Remove(threadName);
-                    this.logger.LogDebug("Thread '{ThreadName}' stopped successfully", threadName);
+                if (result) {
+                    activeThreads.Remove(threadName);
+                    logger.LogDebug("Thread '{ThreadName}' stopped successfully", threadName);
                 }
 
                 return result;
             }
-            finally
-            {
-                this.State.CompleteOperation();
+            finally {
+                State.CompleteOperation();
             }
         }
 
-        public async Task<int> StopAllThreadsAsync(CancellationToken cancellationToken = default)
-        {
-            this.State.SetCurrentOperation("StopAllThreads");
+        public async Task<int> StopAllThreadsAsync(CancellationToken cancellationToken = default) {
+            State.SetCurrentOperation("StopAllThreads");
 
-            try
-            {
+            try {
                 var stoppedCount = 0;
-                var threadsToStop = this.activeThreads.Keys.ToList();
+                var threadsToStop = activeThreads.Keys.ToList();
 
-                foreach (var threadName in threadsToStop)
-                {
-                    var stopped = await this.StopThreadAsync(threadName, cancellationToken);
-                    if (stopped)
-                    {
+                foreach (var threadName in threadsToStop) {
+                    var stopped = await StopThreadAsync(threadName, cancellationToken);
+                    if (stopped) {
                         stoppedCount++;
                     }
                 }
 
                 return stoppedCount;
             }
-            finally
-            {
-                this.State.CompleteOperation();
+            finally {
+                State.CompleteOperation();
             }
         }
 
-        public async Task<Dictionary<string, object>> CheckThreadHealthAsync(CancellationToken cancellationToken = default)
-        {
-            this.State.SetCurrentOperation("CheckThreadHealth");
+        public async Task<Dictionary<string, object>> CheckThreadHealthAsync(CancellationToken cancellationToken = default) {
+            State.SetCurrentOperation("CheckThreadHealth");
 
-            try
-            {
+            try {
                 const string healthCheckCode = """
                     import gc
                     result = {
@@ -472,35 +430,30 @@ namespace Belay.Tests.Unit.Execution
                     }
                     """;
 
-                return await this.communication.ExecuteAsync<Dictionary<string, object>>(healthCheckCode, cancellationToken);
+                return await communication.ExecuteAsync<Dictionary<string, object>>(healthCheckCode, cancellationToken);
             }
-            finally
-            {
-                this.State.CompleteOperation();
+            finally {
+                State.CompleteOperation();
             }
         }
 
-        public async Task ClearThreadCacheAsync(CancellationToken cancellationToken = default)
-        {
-            this.State.SetCurrentOperation("ClearThreadCache");
+        public async Task ClearThreadCacheAsync(CancellationToken cancellationToken = default) {
+            State.SetCurrentOperation("ClearThreadCache");
 
-            try
-            {
+            try {
                 // Clear local thread tracking
-                this.activeThreads.Clear();
+                activeThreads.Clear();
 
                 // Execute device-side thread cache clearing
                 const string clearCode = "clear_thread_cache()";
-                await this.communication.ExecuteAsync(clearCode, cancellationToken);
+                await communication.ExecuteAsync(clearCode, cancellationToken);
             }
-            finally
-            {
-                this.State.CompleteOperation();
+            finally {
+                State.CompleteOperation();
             }
         }
 
-        private async Task<T> ExecuteWithThreadPoliciesAsync<T>(string pythonCode, CancellationToken cancellationToken)
-        {
+        private async Task<T> ExecuteWithThreadPoliciesAsync<T>(string pythonCode, CancellationToken cancellationToken) {
             // Thread-specific policies could include:
             // - Thread safety checks
             // - Resource allocation verification
@@ -508,7 +461,7 @@ namespace Belay.Tests.Unit.Execution
             // - Priority-based execution
 
             // For now, direct execution (policies would be added here)
-            return await this.communication.ExecuteAsync<T>(pythonCode, cancellationToken);
+            return await communication.ExecuteAsync<T>(pythonCode, cancellationToken);
         }
     }
 }

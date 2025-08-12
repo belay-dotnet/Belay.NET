@@ -34,10 +34,10 @@ using Microsoft.Extensions.Logging;
 /// <code>
 /// using var device = Device.FromConnectionString("subprocess:micropython");
 /// await device.ConnectAsync();
-/// 
+///
 /// // Execute code directly
 /// var result = await device.ExecuteAsync&lt;int&gt;("2 + 3");
-/// 
+///
 /// // Check device capabilities
 /// Console.WriteLine($"Platform: {device.State.Capabilities?.Platform}");
 /// Console.WriteLine($"Features: {device.State.Capabilities?.SupportedFeatures}");
@@ -147,7 +147,7 @@ public class Device : IDisposable {
     /// {
     ///     // Use GPIO functionality
     /// }
-    /// 
+    ///
     /// // Monitor current operation
     /// Console.WriteLine($"Current operation: {device.State.CurrentOperation}");
     /// Console.WriteLine($"Last operation: {device.State.LastOperationTime}");
@@ -198,7 +198,6 @@ public class Device : IDisposable {
     /// </remarks>
     public SimplifiedTeardownExecutor Teardown => this.teardownExecutor.Value;
 
-
     /// <summary>
     /// Connect to the MicroPython device and perform capability detection.
     /// </summary>
@@ -215,7 +214,7 @@ public class Device : IDisposable {
     /// <code>
     /// using var device = Device.FromConnectionString("subprocess:micropython");
     /// await device.ConnectAsync();
-    /// 
+    ///
     /// // Capabilities are now available
     /// Console.WriteLine($"Platform: {device.State.Capabilities?.Platform}");
     /// Console.WriteLine($"Memory: {device.State.Capabilities?.AvailableMemory} bytes");
@@ -254,6 +253,7 @@ public class Device : IDisposable {
             }
             catch (Exception ex) {
                 this.logger.LogWarning(ex, "Capability detection failed, device will work with limited functionality");
+
                 // Create minimal capabilities to indicate detection was attempted
                 this.State.Capabilities = new SimpleDeviceCapabilities { DetectionComplete = true };
             }
@@ -328,7 +328,7 @@ public class Device : IDisposable {
 
         // Track operation in device state
         this.State.SetCurrentOperation("ExecuteCode");
-        
+
         try {
             // Check if we have an execution context with an attributed method and route through appropriate executor
             var executionContext = this.executionContextService.Current;
@@ -392,7 +392,7 @@ public class Device : IDisposable {
 
         // Track operation in device state
         this.State.SetCurrentOperation("ExecuteCode");
-        
+
         try {
             // Check if we have an execution context with an attributed method and route through appropriate executor
             var executionContext = this.executionContextService.Current;
@@ -433,7 +433,7 @@ public class Device : IDisposable {
         }
 
         this.logger.LogDebug("Transferring file {LocalPath} to device at {RemotePath}", localPath, remotePath);
-        
+
         this.State.SetCurrentOperation("FileTransfer");
         try {
             await this.communication.PutFileAsync(localPath, remotePath, cancellationToken);
@@ -456,7 +456,7 @@ public class Device : IDisposable {
         }
 
         this.logger.LogDebug("Retrieving file {RemotePath} from device", remotePath);
-        
+
         this.State.SetCurrentOperation("FileRetrieval");
         try {
             byte[] content = await this.communication.GetFileAsync(remotePath, cancellationToken);
@@ -631,11 +631,10 @@ public class Device : IDisposable {
         }
 
         // Dispose simplified executors if they have been initialized
-        if (this.taskExecutor.IsValueCreated)
-        {
+        if (this.taskExecutor.IsValueCreated) {
             this.taskExecutor.Value?.Dispose();
         }
-        
+
         this.methodCache?.Dispose();
         this.communication?.Dispose();
         this.disposed = true;

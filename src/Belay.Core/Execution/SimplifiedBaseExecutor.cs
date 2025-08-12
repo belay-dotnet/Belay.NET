@@ -1,8 +1,7 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Belay.Core.Execution
-{
+namespace Belay.Core.Execution {
     using System;
     using System.Reflection;
     using System.Runtime.CompilerServices;
@@ -31,8 +30,7 @@ namespace Belay.Core.Execution
     /// </list>
     /// </para>
     /// </remarks>
-    public abstract class SimplifiedBaseExecutor : IExecutor
-    {
+    public abstract class SimplifiedBaseExecutor : IExecutor {
         /// <summary>
         /// Gets the device instance to execute Python code on.
         /// </summary>
@@ -60,8 +58,7 @@ namespace Belay.Core.Execution
         /// <param name="logger">The logger for diagnostic information.</param>
         /// <param name="errorMapper">Optional error mapper for exception handling.</param>
         /// <param name="executionContextService">Optional execution context service (creates default if null).</param>
-        protected SimplifiedBaseExecutor(Device device, ILogger logger, IErrorMapper? errorMapper = null, IExecutionContextService? executionContextService = null)
-        {
+        protected SimplifiedBaseExecutor(Device device, ILogger logger, IErrorMapper? errorMapper = null, IExecutionContextService? executionContextService = null) {
             this.Device = device ?? throw new ArgumentNullException(nameof(device));
             this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.ErrorMapper = errorMapper;
@@ -91,10 +88,8 @@ namespace Belay.Core.Execution
         public virtual async Task ApplyPoliciesAndExecuteAsync(
             string pythonCode,
             CancellationToken cancellationToken = default,
-            [CallerMemberName] string? callingMethod = null)
-        {
-            if (string.IsNullOrWhiteSpace(pythonCode))
-            {
+            [CallerMemberName] string? callingMethod = null) {
+            if (string.IsNullOrWhiteSpace(pythonCode)) {
                 throw new ArgumentException("Python code cannot be null or empty", nameof(pythonCode));
             }
 
@@ -110,13 +105,11 @@ namespace Belay.Core.Execution
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <param name="operationName">Optional operation name for tracking.</param>
         /// <returns>The result of the Python code execution.</returns>
-        protected async Task<T> ExecuteOnDeviceAsync<T>(string pythonCode, CancellationToken cancellationToken = default, string? operationName = null)
-        {
+        protected async Task<T> ExecuteOnDeviceAsync<T>(string pythonCode, CancellationToken cancellationToken = default, string? operationName = null) {
             // Track operation in device state
             this.Device.State.SetCurrentOperation(operationName ?? "ExecuteCode");
 
-            try
-            {
+            try {
                 this.Logger.LogDebug(
                     "Executing Python code with simplified executor: {Code}",
                     pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
@@ -128,8 +121,7 @@ namespace Belay.Core.Execution
 
                 return result;
             }
-            finally
-            {
+            finally {
                 // Complete operation tracking
                 this.Device.State.CompleteOperation();
             }
@@ -142,8 +134,7 @@ namespace Belay.Core.Execution
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <param name="operationName">Optional operation name for tracking.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        protected async Task ExecuteOnDeviceAsync(string pythonCode, CancellationToken cancellationToken = default, string? operationName = null)
-        {
+        protected async Task ExecuteOnDeviceAsync(string pythonCode, CancellationToken cancellationToken = default, string? operationName = null) {
             await this.ExecuteOnDeviceAsync<object>(pythonCode, cancellationToken, operationName).ConfigureAwait(false);
         }
 
@@ -163,7 +154,7 @@ namespace Belay.Core.Execution
         /// <param name="parameters">The parameters to pass to the method.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the execution.</param>
         /// <returns>The result of the method execution.</returns>
-        public abstract Task<T> ExecuteAsync<T>(MethodInfo method, object? instance = null, object?[]? parameters = null, CancellationToken cancellationToken = default);
+        public abstract Task<T> ExecuteAsync<T>(MethodInfo method, object? instance, object?[]? parameters = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Executes a method without returning a value.
@@ -173,8 +164,7 @@ namespace Belay.Core.Execution
         /// <param name="parameters">The parameters to pass to the method.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the execution.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public virtual async Task ExecuteAsync(MethodInfo method, object? instance = null, object?[]? parameters = null, CancellationToken cancellationToken = default)
-        {
+        public virtual async Task ExecuteAsync(MethodInfo method, object? instance, object?[]? parameters = null, CancellationToken cancellationToken = default) {
             await this.ExecuteAsync<object>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
         }
 
@@ -185,17 +175,13 @@ namespace Belay.Core.Execution
         /// <param name="pythonCode">The Python code to execute.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>The result of the Python code execution.</returns>
-        protected virtual async Task<T> ExecuteWithCapabilityOptimizationAsync<T>(string pythonCode, CancellationToken cancellationToken)
-        {
-            try
-            {
+        protected virtual async Task<T> ExecuteWithCapabilityOptimizationAsync<T>(string pythonCode, CancellationToken cancellationToken) {
+            try {
                 // Check if device capabilities can inform execution optimization
                 var capabilities = this.Device.State.Capabilities;
-                if (capabilities?.DetectionComplete == true)
-                {
+                if (capabilities?.DetectionComplete == true) {
                     // Apply platform-specific optimizations based on detected capabilities
-                    if (capabilities.Platform == "esp8266" || capabilities.AvailableMemory < 50000)
-                    {
+                    if (capabilities.Platform == "esp8266" || capabilities.AvailableMemory < 50000) {
                         // For low-memory devices, add small delay to prevent overwhelming
                         await Task.Delay(1, cancellationToken).ConfigureAwait(false);
                     }
@@ -210,8 +196,7 @@ namespace Belay.Core.Execution
                 // Direct device execution without session indirection
                 return await this.Device.Communication.ExecuteAsync<T>(pythonCode, cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (this.ErrorMapper != null)
-            {
+            catch (Exception ex) when (this.ErrorMapper != null) {
                 // Apply error mapping if available
                 var mappedException = this.ErrorMapper.MapException(ex);
                 this.Logger.LogDebug(ex, "Exception mapped from {OriginalType} to {MappedType}",
@@ -224,8 +209,7 @@ namespace Belay.Core.Execution
         /// Gets the current device capabilities if available.
         /// </summary>
         /// <returns>Device capabilities or null if not detected.</returns>
-        protected SimpleDeviceCapabilities? GetDeviceCapabilities()
-        {
+        protected SimpleDeviceCapabilities? GetDeviceCapabilities() {
             return this.Device.State.Capabilities;
         }
 
@@ -234,8 +218,7 @@ namespace Belay.Core.Execution
         /// </summary>
         /// <param name="feature">The feature to check.</param>
         /// <returns>True if the feature is supported; otherwise, false.</returns>
-        protected bool SupportsFeature(SimpleDeviceFeatureSet feature)
-        {
+        protected bool SupportsFeature(SimpleDeviceFeatureSet feature) {
             return this.Device.State.Capabilities?.SupportsFeature(feature) == true;
         }
 
@@ -244,12 +227,10 @@ namespace Belay.Core.Execution
         /// </summary>
         /// <param name="flags">The feature set flags to count.</param>
         /// <returns>The number of flags set.</returns>
-        private static int CountFlags(SimpleDeviceFeatureSet flags)
-        {
+        private static int CountFlags(SimpleDeviceFeatureSet flags) {
             var count = 0;
             var value = (int)flags;
-            while (value > 0)
-            {
+            while (value > 0) {
                 count += value & 1;
                 value >>= 1;
             }

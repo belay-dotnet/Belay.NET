@@ -6,8 +6,7 @@
 
 namespace Belay.Tests.Subprocess;
 
-public class SubprocessTestsDisabled
-{
+public class SubprocessTestsDisabled {
     // All subprocess tests temporarily disabled during session management refactoring
     // See issue tracking for completion status
 }

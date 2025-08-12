@@ -119,7 +119,7 @@ public class MethodInterceptionTests {
         }
         catch (Exception ex) {
             // Skip if Python not available or subprocess issues
-            if (ex.Message.Contains("python3") || 
+            if (ex.Message.Contains("python3") ||
                 ex.Message.Contains("subprocess") ||
                 ex.Message.Contains("Subprocess is already started") ||
                 ex.InnerException?.Message.Contains("Subprocess is already started") == true) {
@@ -152,7 +152,7 @@ public class MethodInterceptionTests {
         }
         catch (Exception ex) {
             // Skip if Python not available or subprocess issues
-            if (ex.Message.Contains("python3") || 
+            if (ex.Message.Contains("python3") ||
                 ex.Message.Contains("subprocess") ||
                 ex.Message.Contains("Subprocess is already started") ||
                 ex.InnerException?.Message.Contains("Subprocess is already started") == true) {

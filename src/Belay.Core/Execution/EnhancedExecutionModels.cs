@@ -1,8 +1,7 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Belay.Core.Execution
-{
+namespace Belay.Core.Execution {
     using System;
     using System.Collections.Generic;
     using System.Reflection;
@@ -11,8 +10,7 @@ namespace Belay.Core.Execution
     /// <summary>
     /// Method interception context for caching pipeline configuration in the simplified architecture.
     /// </summary>
-    public class MethodInterceptionContext
-    {
+    public class MethodInterceptionContext {
         /// <summary>
         /// Gets or sets the method being intercepted.
         /// </summary>
@@ -38,8 +36,7 @@ namespace Belay.Core.Execution
     /// <summary>
     /// Pipeline stage interface for method execution processing.
     /// </summary>
-    public interface IPipelineStage
-    {
+    public interface IPipelineStage {
         /// <summary>
         /// Gets the name of this pipeline stage.
         /// </summary>
@@ -54,8 +51,7 @@ namespace Belay.Core.Execution
     /// <summary>
     /// Enhanced execution statistics for monitoring executor performance.
     /// </summary>
-    public class EnhancedExecutionStatistics
-    {
+    public class EnhancedExecutionStatistics {
         /// <summary>
         /// Gets or sets the number of intercepted methods cached.
         /// </summary>

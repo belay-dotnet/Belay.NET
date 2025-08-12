@@ -188,7 +188,7 @@ namespace Belay.Tests.Unit.Execution {
             [Setup]
             Task Initialize();
         }
-        
+
         /// <summary>
         /// Implementation of test interface for proxy testing.
         /// </summary>

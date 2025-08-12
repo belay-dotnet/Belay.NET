@@ -9,8 +9,7 @@ namespace Belay.Tests.Infrastructure;
 /// <summary>
 /// Factory for creating test device communication instances.
 /// </summary>
-public class DeviceCommunicationFactory
-{
+public class DeviceCommunicationFactory {
     /// <summary>
     /// Creates a mock subprocess device for testing.
     /// </summary>
@@ -19,10 +18,9 @@ public class DeviceCommunicationFactory
     /// <param name="additionalArgs">Additional command line arguments.</param>
     /// <returns>Mock device communication instance.</returns>
     public IDeviceCommunication CreateSubprocessDevice(
-        string micropythonPath, 
-        ILogger logger, 
-        string[]? additionalArgs = null)
-    {
+        string micropythonPath,
+        ILogger logger,
+        string[]? additionalArgs = null) {
         return new MockDeviceCommunication(logger);
     }
 }
@@ -30,13 +28,11 @@ public class DeviceCommunicationFactory
 /// <summary>
 /// Mock device communication for testing.
 /// </summary>
-internal class MockDeviceCommunication : IDeviceCommunication
-{
+internal class MockDeviceCommunication : IDeviceCommunication {
     private readonly ILogger _logger;
     private DeviceConnectionState _state = DeviceConnectionState.Disconnected;
 
-    public MockDeviceCommunication(ILogger logger)
-    {
+    public MockDeviceCommunication(ILogger logger) {
         _logger = logger;
     }
 
@@ -45,28 +41,24 @@ internal class MockDeviceCommunication : IDeviceCommunication
     public event EventHandler<DeviceOutputEventArgs>? OutputReceived;
     public event EventHandler<DeviceStateChangeEventArgs>? StateChanged;
 
-    public Task StartAsync(CancellationToken cancellationToken = default)
-    {
+    public Task StartAsync(CancellationToken cancellationToken = default) {
         _state = DeviceConnectionState.Connected;
         StateChanged?.Invoke(this, new DeviceStateChangeEventArgs(DeviceConnectionState.Disconnected, _state, "Mock connected"));
         return Task.CompletedTask;
     }
 
-    public Task StopAsync(CancellationToken cancellationToken = default)
-    {
+    public Task StopAsync(CancellationToken cancellationToken = default) {
         _state = DeviceConnectionState.Disconnected;
         StateChanged?.Invoke(this, new DeviceStateChangeEventArgs(DeviceConnectionState.Connected, _state, "Mock disconnected"));
         return Task.CompletedTask;
     }
 
-    public Task<string> ExecuteAsync(string pythonCode, CancellationToken cancellationToken = default)
-    {
+    public Task<string> ExecuteAsync(string pythonCode, CancellationToken cancellationToken = default) {
         if (_state != DeviceConnectionState.Connected)
             throw new InvalidOperationException("Device not connected");
 
         // Simple mock responses for common test cases
-        return pythonCode.Trim() switch
-        {
+        return pythonCode.Trim() switch {
             "1 + 2" => Task.FromResult("3"),
             "x = 42" => Task.FromResult(""),
             "x * 2" => Task.FromResult("84"),
@@ -101,10 +93,9 @@ internal class MockDeviceCommunication : IDeviceCommunication
         };
     }
 
-    public Task<T> ExecuteAsync<T>(string pythonCode, CancellationToken cancellationToken = default)
-    {
+    public Task<T> ExecuteAsync<T>(string pythonCode, CancellationToken cancellationToken = default) {
         var result = ExecuteAsync(pythonCode, cancellationToken).Result;
-        
+
         if (typeof(T) == typeof(int) && int.TryParse(result, out var intResult))
             return Task.FromResult((T)(object)intResult);
         if (typeof(T) == typeof(double) && double.TryParse(result, out var doubleResult))
@@ -119,18 +110,15 @@ internal class MockDeviceCommunication : IDeviceCommunication
         return Task.FromResult((T)(object)result);
     }
 
-    public Task<byte[]> GetFileAsync(string remotePath, CancellationToken cancellationToken = default)
-    {
+    public Task<byte[]> GetFileAsync(string remotePath, CancellationToken cancellationToken = default) {
         return Task.FromResult(new byte[] { 1, 2, 3, 4, 5 });
     }
 
-    public Task PutFileAsync(string localPath, string remotePath, CancellationToken cancellationToken = default)
-    {
+    public Task PutFileAsync(string localPath, string remotePath, CancellationToken cancellationToken = default) {
         return Task.CompletedTask;
     }
 
-    public void Dispose()
-    {
+    public void Dispose() {
         _state = DeviceConnectionState.Disconnected;
     }
 }

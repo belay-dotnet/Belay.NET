@@ -1,8 +1,7 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Belay.Core.Execution
-{
+namespace Belay.Core.Execution {
     using System;
     using System.Reflection;
     using System.Runtime.CompilerServices;
@@ -22,8 +21,7 @@ namespace Belay.Core.Execution
     /// setup-specific policies like longer timeouts and initialization-specific optimizations.
     /// </para>
     /// </remarks>
-    public sealed class SimplifiedSetupExecutor : SimplifiedBaseExecutor
-    {
+    public sealed class SimplifiedSetupExecutor : SimplifiedBaseExecutor {
         /// <summary>
         /// Initializes a new instance of the <see cref="SimplifiedSetupExecutor"/> class.
         /// </summary>
@@ -32,8 +30,7 @@ namespace Belay.Core.Execution
         /// <param name="errorMapper">Optional error mapper for exception handling.</param>
         /// <param name="executionContextService">Optional execution context service.</param>
         public SimplifiedSetupExecutor(Device device, ILogger<SimplifiedSetupExecutor> logger, IErrorMapper? errorMapper = null, IExecutionContextService? executionContextService = null)
-            : base(device, logger, errorMapper, executionContextService)
-        {
+            : base(device, logger, errorMapper, executionContextService) {
         }
 
         /// <summary>
@@ -47,10 +44,8 @@ namespace Belay.Core.Execution
         public override async Task<T> ApplyPoliciesAndExecuteAsync<T>(
             string pythonCode,
             CancellationToken cancellationToken = default,
-            [CallerMemberName] string? callingMethod = null)
-        {
-            if (string.IsNullOrWhiteSpace(pythonCode))
-            {
+            [CallerMemberName] string? callingMethod = null) {
+            if (string.IsNullOrWhiteSpace(pythonCode)) {
                 throw new ArgumentException("Python code cannot be null or empty", nameof(pythonCode));
             }
 
@@ -58,13 +53,13 @@ namespace Belay.Core.Execution
             var executionContext = this.ExecutionContextService.Current;
             var setupAttribute = executionContext?.SetupAttribute;
 
-            if (setupAttribute == null)
-            {
+            if (setupAttribute == null) {
                 this.Logger.LogDebug("No [Setup] attribute found, executing with default policies");
                 return await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken, callingMethod).ConfigureAwait(false);
             }
 
-            this.Logger.LogDebug("Applying [Setup] attribute policies: Timeout={Timeout}ms",
+            this.Logger.LogDebug(
+                "Applying [Setup] attribute policies: Timeout={Timeout}ms",
                 setupAttribute.TimeoutMs);
 
             // Apply setup-specific timeout policy (longer than default for initialization)
@@ -72,19 +67,16 @@ namespace Belay.Core.Execution
                 ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
                 : null;
 
-            if (timeoutCts != null)
-            {
+            if (timeoutCts != null) {
                 timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(setupAttribute.TimeoutMs));
             }
 
             var effectiveCancellationToken = timeoutCts?.Token ?? cancellationToken;
 
-            try
-            {
+            try {
                 return await this.ExecuteWithSetupPoliciesAsync<T>(pythonCode, setupAttribute, effectiveCancellationToken, callingMethod).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (timeoutCts?.Token.IsCancellationRequested == true)
-            {
+            catch (OperationCanceledException) when (timeoutCts?.Token.IsCancellationRequested == true) {
                 throw new TimeoutException($"Setup execution timed out after {setupAttribute.TimeoutMs}ms");
             }
         }
@@ -94,8 +86,7 @@ namespace Belay.Core.Execution
         /// </summary>
         /// <param name="method">The method to check.</param>
         /// <returns>True if the method has a [Setup] attribute; otherwise, false.</returns>
-        public override bool CanHandle(MethodInfo method)
-        {
+        public override bool CanHandle(MethodInfo method) {
             return method.GetCustomAttribute<SetupAttribute>() != null;
         }
 
@@ -108,16 +99,13 @@ namespace Belay.Core.Execution
         /// <param name="parameters">The parameters to pass to the method.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the execution.</param>
         /// <returns>The result of the method execution.</returns>
-        public override async Task<T> ExecuteAsync<T>(MethodInfo method, object? instance = null, object?[]? parameters = null, CancellationToken cancellationToken = default)
-        {
-            if (method == null)
-            {
+        public override async Task<T> ExecuteAsync<T>(MethodInfo method, object? instance, object?[]? parameters = null, CancellationToken cancellationToken = default) {
+            if (method == null) {
                 throw new ArgumentNullException(nameof(method));
             }
 
             var setupAttribute = method.GetCustomAttribute<SetupAttribute>();
-            if (setupAttribute == null)
-            {
+            if (setupAttribute == null) {
                 throw new InvalidOperationException($"Method '{method.Name}' does not have a [Setup] attribute");
             }
 
@@ -144,30 +132,26 @@ namespace Belay.Core.Execution
         /// <returns>The result of the Python code execution.</returns>
         private async Task<T> ExecuteWithSetupPoliciesAsync<T>(
             string pythonCode,
-            SetupAttribute setupAttribute,
             CancellationToken cancellationToken,
-            string? operationName)
-        {
+            string? operationName) {
             // Setup-specific policies
             this.Logger.LogDebug("Executing setup code with extended timeout and initialization optimizations");
 
             // Check device connection state
-            if (this.Device.ConnectionState != Communication.DeviceConnectionState.Connected)
-            {
+            if (this.Device.ConnectionState != Communication.DeviceConnectionState.Connected) {
                 throw new InvalidOperationException("Device must be connected before executing setup code");
             }
 
             // Apply setup-specific optimizations
             var capabilities = this.GetDeviceCapabilities();
-            if (capabilities?.DetectionComplete == true)
-            {
-                this.Logger.LogDebug("Setup executing on {Platform} with {FeatureCount} detected features",
+            if (capabilities?.DetectionComplete == true) {
+                this.Logger.LogDebug(
+                    "Setup executing on {Platform} with {FeatureCount} detected features",
                     capabilities.Platform ?? "unknown",
                     CountFlags(capabilities.SupportedFeatures));
 
                 // For setup operations, allow extra time for low-memory devices
-                if (capabilities.AvailableMemory < 30000)
-                {
+                if (capabilities.AvailableMemory < 30000) {
                     this.Logger.LogDebug("Low memory device detected, applying setup-specific delays");
                     await Task.Delay(5, cancellationToken).ConfigureAwait(false);
                 }
@@ -181,12 +165,10 @@ namespace Belay.Core.Execution
         /// </summary>
         /// <param name="flags">The feature set flags to count.</param>
         /// <returns>The number of flags set.</returns>
-        private static int CountFlags(SimpleDeviceFeatureSet flags)
-        {
+        private static int CountFlags(SimpleDeviceFeatureSet flags) {
             var count = 0;
             var value = (int)flags;
-            while (value > 0)
-            {
+            while (value > 0) {
                 count += value & 1;
                 value >>= 1;
             }

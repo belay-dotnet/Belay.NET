@@ -14,17 +14,14 @@ using NUnit.Framework;
 /// Validation tests for the simplified architecture refactoring.
 /// </summary>
 [TestFixture]
-public class SimplifiedArchitectureValidationTest
-{
+public class SimplifiedArchitectureValidationTest {
     [Test]
-    public async Task Device_CreateConnectExecute_SimplifiedArchitecture_WorksCorrectly()
-    {
+    public async Task Device_CreateConnectExecute_SimplifiedArchitecture_WorksCorrectly() {
         // Arrange - Create device with simplified architecture
         using var communication = new SubprocessDeviceCommunication("python3", ["-c", "print('Available')"]);
         using var device = new Device(communication, null, null);
 
-        try
-        {
+        try {
             // Act - Connect using simplified architecture
             await device.ConnectAsync();
 
@@ -33,8 +30,7 @@ public class SimplifiedArchitectureValidationTest
             Assert.That(device.State.ConnectionState, Is.EqualTo(DeviceConnectionState.Connected));
 
             // Verify capability detection was performed (if successful)
-            if (device.State.Capabilities != null)
-            {
+            if (device.State.Capabilities != null) {
                 Assert.That(device.State.Capabilities.DetectionComplete, Is.True);
                 TestContext.WriteLine($"Detected Platform: {device.State.Capabilities.Platform}");
                 TestContext.WriteLine($"Detected Features: {device.State.Capabilities.SupportedFeatures}");
@@ -54,23 +50,19 @@ public class SimplifiedArchitectureValidationTest
 
             TestContext.WriteLine("✅ Simplified architecture validation successful!");
         }
-        catch (Exception ex) when (ex.Message.Contains("python3") || ex.Message.Contains("subprocess"))
-        {
+        catch (Exception ex) when (ex.Message.Contains("python3") || ex.Message.Contains("subprocess")) {
             // Skip test if Python3 not available
             Assert.Ignore("Python3 not available for subprocess testing");
         }
-        finally
-        {
-            if (device.State.ConnectionState == DeviceConnectionState.Connected)
-            {
+        finally {
+            if (device.State.ConnectionState == DeviceConnectionState.Connected) {
                 await device.DisconnectAsync();
             }
         }
     }
 
     [Test]
-    public void DeviceState_AfterRefactoring_HasCorrectStructure()
-    {
+    public void DeviceState_AfterRefactoring_HasCorrectStructure() {
         // Arrange & Act - Create device and verify state structure
         using var communication = new SubprocessDeviceCommunication("python3");
         using var device = new Device(communication, null, null);
@@ -86,8 +78,7 @@ public class SimplifiedArchitectureValidationTest
     }
 
     [Test]
-    public void SimplifiedExecutors_AfterRefactoring_AreAvailable()
-    {
+    public void SimplifiedExecutors_AfterRefactoring_AreAvailable() {
         // Arrange & Act - Create device and verify executor availability
         using var communication = new SubprocessDeviceCommunication("python3");
         using var device = new Device(communication, null, null);
@@ -109,8 +100,7 @@ public class SimplifiedArchitectureValidationTest
     }
 
     [Test]
-    public void EnhancedExecutor_AfterRefactoring_IsAvailable()
-    {
+    public void EnhancedExecutor_AfterRefactoring_IsAvailable() {
         // Arrange & Act - Create device and verify enhanced executor
         using var communication = new SubprocessDeviceCommunication("python3");
         using var device = new Device(communication, null, null);

@@ -1,8 +1,7 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Belay.Tests.Unit.Execution
-{
+namespace Belay.Tests.Unit.Execution {
     using System;
     using System.Threading;
     using System.Threading.Tasks;
@@ -18,105 +17,96 @@ namespace Belay.Tests.Unit.Execution
     /// These tests validate the simplified executor approach using DeviceState instead of sessions.
     /// </summary>
     [TestFixture]
-    public class RefactoredTeardownExecutorTests
-    {
+    public class RefactoredTeardownExecutorTests {
         private Mock<IDeviceCommunication> mockCommunication = null!;
         private Mock<ILogger> mockLogger = null!;
         private TestableTeardownExecutor executor = null!;
 
         [SetUp]
-        public void SetUp()
-        {
-            this.mockCommunication = new Mock<IDeviceCommunication>();
-            this.mockLogger = new Mock<ILogger>();
+        public void SetUp() {
+            mockCommunication = new Mock<IDeviceCommunication>();
+            mockLogger = new Mock<ILogger>();
 
             // Mock device is connected
-            this.mockCommunication.Setup(c => c.State).Returns(DeviceConnectionState.Connected);
+            mockCommunication.Setup(c => c.State).Returns(DeviceConnectionState.Connected);
 
-            this.executor = new TestableTeardownExecutor(this.mockCommunication.Object, this.mockLogger.Object);
+            executor = new TestableTeardownExecutor(mockCommunication.Object, mockLogger.Object);
         }
 
         [Test]
-        public void Constructor_WithNullCommunication_ThrowsArgumentNullException()
-        {
+        public void Constructor_WithNullCommunication_ThrowsArgumentNullException() {
             // Act & Assert
             FluentActions
-                .Invoking(() => new TestableTeardownExecutor(null!, this.mockLogger.Object))
+                .Invoking(() => new TestableTeardownExecutor(null!, mockLogger.Object))
                 .Should().ThrowExactly<ArgumentNullException>()
                 .WithParameterName("communication");
         }
 
         [Test]
-        public void Constructor_WithNullLogger_ThrowsArgumentNullException()
-        {
+        public void Constructor_WithNullLogger_ThrowsArgumentNullException() {
             // Act & Assert
             FluentActions
-                .Invoking(() => new TestableTeardownExecutor(this.mockCommunication.Object, null!))
+                .Invoking(() => new TestableTeardownExecutor(mockCommunication.Object, null!))
                 .Should().ThrowExactly<ArgumentNullException>()
                 .WithParameterName("logger");
         }
 
         [Test]
-        public async Task ExecuteTeardownAsync_WithBasicCode_ExecutesSuccessfully()
-        {
+        public async Task ExecuteTeardownAsync_WithBasicCode_ExecutesSuccessfully() {
             // Arrange
             const string pythonCode = "cleanup_resources()\nprint('Teardown complete')";
             const string expectedResult = "Teardown complete";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await this.executor.ExecuteTeardownAsync<string>(pythonCode);
+            var result = await executor.ExecuteTeardownAsync<string>(pythonCode);
 
             // Assert
             result.Should().Be(expectedResult);
-            this.mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
+            mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
-        public async Task ExecuteTeardownAsync_WithNullCode_ThrowsArgumentException()
-        {
+        public async Task ExecuteTeardownAsync_WithNullCode_ThrowsArgumentException() {
             // Act & Assert
             await FluentActions
-                .Invoking(async () => await this.executor.ExecuteTeardownAsync<string>(null!))
+                .Invoking(async () => await executor.ExecuteTeardownAsync<string>(null!))
                 .Should().ThrowAsync<ArgumentException>()
                 .WithMessage("*Python code cannot be null or empty*")
                 .WithParameterName("pythonCode");
         }
 
         [Test]
-        public async Task ExecuteTeardownAsync_TracksTeardownOperation_InDeviceState()
-        {
+        public async Task ExecuteTeardownAsync_TracksTeardownOperation_InDeviceState() {
             // Arrange
             const string pythonCode = "teardown_complete = True";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<bool>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(async () =>
-                {
+                .Returns(async () => {
                     await Task.Delay(10); // Small delay to ensure operation tracking is visible
                     return true;
                 });
 
             // Act
-            var task = this.executor.ExecuteTeardownAsync<bool>(pythonCode);
+            var task = executor.ExecuteTeardownAsync<bool>(pythonCode);
 
             // Assert - operation should be tracked during execution
-            this.executor.State.CurrentOperation.Should().Be("Teardown");
+            executor.State.CurrentOperation.Should().Be("Teardown");
 
             var result = await task;
 
             // Assert - operation should be completed after execution
             result.Should().BeTrue();
-            this.executor.State.CurrentOperation.Should().BeNull();
-            this.executor.State.LastOperationTime.Should().NotBeNull();
+            executor.State.CurrentOperation.Should().BeNull();
+            executor.State.LastOperationTime.Should().NotBeNull();
         }
 
         [Test]
-        public async Task ExecuteTeardownAsync_WithResourceCleanup_CleansUpProperly()
-        {
+        public async Task ExecuteTeardownAsync_WithResourceCleanup_CleansUpProperly() {
             // Arrange
             const string pythonCode = """
                 # Cleanup GPIO pins
@@ -132,69 +122,66 @@ namespace Belay.Tests.Unit.Execution
 
             const string expectedResult = "All resources cleaned up";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await this.executor.ExecuteTeardownAsync<string>(pythonCode);
+            var result = await executor.ExecuteTeardownAsync<string>(pythonCode);
 
             // Assert
             result.Should().Be(expectedResult);
-            this.mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
+            mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
-        public async Task ExecuteTeardownAsync_WithTeardownException_AttemptsGracefulRecovery()
-        {
+        public async Task ExecuteTeardownAsync_WithTeardownException_AttemptsGracefulRecovery() {
             // Arrange
             const string pythonCode = "undefined_cleanup_function()";
             var teardownException = new InvalidOperationException("Teardown failed: undefined_cleanup_function not defined");
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(teardownException);
 
             // Act & Assert - Should propagate teardown exceptions
             await FluentActions
-                .Invoking(async () => await this.executor.ExecuteTeardownAsync<string>(pythonCode))
+                .Invoking(async () => await executor.ExecuteTeardownAsync<string>(pythonCode))
                 .Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Teardown failed: undefined_cleanup_function not defined");
 
             // State should still be updated even on teardown failure
-            this.executor.State.CurrentOperation.Should().BeNull();
-            this.executor.State.LastOperationTime.Should().NotBeNull();
+            executor.State.CurrentOperation.Should().BeNull();
+            executor.State.LastOperationTime.Should().NotBeNull();
         }
 
         [Test]
-        public async Task ExecuteTeardownAsync_WithCriticalTeardownFailure_ExecutesEmergencyCleanup()
-        {
+        public async Task ExecuteTeardownAsync_WithCriticalTeardownFailure_ExecutesEmergencyCleanup() {
             // Arrange
             const string pythonCode = "critical_cleanup()";
             const string emergencyCode = "import gc; gc.collect()";
 
             // First call fails, emergency cleanup succeeds
-            this.mockCommunication.SetupSequence(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mockCommunication.SetupSequence(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("Critical teardown failure"))
                 .ReturnsAsync("Emergency cleanup completed");
 
             // Act
-            var result = await this.executor.ExecuteTeardownWithRecoveryAsync<string>(pythonCode, emergencyCode);
+            var result = await executor.ExecuteTeardownWithRecoveryAsync<string>(pythonCode, emergencyCode);
 
             // Assert
             result.Should().Be("Emergency cleanup completed");
-            this.mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
-            this.mockCommunication.Verify(c => c.ExecuteAsync<string>(emergencyCode, It.IsAny<CancellationToken>()), Times.Once);
+            mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
+            mockCommunication.Verify(c => c.ExecuteAsync<string>(emergencyCode, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
-        public async Task ExecuteTeardownAsync_WithCancellation_AttemptsQuickCleanup()
-        {
+        public async Task ExecuteTeardownAsync_WithCancellation_AttemptsQuickCleanup() {
             // Arrange
             const string pythonCode = "import time; time.sleep(10); cleanup()";
             using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns<string, CancellationToken>((_, token) => Task.FromCanceled<string>(token));
 
@@ -202,36 +189,34 @@ namespace Belay.Tests.Unit.Execution
 
             // Act & Assert
             await FluentActions
-                .Invoking(async () => await this.executor.ExecuteTeardownAsync<string>(pythonCode, cts.Token))
+                .Invoking(async () => await executor.ExecuteTeardownAsync<string>(pythonCode, cts.Token))
                 .Should().ThrowAsync<TaskCanceledException>();
         }
 
         [Test]
-        public async Task ExecuteTeardownAsync_WithVoidReturn_CompletesSuccessfully()
-        {
+        public async Task ExecuteTeardownAsync_WithVoidReturn_CompletesSuccessfully() {
             // Arrange
             const string pythonCode = "global_state = None";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(string.Empty);
 
             // Act & Assert - Should not throw
-            var action = () => this.executor.ExecuteTeardownAsync(pythonCode);
+            var action = () => executor.ExecuteTeardownAsync(pythonCode);
             await action.Should().NotThrowAsync();
 
-            this.mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
+            mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
-        public void State_InitialState_IsCorrect()
-        {
+        public void State_InitialState_IsCorrect() {
             // Assert
-            this.executor.State.Should().NotBeNull();
-            this.executor.State.Capabilities.Should().BeNull();
-            this.executor.State.CurrentOperation.Should().BeNull();
-            this.executor.State.LastOperationTime.Should().BeNull();
-            this.executor.State.ConnectionState.Should().Be(DeviceConnectionState.Connected);
+            executor.State.Should().NotBeNull();
+            executor.State.Capabilities.Should().BeNull();
+            executor.State.CurrentOperation.Should().BeNull();
+            executor.State.LastOperationTime.Should().BeNull();
+            executor.State.ConnectionState.Should().Be(DeviceConnectionState.Connected);
         }
     }
 
@@ -239,93 +224,79 @@ namespace Belay.Tests.Unit.Execution
     /// Testable implementation of TeardownExecutor for the refactored architecture.
     /// This represents how TeardownExecutor would work without session management dependencies.
     /// </summary>
-    public class TestableTeardownExecutor
-    {
+    public class TestableTeardownExecutor {
         private readonly IDeviceCommunication communication;
         private readonly ILogger logger;
 
         public DeviceState State { get; } = new DeviceState();
 
-        public TestableTeardownExecutor(IDeviceCommunication communication, ILogger logger)
-        {
+        public TestableTeardownExecutor(IDeviceCommunication communication, ILogger logger) {
             this.communication = communication ?? throw new ArgumentNullException(nameof(communication));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Initialize state with connection state from communication
-            this.State.ConnectionState = this.communication.State;
+            State.ConnectionState = this.communication.State;
         }
 
         public async Task<T> ExecuteTeardownAsync<T>(
             string pythonCode,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             // Validate input
-            if (string.IsNullOrWhiteSpace(pythonCode))
-            {
+            if (string.IsNullOrWhiteSpace(pythonCode)) {
                 throw new ArgumentException("Python code cannot be null or empty", nameof(pythonCode));
             }
 
             // Track operation in state
-            this.State.SetCurrentOperation("Teardown");
+            State.SetCurrentOperation("Teardown");
 
-            try
-            {
-                this.logger.LogDebug("Executing teardown code: {Code}", pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
+            try {
+                logger.LogDebug("Executing teardown code: {Code}", pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
 
                 // Apply teardown-specific policies
-                var result = await this.ExecuteWithTeardownPoliciesAsync<T>(pythonCode, cancellationToken);
+                var result = await ExecuteWithTeardownPoliciesAsync<T>(pythonCode, cancellationToken);
 
-                this.logger.LogDebug("Teardown code execution completed successfully");
+                logger.LogDebug("Teardown code execution completed successfully");
 
                 return result;
             }
-            catch (Exception ex)
-            {
-                this.logger.LogWarning(ex, "Teardown execution encountered error, attempting graceful recovery");
+            catch (Exception ex) {
+                logger.LogWarning(ex, "Teardown execution encountered error, attempting graceful recovery");
                 throw;
             }
-            finally
-            {
+            finally {
                 // Complete operation tracking even on failure
-                this.State.CompleteOperation();
+                State.CompleteOperation();
             }
         }
 
         public async Task ExecuteTeardownAsync(
             string pythonCode,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             // Call the string-returning version and ignore result for void execution
-            await this.ExecuteTeardownAsync<string>(pythonCode, cancellationToken);
+            await ExecuteTeardownAsync<string>(pythonCode, cancellationToken);
         }
 
         public async Task<T> ExecuteTeardownWithRecoveryAsync<T>(
             string primaryCode,
             string emergencyCode,
-            CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                return await this.ExecuteTeardownAsync<T>(primaryCode, cancellationToken);
+            CancellationToken cancellationToken = default) {
+            try {
+                return await ExecuteTeardownAsync<T>(primaryCode, cancellationToken);
             }
-            catch (Exception ex)
-            {
-                this.logger.LogWarning(ex, "Primary teardown failed, executing emergency cleanup");
-                
-                try
-                {
-                    return await this.ExecuteTeardownAsync<T>(emergencyCode, cancellationToken);
+            catch (Exception ex) {
+                logger.LogWarning(ex, "Primary teardown failed, executing emergency cleanup");
+
+                try {
+                    return await ExecuteTeardownAsync<T>(emergencyCode, cancellationToken);
                 }
-                catch (Exception emergencyEx)
-                {
-                    this.logger.LogError(emergencyEx, "Emergency teardown also failed");
+                catch (Exception emergencyEx) {
+                    logger.LogError(emergencyEx, "Emergency teardown also failed");
                     throw;
                 }
             }
         }
 
-        private async Task<T> ExecuteWithTeardownPoliciesAsync<T>(string pythonCode, CancellationToken cancellationToken)
-        {
+        private async Task<T> ExecuteWithTeardownPoliciesAsync<T>(string pythonCode, CancellationToken cancellationToken) {
             // Teardown-specific policies could include:
             // - Force execution even if device is disconnecting
             // - Shorter timeout for teardown operations
@@ -333,7 +304,7 @@ namespace Belay.Tests.Unit.Execution
             // - Best-effort execution (continue on minor errors)
 
             // For now, direct execution (policies would be added here)
-            return await this.communication.ExecuteAsync<T>(pythonCode, cancellationToken);
+            return await communication.ExecuteAsync<T>(pythonCode, cancellationToken);
         }
     }
 }

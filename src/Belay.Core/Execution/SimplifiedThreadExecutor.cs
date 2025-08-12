@@ -1,8 +1,7 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Belay.Core.Execution
-{
+namespace Belay.Core.Execution {
     using System;
     using System.Collections.Concurrent;
     using System.Reflection;
@@ -23,8 +22,7 @@ namespace Belay.Core.Execution
     /// thread-specific policies like capability validation, thread management, and health monitoring.
     /// </para>
     /// </remarks>
-    public sealed class SimplifiedThreadExecutor : SimplifiedBaseExecutor
-    {
+    public sealed class SimplifiedThreadExecutor : SimplifiedBaseExecutor {
         private readonly ConcurrentDictionary<string, string> activeThreads = new();
 
         /// <summary>
@@ -35,8 +33,7 @@ namespace Belay.Core.Execution
         /// <param name="errorMapper">Optional error mapper for exception handling.</param>
         /// <param name="executionContextService">Optional execution context service.</param>
         public SimplifiedThreadExecutor(Device device, ILogger<SimplifiedThreadExecutor> logger, IErrorMapper? errorMapper = null, IExecutionContextService? executionContextService = null)
-            : base(device, logger, errorMapper, executionContextService)
-        {
+            : base(device, logger, errorMapper, executionContextService) {
         }
 
         /// <summary>
@@ -55,10 +52,8 @@ namespace Belay.Core.Execution
         public override async Task<T> ApplyPoliciesAndExecuteAsync<T>(
             string pythonCode,
             CancellationToken cancellationToken = default,
-            [CallerMemberName] string? callingMethod = null)
-        {
-            if (string.IsNullOrWhiteSpace(pythonCode))
-            {
+            [CallerMemberName] string? callingMethod = null) {
+            if (string.IsNullOrWhiteSpace(pythonCode)) {
                 throw new ArgumentException("Python code cannot be null or empty", nameof(pythonCode));
             }
 
@@ -66,8 +61,7 @@ namespace Belay.Core.Execution
             var executionContext = this.ExecutionContextService.Current;
             var threadAttribute = executionContext?.ThreadAttribute;
 
-            if (threadAttribute == null)
-            {
+            if (threadAttribute == null) {
                 this.Logger.LogDebug("No [Thread] attribute found, executing with default policies");
                 return await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken, callingMethod).ConfigureAwait(false);
             }
@@ -85,8 +79,7 @@ namespace Belay.Core.Execution
         /// </summary>
         /// <param name="method">The method to check.</param>
         /// <returns>True if the method has a [Thread] attribute; otherwise, false.</returns>
-        public override bool CanHandle(MethodInfo method)
-        {
+        public override bool CanHandle(MethodInfo method) {
             return method.GetCustomAttribute<ThreadAttribute>() != null;
         }
 
@@ -99,16 +92,13 @@ namespace Belay.Core.Execution
         /// <param name="parameters">The parameters to pass to the method.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the execution.</param>
         /// <returns>The result of the method execution.</returns>
-        public override async Task<T> ExecuteAsync<T>(MethodInfo method, object? instance = null, object?[]? parameters = null, CancellationToken cancellationToken = default)
-        {
-            if (method == null)
-            {
+        public override async Task<T> ExecuteAsync<T>(MethodInfo method, object? instance, object?[]? parameters = null, CancellationToken cancellationToken = default) {
+            if (method == null) {
                 throw new ArgumentNullException(nameof(method));
             }
 
             var threadAttribute = method.GetCustomAttribute<ThreadAttribute>();
-            if (threadAttribute == null)
-            {
+            if (threadAttribute == null) {
                 throw new InvalidOperationException($"Method '{method.Name}' does not have a [Thread] attribute");
             }
 
@@ -132,21 +122,19 @@ namespace Belay.Core.Execution
         /// <param name="threadName">The name of the thread for tracking.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>The thread identifier or result from thread creation.</returns>
-        public async Task<T> StartThreadAsync<T>(string pythonCode, string threadName, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(pythonCode))
-            {
+        public async Task<T> StartThreadAsync<T>(string pythonCode, string threadName, CancellationToken cancellationToken = default) {
+            if (string.IsNullOrWhiteSpace(pythonCode)) {
                 throw new ArgumentException("Python code cannot be null or empty", nameof(pythonCode));
             }
 
-            if (string.IsNullOrWhiteSpace(threadName))
-            {
+            if (string.IsNullOrWhiteSpace(threadName)) {
                 throw new ArgumentException("Thread name cannot be null or empty", nameof(threadName));
             }
 
             this.ValidateThreadingSupport();
 
-            this.Logger.LogDebug("Starting thread '{ThreadName}' with code: {Code}", 
+            this.Logger.LogDebug(
+                "Starting thread '{ThreadName}' with code: {Code}",
                 threadName, pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
 
             var threadCreationCode = $@"
@@ -178,10 +166,8 @@ thread_id
         /// <param name="threadName">The name of the thread to stop.</param>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>True if the thread was stopped successfully; otherwise, false.</returns>
-        public async Task<bool> StopThreadAsync(string threadName, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(threadName))
-            {
+        public async Task<bool> StopThreadAsync(string threadName, CancellationToken cancellationToken = default) {
+            if (string.IsNullOrWhiteSpace(threadName)) {
                 throw new ArgumentException("Thread name cannot be null or empty", nameof(threadName));
             }
 
@@ -200,20 +186,17 @@ except Exception as e:
     False
 ";
 
-            try
-            {
+            try {
                 var result = await this.ExecuteOnDeviceAsync<bool>(stopCode, cancellationToken, $"StopThread:{threadName}").ConfigureAwait(false);
-                
-                if (result)
-                {
+
+                if (result) {
                     this.activeThreads.TryRemove(threadName, out _);
                     this.Logger.LogDebug("Thread '{ThreadName}' stopped successfully", threadName);
                 }
 
                 return result;
             }
-            catch (Exception ex)
-            {
+            catch (Exception ex) {
                 this.Logger.LogWarning(ex, "Failed to stop thread '{ThreadName}'", threadName);
                 return false;
             }
@@ -224,25 +207,20 @@ except Exception as e:
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>The number of threads that were stopped successfully.</returns>
-        public async Task<int> StopAllThreadsAsync(CancellationToken cancellationToken = default)
-        {
+        public async Task<int> StopAllThreadsAsync(CancellationToken cancellationToken = default) {
             this.Logger.LogDebug("Stopping all active threads");
 
             var stoppedCount = 0;
             var threadsToStop = this.activeThreads.Keys.ToList();
 
-            foreach (var threadName in threadsToStop)
-            {
-                try
-                {
+            foreach (var threadName in threadsToStop) {
+                try {
                     var stopped = await this.StopThreadAsync(threadName, cancellationToken).ConfigureAwait(false);
-                    if (stopped)
-                    {
+                    if (stopped) {
                         stoppedCount++;
                     }
                 }
-                catch (Exception ex)
-                {
+                catch (Exception ex) {
                     this.Logger.LogWarning(ex, "Failed to stop thread '{ThreadName}'", threadName);
                 }
             }
@@ -256,8 +234,7 @@ except Exception as e:
         /// </summary>
         /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
         /// <returns>A dictionary containing thread health information.</returns>
-        public async Task<Dictionary<string, object>> CheckThreadHealthAsync(CancellationToken cancellationToken = default)
-        {
+        public async Task<Dictionary<string, object>> CheckThreadHealthAsync(CancellationToken cancellationToken = default) {
             this.Logger.LogDebug("Checking thread health");
 
             const string healthCheckCode = @"
@@ -278,8 +255,7 @@ result
         /// <summary>
         /// Clears the thread cache and resets thread tracking.
         /// </summary>
-        public void ClearThreadCache()
-        {
+        public void ClearThreadCache() {
             this.activeThreads.Clear();
             this.Device.State.ClearExecutionHistory();
             this.Logger.LogDebug("Thread cache and execution history cleared");
@@ -296,18 +272,15 @@ result
         /// <returns>The result of the Python code execution.</returns>
         private async Task<T> ExecuteWithThreadPoliciesAsync<T>(
             string pythonCode,
-            ThreadAttribute threadAttribute,
             CancellationToken cancellationToken,
-            string? operationName)
-        {
+            string? operationName) {
             // Thread-specific policies
             this.Logger.LogDebug("Executing thread code with threading-specific optimizations");
 
             var threadName = $"Thread_{DateTime.UtcNow.Ticks}";
-            
+
             // For thread operations, use the StartThreadAsync method
-            if (typeof(T) == typeof(string) || typeof(T) == typeof(object))
-            {
+            if (typeof(T) == typeof(string) || typeof(T) == typeof(object)) {
                 return await this.StartThreadAsync<T>(pythonCode, threadName, cancellationToken).ConfigureAwait(false);
             }
 
@@ -319,11 +292,9 @@ result
         /// Validates that the device supports threading capabilities.
         /// </summary>
         /// <exception cref="NotSupportedException">Thrown when the device does not support threading.</exception>
-        private void ValidateThreadingSupport()
-        {
+        private void ValidateThreadingSupport() {
             var capabilities = this.GetDeviceCapabilities();
-            if (capabilities?.DetectionComplete == true && !this.SupportsFeature(SimpleDeviceFeatureSet.Threading))
-            {
+            if (capabilities?.DetectionComplete == true && !this.SupportsFeature(SimpleDeviceFeatureSet.Threading)) {
                 throw new NotSupportedException("Threading is not supported on this device platform");
             }
         }

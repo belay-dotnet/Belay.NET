@@ -1,8 +1,7 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
-namespace Belay.Tests.Unit.Execution
-{
+namespace Belay.Tests.Unit.Execution {
     using System;
     using System.Threading;
     using System.Threading.Tasks;
@@ -18,139 +17,128 @@ namespace Belay.Tests.Unit.Execution
     /// These tests validate the simplified executor approach using DeviceState instead of sessions.
     /// </summary>
     [TestFixture]
-    public class RefactoredSetupExecutorTests
-    {
+    public class RefactoredSetupExecutorTests {
         private Mock<IDeviceCommunication> mockCommunication = null!;
         private Mock<ILogger> mockLogger = null!;
         private TestableSetupExecutor executor = null!;
 
         [SetUp]
-        public void SetUp()
-        {
-            this.mockCommunication = new Mock<IDeviceCommunication>();
-            this.mockLogger = new Mock<ILogger>();
+        public void SetUp() {
+            mockCommunication = new Mock<IDeviceCommunication>();
+            mockLogger = new Mock<ILogger>();
 
             // Mock device is connected
-            this.mockCommunication.Setup(c => c.State).Returns(DeviceConnectionState.Connected);
+            mockCommunication.Setup(c => c.State).Returns(DeviceConnectionState.Connected);
 
-            this.executor = new TestableSetupExecutor(this.mockCommunication.Object, this.mockLogger.Object);
+            executor = new TestableSetupExecutor(mockCommunication.Object, mockLogger.Object);
         }
 
         [Test]
-        public void Constructor_WithNullCommunication_ThrowsArgumentNullException()
-        {
+        public void Constructor_WithNullCommunication_ThrowsArgumentNullException() {
             // Act & Assert
             FluentActions
-                .Invoking(() => new TestableSetupExecutor(null!, this.mockLogger.Object))
+                .Invoking(() => new TestableSetupExecutor(null!, mockLogger.Object))
                 .Should().ThrowExactly<ArgumentNullException>()
                 .WithParameterName("communication");
         }
 
         [Test]
-        public void Constructor_WithNullLogger_ThrowsArgumentNullException()
-        {
+        public void Constructor_WithNullLogger_ThrowsArgumentNullException() {
             // Act & Assert
             FluentActions
-                .Invoking(() => new TestableSetupExecutor(this.mockCommunication.Object, null!))
+                .Invoking(() => new TestableSetupExecutor(mockCommunication.Object, null!))
                 .Should().ThrowExactly<ArgumentNullException>()
                 .WithParameterName("logger");
         }
 
         [Test]
-        public async Task ExecuteSetupAsync_WithBasicCode_ExecutesSuccessfully()
-        {
+        public async Task ExecuteSetupAsync_WithBasicCode_ExecutesSuccessfully() {
             // Arrange
             const string pythonCode = "import machine\nprint('Setup complete')";
             const string expectedResult = "Setup complete";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await this.executor.ExecuteSetupAsync<string>(pythonCode);
+            var result = await executor.ExecuteSetupAsync<string>(pythonCode);
 
             // Assert
             result.Should().Be(expectedResult);
-            this.mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
+            mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
-        public async Task ExecuteSetupAsync_WithNullCode_ThrowsArgumentException()
-        {
+        public async Task ExecuteSetupAsync_WithNullCode_ThrowsArgumentException() {
             // Act & Assert
             await FluentActions
-                .Invoking(async () => await this.executor.ExecuteSetupAsync<string>(null!))
+                .Invoking(async () => await executor.ExecuteSetupAsync<string>(null!))
                 .Should().ThrowAsync<ArgumentException>()
                 .WithMessage("*Python code cannot be null or empty*")
                 .WithParameterName("pythonCode");
         }
 
         [Test]
-        public async Task ExecuteSetupAsync_TracksSetupOperation_InDeviceState()
-        {
+        public async Task ExecuteSetupAsync_TracksSetupOperation_InDeviceState() {
             // Arrange
             const string pythonCode = "setup_complete = True";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<bool>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .Returns(async () =>
-                {
+                .Returns(async () => {
                     await Task.Delay(10); // Small delay to ensure operation tracking is visible
                     return true;
                 });
 
             // Act
-            var task = this.executor.ExecuteSetupAsync<bool>(pythonCode);
+            var task = executor.ExecuteSetupAsync<bool>(pythonCode);
 
             // Assert - operation should be tracked during execution
-            this.executor.State.CurrentOperation.Should().Be("Setup");
+            executor.State.CurrentOperation.Should().Be("Setup");
 
             var result = await task;
 
             // Assert - operation should be completed after execution
             result.Should().BeTrue();
-            this.executor.State.CurrentOperation.Should().BeNull();
-            this.executor.State.LastOperationTime.Should().NotBeNull();
+            executor.State.CurrentOperation.Should().BeNull();
+            executor.State.LastOperationTime.Should().NotBeNull();
         }
 
         [Test]
-        public async Task ExecuteSetupAsync_WithDeviceCapabilitiesAvailable_UsesCapabilities()
-        {
+        public async Task ExecuteSetupAsync_WithDeviceCapabilitiesAvailable_UsesCapabilities() {
             // Arrange
             const string pythonCode = "configure_hardware()";
-            var capabilities = new SimpleDeviceCapabilities
-            {
+            var capabilities = new SimpleDeviceCapabilities {
                 Platform = "rp2",
                 SupportedFeatures = SimpleDeviceFeatureSet.GPIO | SimpleDeviceFeatureSet.I2C,
                 AvailableMemory = 32768,
                 DetectionComplete = true
             };
 
-            this.executor.State.Capabilities = capabilities;
+            executor.State.Capabilities = capabilities;
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("Hardware configured for RP2");
 
             // Act
-            var result = await this.executor.ExecuteSetupAsync<string>(pythonCode);
+            var result = await executor.ExecuteSetupAsync<string>(pythonCode);
 
             // Assert
             result.Should().Be("Hardware configured for RP2");
             // Verify capabilities were available during setup
-            this.executor.State.Capabilities.Should().NotBeNull();
-            this.executor.State.Capabilities!.Platform.Should().Be("rp2");
+            executor.State.Capabilities.Should().NotBeNull();
+            executor.State.Capabilities!.Platform.Should().Be("rp2");
         }
 
         [Test]
-        public async Task ExecuteSetupAsync_WithCancellation_PropagatesCancellation()
-        {
+        public async Task ExecuteSetupAsync_WithCancellation_PropagatesCancellation() {
             // Arrange
             const string pythonCode = "import time; time.sleep(5)";
             using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns<string, CancellationToken>((_, token) => Task.FromCanceled<string>(token));
 
@@ -158,31 +146,29 @@ namespace Belay.Tests.Unit.Execution
 
             // Act & Assert
             await FluentActions
-                .Invoking(async () => await this.executor.ExecuteSetupAsync<string>(pythonCode, cts.Token))
+                .Invoking(async () => await executor.ExecuteSetupAsync<string>(pythonCode, cts.Token))
                 .Should().ThrowAsync<TaskCanceledException>();
         }
 
         [Test]
-        public async Task ExecuteSetupAsync_WithSetupException_PropagatesException()
-        {
+        public async Task ExecuteSetupAsync_WithSetupException_PropagatesException() {
             // Arrange
             const string pythonCode = "invalid_setup_function()";
             var setupException = new InvalidOperationException("Setup failed: invalid_setup_function not defined");
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(setupException);
 
             // Act & Assert
             await FluentActions
-                .Invoking(async () => await this.executor.ExecuteSetupAsync<string>(pythonCode))
+                .Invoking(async () => await executor.ExecuteSetupAsync<string>(pythonCode))
                 .Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("Setup failed: invalid_setup_function not defined");
         }
 
         [Test]
-        public async Task ExecuteSetupAsync_WithComplexSetupSequence_ExecutesInOrder()
-        {
+        public async Task ExecuteSetupAsync_WithComplexSetupSequence_ExecutesInOrder() {
             // Arrange
             var setupSequence = new[]
             {
@@ -196,44 +182,42 @@ namespace Belay.Tests.Unit.Execution
             var pythonCode = string.Join("\n", setupSequence);
             const string expectedResult = "Setup completed";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await this.executor.ExecuteSetupAsync<string>(pythonCode);
+            var result = await executor.ExecuteSetupAsync<string>(pythonCode);
 
             // Assert
             result.Should().Be(expectedResult);
-            this.mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
+            mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
-        public void State_InitialState_IsCorrect()
-        {
+        public void State_InitialState_IsCorrect() {
             // Assert
-            this.executor.State.Should().NotBeNull();
-            this.executor.State.Capabilities.Should().BeNull();
-            this.executor.State.CurrentOperation.Should().BeNull();
-            this.executor.State.LastOperationTime.Should().BeNull();
-            this.executor.State.ConnectionState.Should().Be(DeviceConnectionState.Connected);
+            executor.State.Should().NotBeNull();
+            executor.State.Capabilities.Should().BeNull();
+            executor.State.CurrentOperation.Should().BeNull();
+            executor.State.LastOperationTime.Should().BeNull();
+            executor.State.ConnectionState.Should().Be(DeviceConnectionState.Connected);
         }
 
         [Test]
-        public async Task ExecuteSetupAsync_WithVoidReturn_CompletesSuccessfully()
-        {
+        public async Task ExecuteSetupAsync_WithVoidReturn_CompletesSuccessfully() {
             // Arrange
             const string pythonCode = "global_variable = 'initialized'";
 
-            this.mockCommunication
+            mockCommunication
                 .Setup(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(string.Empty);
 
             // Act & Assert - Should not throw
-            var action = () => this.executor.ExecuteSetupAsync(pythonCode);
+            var action = () => executor.ExecuteSetupAsync(pythonCode);
             await action.Should().NotThrowAsync();
 
-            this.mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
+            mockCommunication.Verify(c => c.ExecuteAsync<string>(pythonCode, It.IsAny<CancellationToken>()), Times.Once);
         }
     }
 
@@ -241,76 +225,67 @@ namespace Belay.Tests.Unit.Execution
     /// Testable implementation of SetupExecutor for the refactored architecture.
     /// This represents how SetupExecutor would work without session management dependencies.
     /// </summary>
-    public class TestableSetupExecutor
-    {
+    public class TestableSetupExecutor {
         private readonly IDeviceCommunication communication;
         private readonly ILogger logger;
 
         public DeviceState State { get; } = new DeviceState();
 
-        public TestableSetupExecutor(IDeviceCommunication communication, ILogger logger)
-        {
+        public TestableSetupExecutor(IDeviceCommunication communication, ILogger logger) {
             this.communication = communication ?? throw new ArgumentNullException(nameof(communication));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Initialize state with connection state from communication
-            this.State.ConnectionState = this.communication.State;
+            State.ConnectionState = this.communication.State;
         }
 
         public async Task<T> ExecuteSetupAsync<T>(
             string pythonCode,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             // Validate input
-            if (string.IsNullOrWhiteSpace(pythonCode))
-            {
+            if (string.IsNullOrWhiteSpace(pythonCode)) {
                 throw new ArgumentException("Python code cannot be null or empty", nameof(pythonCode));
             }
 
             // Check device connection
-            if (this.communication.State != DeviceConnectionState.Connected)
-            {
+            if (communication.State != DeviceConnectionState.Connected) {
                 throw new InvalidOperationException("Device must be connected before executing setup code");
             }
 
             // Track operation in state
-            this.State.SetCurrentOperation("Setup");
+            State.SetCurrentOperation("Setup");
 
-            try
-            {
-                this.logger.LogDebug("Executing setup code: {Code}", pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
+            try {
+                logger.LogDebug("Executing setup code: {Code}", pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
 
                 // Apply setup-specific policies
-                var result = await this.ExecuteWithSetupPoliciesAsync<T>(pythonCode, cancellationToken);
+                var result = await ExecuteWithSetupPoliciesAsync<T>(pythonCode, cancellationToken);
 
-                this.logger.LogDebug("Setup code execution completed successfully");
+                logger.LogDebug("Setup code execution completed successfully");
 
                 return result;
             }
-            finally
-            {
+            finally {
                 // Complete operation tracking
-                this.State.CompleteOperation();
+                State.CompleteOperation();
             }
         }
 
         public async Task ExecuteSetupAsync(
             string pythonCode,
-            CancellationToken cancellationToken = default)
-        {
+            CancellationToken cancellationToken = default) {
             // Call the string-returning version and ignore result for void execution
-            await this.ExecuteSetupAsync<string>(pythonCode, cancellationToken);
+            await ExecuteSetupAsync<string>(pythonCode, cancellationToken);
         }
 
-        private async Task<T> ExecuteWithSetupPoliciesAsync<T>(string pythonCode, CancellationToken cancellationToken)
-        {
+        private async Task<T> ExecuteWithSetupPoliciesAsync<T>(string pythonCode, CancellationToken cancellationToken) {
             // Setup-specific policies could include:
             // - Longer timeout for setup operations
             // - Capability-aware initialization
             // - Resource pre-allocation
 
             // For now, direct execution (policies would be added here)
-            return await this.communication.ExecuteAsync<T>(pythonCode, cancellationToken);
+            return await communication.ExecuteAsync<T>(pythonCode, cancellationToken);
         }
     }
 }

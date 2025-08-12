@@ -7,8 +7,7 @@
 
 namespace Belay.Tests.Integration;
 
-public class RawReplProtocolTestsDisabled
-{
+public class RawReplProtocolTestsDisabled {
     // All integration tests temporarily disabled during session management refactoring
     // See issue tracking for completion status
 }

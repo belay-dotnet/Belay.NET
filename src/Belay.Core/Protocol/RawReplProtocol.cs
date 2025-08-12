@@ -546,7 +546,7 @@ public class RawReplProtocol : IDisposable {
         if (result.StartsWith("OK")) {
             // Raw REPL response format: "OK<content>\x04\x04>" or "OK>"
             result = result.Substring(2);
-            
+
             // Remove trailing control characters and prompt
             int firstControlCharIndex = result.IndexOf('\x04');
             if (firstControlCharIndex >= 0) {
@@ -555,7 +555,7 @@ public class RawReplProtocol : IDisposable {
             else if (result.EndsWith('>')) {
                 result = result.Substring(0, result.Length - 1);
             }
-            
+
             // Trim line ending characters but preserve content
             response.Result = result.TrimEnd('\r', '\n');
         }

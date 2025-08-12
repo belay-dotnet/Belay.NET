@@ -15,34 +15,29 @@ namespace Belay.Tests.Unit;
 /// complex session management.
 /// </summary>
 [TestFixture]
-public class DeviceStateTests
-{
+public class DeviceStateTests {
     private DeviceState deviceState = null!;
 
     [SetUp]
-    public void SetUp()
-    {
-        this.deviceState = new DeviceState();
+    public void SetUp() {
+        deviceState = new DeviceState();
     }
 
     [Test]
-    public void DeviceState_InitialState_IsCorrect()
-    {
+    public void DeviceState_InitialState_IsCorrect() {
         // Arrange & Act - deviceState created in SetUp
 
         // Assert
-        this.deviceState.Capabilities.Should().BeNull("capabilities not detected yet");
-        this.deviceState.CurrentOperation.Should().BeNull("no operation in progress");
-        this.deviceState.LastOperationTime.Should().BeNull("no operations completed yet");
-        this.deviceState.ConnectionState.Should().Be(DeviceConnectionState.Disconnected, "initial state should be disconnected");
+        deviceState.Capabilities.Should().BeNull("capabilities not detected yet");
+        deviceState.CurrentOperation.Should().BeNull("no operation in progress");
+        deviceState.LastOperationTime.Should().BeNull("no operations completed yet");
+        deviceState.ConnectionState.Should().Be(DeviceConnectionState.Disconnected, "initial state should be disconnected");
     }
 
     [Test]
-    public void SetCapabilities_WithValidData_UpdatesState()
-    {
+    public void SetCapabilities_WithValidData_UpdatesState() {
         // Arrange
-        var capabilities = new SimpleDeviceCapabilities
-        {
+        var capabilities = new SimpleDeviceCapabilities {
             Platform = "esp32",
             Version = "3.4.0",
             SupportedFeatures = SimpleDeviceFeatureSet.GPIO | SimpleDeviceFeatureSet.WiFi,
@@ -51,71 +46,67 @@ public class DeviceStateTests
         };
 
         // Act
-        this.deviceState.Capabilities = capabilities;
+        deviceState.Capabilities = capabilities;
 
         // Assert
-        this.deviceState.Capabilities.Should().NotBeNull();
-        this.deviceState.Capabilities!.Platform.Should().Be("esp32");
-        this.deviceState.Capabilities.Version.Should().Be("3.4.0");
-        this.deviceState.Capabilities.SupportedFeatures.Should().HaveFlag(SimpleDeviceFeatureSet.GPIO);
-        this.deviceState.Capabilities.SupportedFeatures.Should().HaveFlag(SimpleDeviceFeatureSet.WiFi);
-        this.deviceState.Capabilities.AvailableMemory.Should().Be(50000);
-        this.deviceState.Capabilities.DetectionComplete.Should().BeTrue();
+        deviceState.Capabilities.Should().NotBeNull();
+        deviceState.Capabilities!.Platform.Should().Be("esp32");
+        deviceState.Capabilities.Version.Should().Be("3.4.0");
+        deviceState.Capabilities.SupportedFeatures.Should().HaveFlag(SimpleDeviceFeatureSet.GPIO);
+        deviceState.Capabilities.SupportedFeatures.Should().HaveFlag(SimpleDeviceFeatureSet.WiFi);
+        deviceState.Capabilities.AvailableMemory.Should().Be(50000);
+        deviceState.Capabilities.DetectionComplete.Should().BeTrue();
     }
 
     [Test]
-    public void SetCurrentOperation_TracksOperation()
-    {
+    public void SetCurrentOperation_TracksOperation() {
         // Arrange
         const string operationName = "ExecutePythonCode";
 
         // Act
-        this.deviceState.SetCurrentOperation(operationName);
+        deviceState.SetCurrentOperation(operationName);
 
         // Assert
-        this.deviceState.CurrentOperation.Should().Be(operationName);
-        this.deviceState.LastOperationTime.Should().BeNull("operation not completed yet");
+        deviceState.CurrentOperation.Should().Be(operationName);
+        deviceState.LastOperationTime.Should().BeNull("operation not completed yet");
     }
 
     [Test]
-    public void SetCurrentOperation_WithNull_ClearsOperation()
-    {
+    public void SetCurrentOperation_WithNull_ClearsOperation() {
         // Arrange
-        this.deviceState.SetCurrentOperation("test");
+        deviceState.SetCurrentOperation("test");
 
         // Act
-        this.deviceState.SetCurrentOperation(null);
+        deviceState.SetCurrentOperation(null);
 
         // Assert
-        this.deviceState.CurrentOperation.Should().BeNull();
+        deviceState.CurrentOperation.Should().BeNull();
     }
 
     [Test]
-    public void CompleteOperation_UpdatesTimestamp()
-    {
+    public void CompleteOperation_UpdatesTimestamp() {
         // Arrange
-        this.deviceState.SetCurrentOperation("test operation");
+        deviceState.SetCurrentOperation("test operation");
         var beforeComplete = DateTime.UtcNow;
 
         // Act
-        this.deviceState.CompleteOperation();
+        deviceState.CompleteOperation();
         var afterComplete = DateTime.UtcNow;
 
         // Assert
-        this.deviceState.CurrentOperation.Should().BeNull("operation should be cleared");
-        this.deviceState.LastOperationTime.Should().NotBeNull("completion time should be set");
-        this.deviceState.LastOperationTime!.Value.Should().BeAfter(beforeComplete.AddMilliseconds(-10));
-        this.deviceState.LastOperationTime.Value.Should().BeBefore(afterComplete.AddMilliseconds(10));
+        deviceState.CurrentOperation.Should().BeNull("operation should be cleared");
+        deviceState.LastOperationTime.Should().NotBeNull("completion time should be set");
+        deviceState.LastOperationTime!.Value.Should().BeAfter(beforeComplete.AddMilliseconds(-10));
+        deviceState.LastOperationTime.Value.Should().BeBefore(afterComplete.AddMilliseconds(10));
     }
 
     [Test]
-    public void ToString_WithNoCapabilities_ReturnsFormattedString()
-    {
+    public void ToString_WithNoCapabilities_ReturnsFormattedString() {
         // Arrange
-        this.deviceState.ConnectionState = DeviceConnectionState.Connected;
+        deviceState.ConnectionState = DeviceConnectionState.Connected;
 
         // Act
-        var result = this.deviceState.ToString();
+        var result = deviceState.ToString();
 
         // Assert
         result.Should().Contain("DeviceState");
@@ -125,15 +116,14 @@ public class DeviceStateTests
     }
 
     [Test]
-    public void ToString_WithCapabilitiesAndOperation_ReturnsFormattedString()
-    {
+    public void ToString_WithCapabilitiesAndOperation_ReturnsFormattedString() {
         // Arrange
-        this.deviceState.Capabilities = new SimpleDeviceCapabilities { Platform = "esp32" };
-        this.deviceState.SetCurrentOperation("TestOperation");
-        this.deviceState.ConnectionState = DeviceConnectionState.Connected;
+        deviceState.Capabilities = new SimpleDeviceCapabilities { Platform = "esp32" };
+        deviceState.SetCurrentOperation("TestOperation");
+        deviceState.ConnectionState = DeviceConnectionState.Connected;
 
         // Act
-        var result = this.deviceState.ToString();
+        var result = deviceState.ToString();
 
         // Assert
         result.Should().Contain("DeviceState");
@@ -143,22 +133,21 @@ public class DeviceStateTests
     }
 
     [Test]
-    public void ConnectionState_CanBeUpdated()
-    {
+    public void ConnectionState_CanBeUpdated() {
         // Arrange
-        this.deviceState.ConnectionState = DeviceConnectionState.Disconnected;
+        deviceState.ConnectionState = DeviceConnectionState.Disconnected;
 
         // Act
-        this.deviceState.ConnectionState = DeviceConnectionState.Connecting;
+        deviceState.ConnectionState = DeviceConnectionState.Connecting;
 
         // Assert
-        this.deviceState.ConnectionState.Should().Be(DeviceConnectionState.Connecting);
+        deviceState.ConnectionState.Should().Be(DeviceConnectionState.Connecting);
 
         // Act
-        this.deviceState.ConnectionState = DeviceConnectionState.Connected;
+        deviceState.ConnectionState = DeviceConnectionState.Connected;
 
         // Assert
-        this.deviceState.ConnectionState.Should().Be(DeviceConnectionState.Connected);
+        deviceState.ConnectionState.Should().Be(DeviceConnectionState.Connected);
     }
 }
 
@@ -167,11 +156,9 @@ public class DeviceStateTests
 /// Validates simplified capability detection functionality.
 /// </summary>
 [TestFixture]
-public class SimpleDeviceCapabilitiesTests
-{
+public class SimpleDeviceCapabilitiesTests {
     [Test]
-    public void SimpleDeviceCapabilities_DefaultState_IsCorrect()
-    {
+    public void SimpleDeviceCapabilities_DefaultState_IsCorrect() {
         // Arrange & Act
         var capabilities = new SimpleDeviceCapabilities();
 
@@ -184,11 +171,9 @@ public class SimpleDeviceCapabilitiesTests
     }
 
     [Test]
-    public void SupportsFeature_WithSupportedFeature_ReturnsTrue()
-    {
+    public void SupportsFeature_WithSupportedFeature_ReturnsTrue() {
         // Arrange
-        var capabilities = new SimpleDeviceCapabilities
-        {
+        var capabilities = new SimpleDeviceCapabilities {
             SupportedFeatures = SimpleDeviceFeatureSet.GPIO | SimpleDeviceFeatureSet.I2C
         };
 
@@ -198,11 +183,9 @@ public class SimpleDeviceCapabilitiesTests
     }
 
     [Test]
-    public void SupportsFeature_WithUnsupportedFeature_ReturnsFalse()
-    {
+    public void SupportsFeature_WithUnsupportedFeature_ReturnsFalse() {
         // Arrange
-        var capabilities = new SimpleDeviceCapabilities
-        {
+        var capabilities = new SimpleDeviceCapabilities {
             SupportedFeatures = SimpleDeviceFeatureSet.GPIO
         };
 
@@ -212,11 +195,9 @@ public class SimpleDeviceCapabilitiesTests
     }
 
     [Test]
-    public void SupportsFeature_WithNoFeatures_ReturnsFalse()
-    {
+    public void SupportsFeature_WithNoFeatures_ReturnsFalse() {
         // Arrange
-        var capabilities = new SimpleDeviceCapabilities
-        {
+        var capabilities = new SimpleDeviceCapabilities {
             SupportedFeatures = SimpleDeviceFeatureSet.None
         };
 
@@ -225,11 +206,9 @@ public class SimpleDeviceCapabilitiesTests
     }
 
     [Test]
-    public void ToString_WithCompleteDetection_ReturnsFormattedString()
-    {
+    public void ToString_WithCompleteDetection_ReturnsFormattedString() {
         // Arrange
-        var capabilities = new SimpleDeviceCapabilities
-        {
+        var capabilities = new SimpleDeviceCapabilities {
             Platform = "esp32",
             Version = "3.4.0",
             SupportedFeatures = SimpleDeviceFeatureSet.GPIO | SimpleDeviceFeatureSet.WiFi | SimpleDeviceFeatureSet.I2C,
@@ -250,11 +229,9 @@ public class SimpleDeviceCapabilitiesTests
     }
 
     [Test]
-    public void ToString_WithPendingDetection_ReturnsFormattedString()
-    {
+    public void ToString_WithPendingDetection_ReturnsFormattedString() {
         // Arrange
-        var capabilities = new SimpleDeviceCapabilities
-        {
+        var capabilities = new SimpleDeviceCapabilities {
             DetectionComplete = false
         };
 
@@ -275,11 +252,9 @@ public class SimpleDeviceCapabilitiesTests
 /// Validates flag enumeration behavior.
 /// </summary>
 [TestFixture]
-public class SimpleDeviceFeatureSetTests
-{
+public class SimpleDeviceFeatureSetTests {
     [Test]
-    public void SimpleDeviceFeatureSet_FlagCombination_WorksCorrectly()
-    {
+    public void SimpleDeviceFeatureSet_FlagCombination_WorksCorrectly() {
         // Arrange
         var combinedFeatures = SimpleDeviceFeatureSet.GPIO | SimpleDeviceFeatureSet.I2C | SimpleDeviceFeatureSet.SPI;
 
@@ -291,8 +266,7 @@ public class SimpleDeviceFeatureSetTests
     }
 
     [Test]
-    public void SimpleDeviceFeatureSet_None_HasNoFlags()
-    {
+    public void SimpleDeviceFeatureSet_None_HasNoFlags() {
         // Arrange
         var noFeatures = SimpleDeviceFeatureSet.None;
 
@@ -303,15 +277,13 @@ public class SimpleDeviceFeatureSetTests
     }
 
     [Test]
-    public void SimpleDeviceFeatureSet_AllValues_AreValid()
-    {
+    public void SimpleDeviceFeatureSet_AllValues_AreValid() {
         // This test ensures all enum values are powers of 2 (valid flags)
         var values = Enum.GetValues<SimpleDeviceFeatureSet>();
-        
-        foreach (var value in values)
-        {
+
+        foreach (var value in values) {
             if (value == SimpleDeviceFeatureSet.None) continue;
-            
+
             // Each flag should be a power of 2
             var intValue = (int)value;
             var isPowerOfTwo = (intValue & (intValue - 1)) == 0;
