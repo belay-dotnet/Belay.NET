@@ -19,6 +19,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: write
     outputs:
       build-image: ${{ steps.setup.outputs.build-image }}
       test-image: ${{ steps.setup.outputs.test-image }}
