@@ -60,11 +60,13 @@ This file provides **MANDATORY** development requirements for Claude Code when w
 ## Key Knowledge Areas
 
 ### Raw REPL Protocol Understanding
+- **Protocol Specification**: See `docs/ICDs/ICD-001-RawReplProtocol.md` for complete technical specification
 - **Raw Mode**: Entered via Ctrl-A (0x01), allows programmatic code execution
 - **Raw-Paste Mode**: More advanced protocol with flow control for large code transfers
 - **Protocol Sequence**: `\x05A\x01` initialization, window-size management, flow control
 - **Exit Sequences**: Ctrl-B (0x02) exits raw mode, Ctrl-D (0x04) executes code
 - **Implementation**: Must handle flow control bytes `\x01` (increase window) and `\x04` (end data)
+- **Reference Implementation**: `src/Belay.Core/RawReplProtocol.cs` provides direct protocol implementation per ICD-001
 
 ### MicroPython Submodule
 - Include micropython git submodule for reference and testing
@@ -84,11 +86,14 @@ This file provides **MANDATORY** development requirements for Claude Code when w
 - **Configuration**: `docs/docfx.json` controls generation behavior
 
 ### Architecture Principles
+- **Interface Control Documents**: All major interfaces documented in `docs/ICDs/` for maintainable architecture
+- **Device Communication Contract**: See `docs/ICDs/ICD-002-DeviceCommunication.md` for simplified communication interface
+- **Simplification Strategy**: See `docs/ICDs/SIMPLIFICATION_ROADMAP.md` for aggressive simplification approach
 - **Async-First**: All device communication uses Task-based async patterns
 - **Strong Typing**: Generic return types with compile-time safety
 - **DI Ready**: Full dependency injection support with IServiceCollection extensions
 - **Cross-Platform**: .NET 6+ for Windows/Linux/macOS compatibility
-- **Enterprise Ready**: Structured logging, configuration, health checks
+- **Direct Implementation**: Favor direct, documented implementations over complex abstraction layers
 
 ## Documentation Requirements
 

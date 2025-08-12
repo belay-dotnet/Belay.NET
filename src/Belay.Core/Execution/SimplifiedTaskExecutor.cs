@@ -10,9 +10,7 @@ namespace Belay.Core.Execution {
     using System.Threading;
     using System.Threading.Tasks;
     using Belay.Attributes;
-    using Belay.Core.Caching;
     using Belay.Core.Exceptions;
-    using Belay.Core.Transactions;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -36,8 +34,6 @@ namespace Belay.Core.Execution {
     /// </remarks>
     public sealed class SimplifiedTaskExecutor : SimplifiedBaseExecutor, IDisposable {
         private readonly SemaphoreSlim exclusiveSemaphore;
-        private readonly IMethodDeploymentCache methodCache;
-        private readonly ITransactionManager transactionManager;
         private bool disposed = false;
 
         /// <summary>
@@ -46,14 +42,10 @@ namespace Belay.Core.Execution {
         /// <param name="device">The device to execute Python code on.</param>
         /// <param name="logger">The logger for diagnostic information.</param>
         /// <param name="errorMapper">Optional error mapper for exception handling.</param>
-        /// <param name="cache">Optional method deployment cache for performance optimization.</param>
         /// <param name="executionContextService">Optional execution context service.</param>
-        /// <param name="transactionManager">Optional transaction manager for ensuring consistency.</param>
-        public SimplifiedTaskExecutor(Device device, ILogger<SimplifiedTaskExecutor> logger, IErrorMapper? errorMapper = null, IMethodDeploymentCache? cache = null, IExecutionContextService? executionContextService = null, ITransactionManager? transactionManager = null)
+        public SimplifiedTaskExecutor(Device device, ILogger<SimplifiedTaskExecutor> logger, IErrorMapper? errorMapper = null, IExecutionContextService? executionContextService = null)
             : base(device, logger, errorMapper, executionContextService) {
             this.exclusiveSemaphore = new SemaphoreSlim(1, 1);
-            this.methodCache = cache ?? new MethodDeploymentCache(new MethodCacheConfiguration(), logger: Microsoft.Extensions.Logging.Abstractions.NullLogger<MethodDeploymentCache>.Instance);
-            this.transactionManager = transactionManager ?? new TransactionManager(Microsoft.Extensions.Logging.Abstractions.NullLogger<TransactionManager>.Instance);
         }
 
         /// <summary>
@@ -218,37 +210,16 @@ namespace Belay.Core.Execution {
             // Simplified execution without complex caching for now
             this.Logger.LogDebug("Executing task code with simplified policies");
 
-            // Check cache if caching is enabled
-            if (taskAttribute.Cache && this.methodCache != null) {
-                var (deviceId, firmwareVersion) = this.Device.GetDeviceIdentification();
-                var cacheKey = new MethodCacheKey(deviceId, firmwareVersion, pythonCode);
-
-                var cachedResult = this.methodCache.Get<T>(cacheKey);
-                if (cachedResult != null) {
-                    this.Logger.LogDebug("Cache hit for method execution");
-                    return cachedResult;
-                }
-
-                // Execute and cache result
-                var result = await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken, operationName).ConfigureAwait(false);
-
-                if (result != null) {
-                    this.methodCache.Set(cacheKey, result);
-                    this.Logger.LogDebug("Result cached for future use");
-                }
-
-                return result;
-            }
-
-            // Execute without caching
+            // Execute task (caching handled by AttributeHandler if needed)
             return await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken, operationName).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Clears the method cache and execution state.
+        /// Clears the execution state.
         /// </summary>
         public void ClearCache() {
-            this.methodCache?.ClearAll();
+            // Clear simple cache (used by AttributeHandler)
+            SimpleCache.Clear();
             this.Device.State.ClearExecutionHistory();
             this.Logger.LogDebug("Task executor cache and execution history cleared");
         }
@@ -278,7 +249,6 @@ namespace Belay.Core.Execution {
                 try {
                     // Dispose the semaphore
                     this.exclusiveSemaphore?.Dispose();
-                    this.methodCache?.Dispose();
 
                     // Note: transactionManager disposal handled by DI container if needed
                     this.disposed = true;

@@ -3,7 +3,6 @@
 
 namespace Belay.Core;
 
-using Belay.Core.Caching;
 using Belay.Core.Communication;
 using Belay.Core.Discovery;
 using Belay.Core.Execution;
@@ -46,7 +45,6 @@ using Microsoft.Extensions.Logging;
 public class Device : IDisposable {
     private readonly IDeviceCommunication communication;
     private readonly ILogger<Device> logger;
-    private readonly IMethodDeploymentCache methodCache;
     private readonly IExecutionContextService executionContextService;
     private readonly Lazy<SimplifiedTaskExecutor> taskExecutor;
     private readonly Lazy<SimplifiedSetupExecutor> setupExecutor;
@@ -70,7 +68,7 @@ public class Device : IDisposable {
     /// <param name="logger">Optional logger for device operations.</param>
     /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
     public Device(IDeviceCommunication communication, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null)
-        : this(communication, logger, loggerFactory, null, null) {
+        : this(communication, logger, loggerFactory, null) {
     }
 
     /// <summary>
@@ -79,9 +77,8 @@ public class Device : IDisposable {
     /// <param name="communication">The device communication implementation.</param>
     /// <param name="logger">Logger for device operations.</param>
     /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
-    /// <param name="methodCache">Optional method deployment cache for performance optimization.</param>
     /// <param name="executionContextService">Optional execution context service for secure method detection.</param>
-    public Device(IDeviceCommunication communication, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null, IMethodDeploymentCache? methodCache = null, IExecutionContextService? executionContextService = null) {
+    public Device(IDeviceCommunication communication, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null, IExecutionContextService? executionContextService = null) {
         this.communication = communication ?? throw new ArgumentNullException(nameof(communication));
         this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Device>.Instance;
 
@@ -95,10 +92,6 @@ public class Device : IDisposable {
 
         var executorLoggerFactory = loggerFactory ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
 
-        // Use injected cache or create a default one
-        this.methodCache = methodCache ?? new MethodDeploymentCache(
-            new MethodCacheConfiguration(),
-            executorLoggerFactory.CreateLogger<MethodDeploymentCache>());
 
         // Use injected execution context service or create a default one
         this.executionContextService = executionContextService ?? new ExecutionContextService();
@@ -107,8 +100,7 @@ public class Device : IDisposable {
         this.State.ConnectionState = this.communication.State;
 
         // Initialize simplified executors without session management dependencies
-        var transactionManager = new Belay.Core.Transactions.TransactionManager(executorLoggerFactory.CreateLogger<Belay.Core.Transactions.TransactionManager>());
-        this.taskExecutor = new Lazy<SimplifiedTaskExecutor>(() => new SimplifiedTaskExecutor(this, executorLoggerFactory.CreateLogger<SimplifiedTaskExecutor>(), cache: this.methodCache, executionContextService: this.executionContextService, transactionManager: transactionManager));
+        this.taskExecutor = new Lazy<SimplifiedTaskExecutor>(() => new SimplifiedTaskExecutor(this, executorLoggerFactory.CreateLogger<SimplifiedTaskExecutor>(), executionContextService: this.executionContextService));
         this.setupExecutor = new Lazy<SimplifiedSetupExecutor>(() => new SimplifiedSetupExecutor(this, executorLoggerFactory.CreateLogger<SimplifiedSetupExecutor>(), executionContextService: this.executionContextService));
         this.threadExecutor = new Lazy<SimplifiedThreadExecutor>(() => new SimplifiedThreadExecutor(this, executorLoggerFactory.CreateLogger<SimplifiedThreadExecutor>(), executionContextService: this.executionContextService));
         this.teardownExecutor = new Lazy<SimplifiedTeardownExecutor>(() => new SimplifiedTeardownExecutor(this, executorLoggerFactory.CreateLogger<SimplifiedTeardownExecutor>(), executionContextService: this.executionContextService));
@@ -635,7 +627,6 @@ public class Device : IDisposable {
             this.taskExecutor.Value?.Dispose();
         }
 
-        this.methodCache?.Dispose();
         this.communication?.Dispose();
         this.disposed = true;
     }

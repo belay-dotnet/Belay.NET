@@ -5,7 +5,6 @@ namespace Belay.Core.Execution {
     using System;
     using System.Collections.Generic;
     using System.Reflection;
-    using Belay.Core.Caching;
 
     /// <summary>
     /// Method interception context for caching pipeline configuration in the simplified architecture.
@@ -58,9 +57,9 @@ namespace Belay.Core.Execution {
         public int InterceptedMethodCount { get; set; }
 
         /// <summary>
-        /// Gets or sets the deployment cache statistics.
+        /// Gets or sets the deployment cache hit count (simplified).
         /// </summary>
-        public CacheStatistics? DeploymentCacheStatistics { get; set; }
+        public int CacheHitCount { get; set; }
 
         /// <summary>
         /// Gets or sets the number of specialized executors registered.
