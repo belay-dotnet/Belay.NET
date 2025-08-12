@@ -31,7 +31,7 @@ RUN curl -L https://github.com/dotnet/docfx/releases/download/v2.78.3/docfx-linu
 
 # Install Python tools for documentation processing
 RUN apt-get update && apt-get install -y python3-pip \
-    && pip3 install --no-cache-dir markdown pyyaml jinja2 \
+    && pip3 install --no-cache-dir --break-system-packages markdown pyyaml jinja2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install global npm packages for development (as root)

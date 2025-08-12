@@ -44,7 +44,7 @@ USER docsbuilder
 
 # Install Python documentation tools
 USER root
-RUN pip3 install --no-cache-dir \
+RUN pip3 install --no-cache-dir --break-system-packages \
     markdown \
     pyyaml \
     jinja2
