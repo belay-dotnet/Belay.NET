@@ -90,42 +90,79 @@ The Architectural Improvements Release addresses critical architectural gaps ide
   - End-to-end scenario test infrastructure
   - Performance and load testing framework
 
+#### Critical CI/CD Recovery Issues (URGENT)
+- **Issue 002-111**: [Fix Infinite Recursion in Enhanced Executor](./issue-002-111-infinite-recursion-fix.md) - 2-3 days 🚨 **CRITICAL**
+  - Stack overflow in CI unit tests
+  - Circular dependency in executor chain
+  - Blocks all CI/CD operations
+
+- **Issue 002-112**: [Integration Test Infrastructure Restoration](./issue-002-112-integration-test-restoration.md) - 3-4 days
+  - Re-enable disabled test files
+  - Update tests for new session management
+  - Fix Belay.Tests.Infrastructure project
+
+- **Issue 002-113**: [Code Formatting and Quality Cleanup](./issue-002-113-code-formatting-cleanup.md) - 1 day
+  - Fix 60+ files with formatting violations
+  - Update .editorconfig standards
+  - Configure format-on-save
+
+- **Issue 002-114**: [Post-Refactoring Documentation Update](./issue-002-114-documentation-architecture-update.md) - 2-3 days
+  - Update architecture documentation
+  - Fix code examples for new patterns
+  - Complete relevant placeholder pages
+
 ## Implementation Strategy
 
-### Phase 1: Core Foundation (3 weeks)
-**Week 1**: Critical Architecture Foundation
-- Issue 002-101: Executor Framework Implementation
-- Issue 002-102: Device Session Management System
+### Phase 0: URGENT CI Recovery (1 week) 🚨 CRITICAL PATH
+**Days 1-2**: Fix CI Blockers
+- Issue 002-111: Fix Infinite Recursion in Enhanced Executor (CRITICAL)
 
-**Week 2**: Infrastructure and Performance
+**Day 3**: Quick Wins
+- Issue 002-113: Code Formatting and Quality Cleanup
+
+**Days 4-7**: Test Infrastructure
+- Issue 002-112: Integration Test Infrastructure Restoration
+
+### Phase 1: Core Foundation (3 weeks)
+**Week 2**: Critical Architecture Foundation
+- Issue 002-101: Executor Framework Implementation (partially complete)
+- Issue 002-102: Device Session Management System ✅ COMPLETE
+
+**Week 3**: Infrastructure and Performance
 - Issue 002-103: Method Deployment Caching Infrastructure  
 - Issue 002-104: Dependency Injection Infrastructure
 
-**Week 3**: Error Handling and Integration
+**Week 4**: Error Handling and Integration
 - Issue 002-105: Unified Exception Handling System
 - Issue 002-106: Cross-Component Integration Layer
 
 ### Phase 2: Advanced Features and Quality (2-3 weeks)
-**Week 4**: Resource Management and Factories
+**Week 5**: Resource Management and Factories
 - Issue 002-107: Device Resource Management Framework
 - Issue 002-108: Factory Pattern Implementation
 
-**Week 5**: Demonstration and Testing
+**Week 6**: Demonstration and Testing
 - Issue 002-109: Attribute System Refactoring
 - Issue 002-110: Testing Infrastructure Improvements
 
-**Week 6**: Integration and Validation
+**Week 7**: Integration and Validation
+- Issue 002-114: Post-Refactoring Documentation Update
 - Cross-component integration testing
 - Performance benchmarking and optimization
 - Architecture review validation
-- Documentation completion
 
 ## Dependency Graph
 
 ```
-Critical Path:
+URGENT Critical Path (CI Recovery):
+Issue 002-111 (Infinite Recursion Fix) 🚨 BLOCKS ALL
+    ├── Issue 002-113 (Code Formatting)
+    └── Issue 002-112 (Integration Tests)
+        └── Issue 002-114 (Documentation)
+
+Original Critical Path (Post-Recovery):
 Issue 002-101 (Executor Framework) 
-    ├── Issue 002-102 (Session Management) 
+    ├── Issue 002-102 (Session Management) ✅ COMPLETE
     │   ├── Issue 002-103 (Caching)
     │   └── Issue 002-106 (Integration Layer)
     ├── Issue 002-105 (Exception Handling)
