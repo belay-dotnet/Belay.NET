@@ -185,17 +185,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
         
-    - name: Initialize submodules manually if needed
+    - name: Initialize submodules manually
       run: |
-        if [ ! -f "micropython/README.md" ]; then
-          echo "Submodules not properly checked out, initializing manually..."
-          git submodule update --init --recursive
-        else
-          echo "Submodules already available"
-        fi
+        echo "Initializing submodules manually for container compatibility..."
+        git submodule update --init --recursive
 
     - name: Test DocFX build
       run: |
