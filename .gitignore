@@ -241,3 +241,6 @@ docs/node_modules/
 
 # Debug test projects
 DebugTest.csproj
+
+# Repository cleanup archives
+archive/
