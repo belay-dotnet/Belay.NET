@@ -94,6 +94,13 @@ RUN micropython --version && \
     test-micropython-subprocess && \
     echo "MicroPython unix port ready for Belay.NET testing"
 
+# Verify Git is accessible for GitHub Actions (as root user)
+USER root
+RUN git --version && \
+    which git && \
+    echo "Git available for GitHub Actions"
+USER builder
+
 # Health check for MicroPython functionality
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD micropython -c "print('MicroPython health check OK')" || exit 1
