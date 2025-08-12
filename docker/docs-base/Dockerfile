@@ -34,13 +34,13 @@ RUN curl -L https://github.com/dotnet/docfx/releases/download/v2.78.3/docfx-linu
     && chmod +x /usr/local/bin/docfx \
     && rm docfx.zip
 
-USER docsbuilder
-
-# Install global npm packages for documentation
+# Install global npm packages for documentation (as root)
 RUN npm install -g \
     vitepress@latest \
     markdown-it \
     @types/node
+
+USER docsbuilder
 
 # Install Python documentation tools
 USER root

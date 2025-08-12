@@ -34,13 +34,13 @@ RUN apt-get update && apt-get install -y python3-pip \
     && pip3 install --no-cache-dir markdown pyyaml jinja2 \
     && rm -rf /var/lib/apt/lists/*
 
-USER builder
-
-# Install global npm packages for development
+# Install global npm packages for development (as root)
 RUN npm install -g \
     vitepress@latest \
     markdown-it \
     @types/node
+
+USER builder
 
 # Install additional .NET development tools
 RUN dotnet tool install -g dotnet-ef \
