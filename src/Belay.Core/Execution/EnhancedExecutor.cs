@@ -107,16 +107,15 @@ namespace Belay.Core.Execution
             var methodContext = new MethodExecutionContext(method, instance, parameters);
             using var contextScope = this.ExecutionContextService.SetContext(methodContext);
 
-            // Check for specialized executor first
-            var specializedExecutor = this.GetSpecializedExecutor(method);
-            if (specializedExecutor != null)
-            {
-                this.Logger.LogDebug("Delegating to specialized executor: {ExecutorType}", specializedExecutor.GetType().Name);
-                return await specializedExecutor.ExecuteAsync<T>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
-            }
+            // IMPORTANT: Extract Python code directly instead of delegating to avoid circular dependencies
+            // Enhanced executor should extract Python code and execute directly, not delegate to other executors
+            string pythonCode = this.ExtractPythonCodeFromMethod(method, instance, parameters);
+            
+            this.Logger.LogDebug("Enhanced executor extracted Python code: {Code}", 
+                pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
 
-            // Fallback to attribute-based execution through simplified executors
-            return await this.ExecuteWithAttributeRouting<T>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
+            // Execute directly through ApplyPoliciesAndExecuteAsync which routes to ExecuteOnDeviceAsync
+            return await this.ApplyPoliciesAndExecuteAsync<T>(pythonCode, cancellationToken, method.Name).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -134,18 +133,15 @@ namespace Belay.Core.Execution
         {
             this.ThrowIfDisposed();
 
-            // Check if we have an execution context and route appropriately
-            var executionContext = this.ExecutionContextService.Current;
-            if (executionContext != null)
-            {
-                this.Logger.LogDebug("Enhanced execution with context for method {MethodName}", executionContext.Method.Name);
-                return await this.ExecuteAsync<T>(executionContext.Method, executionContext.Instance, executionContext.Parameters, cancellationToken).ConfigureAwait(false);
-            }
+            // IMPORTANT: Do not route back through ExecuteAsync to prevent infinite recursion
+            // ApplyPoliciesAndExecuteAsync must execute Python code directly on the device
+            // The execution context is already established by the calling method
 
-            // Fallback to direct execution for code without method context
-            this.Logger.LogDebug("No method context available, executing Python code directly: {Code}",
+            // Enhanced executor applies minimal additional policies and delegates to device execution
+            this.Logger.LogDebug("Enhanced executor executing Python code directly: {Code}",
                 pythonCode.Length > 100 ? $"{pythonCode[..100]}..." : pythonCode);
 
+            // Execute directly on device without routing back through method execution system
             return await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken, callingMethod).ConfigureAwait(false);
         }
 
@@ -222,46 +218,6 @@ namespace Belay.Core.Execution
             this.Logger.LogDebug("Cleared enhanced executor caches and state");
         }
 
-        /// <summary>
-        /// Routes method execution through the appropriate simplified executor based on attributes.
-        /// </summary>
-        /// <typeparam name="T">The expected return type.</typeparam>
-        /// <param name="method">The method to execute.</param>
-        /// <param name="instance">The instance to invoke the method on.</param>
-        /// <param name="parameters">The parameters to pass to the method.</param>
-        /// <param name="cancellationToken">Cancellation token to cancel the execution.</param>
-        /// <returns>The result of the method execution.</returns>
-        private async Task<T> ExecuteWithAttributeRouting<T>(
-            MethodInfo method,
-            object? instance,
-            object?[]? parameters,
-            CancellationToken cancellationToken)
-        {
-            // Route through appropriate simplified executor based on attribute
-            if (method.GetCustomAttribute<TaskAttribute>() != null)
-            {
-                return await this.Device.Task.ExecuteAsync<T>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (method.GetCustomAttribute<SetupAttribute>() != null)
-            {
-                return await this.Device.Setup.ExecuteAsync<T>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (method.GetCustomAttribute<ThreadAttribute>() != null)
-            {
-                return await this.Device.Thread.ExecuteAsync<T>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (method.GetCustomAttribute<TeardownAttribute>() != null)
-            {
-                return await this.Device.Teardown.ExecuteAsync<T>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
-            }
-
-            // Generate Python code and execute directly if no specific attribute found
-            var pythonCode = $"# Method: {method.Name}\\nresult = None  # Placeholder for method execution";
-            return await this.ExecuteOnDeviceAsync<T>(pythonCode, cancellationToken, method.Name).ConfigureAwait(false);
-        }
 
         private MethodInterceptionContext CreateInterceptionContext(MethodInfo method, object? instance)
         {
@@ -295,26 +251,60 @@ namespace Belay.Core.Execution
 
         private void InitializeDefaultSpecializedExecutors()
         {
-            // Register simplified executors for standard attributes if not already provided
-            if (!this.specializedExecutors.ContainsKey(typeof(TaskAttribute)))
-            {
-                this.RegisterSpecializedExecutor(typeof(TaskAttribute), this.Device.Task);
-            }
+            // Enhanced executor now handles all attributes directly without delegation
+            // No specialized executors needed - this prevents circular dependencies
+            this.Logger.LogDebug("Enhanced executor using direct execution - no specialized executors needed");
+        }
 
-            if (!this.specializedExecutors.ContainsKey(typeof(SetupAttribute)))
+        private string ExtractPythonCodeFromMethod(MethodInfo method, object? instance, object?[]? parameters)
+        {
+            // Get Python code from [PythonCode] attribute first, fallback to method invocation
+            var pythonCodeAttribute = method.GetCustomAttribute<Belay.Attributes.PythonCodeAttribute>();
+            
+            if (pythonCodeAttribute != null)
             {
-                this.RegisterSpecializedExecutor(typeof(SetupAttribute), this.Device.Setup);
+                // Extract Python code from attribute and apply parameter substitution if enabled
+                var pythonCode = pythonCodeAttribute.Code;
+                
+                if (pythonCodeAttribute.EnableParameterSubstitution && parameters != null && parameters.Length > 0)
+                {
+                    // Apply parameter substitution
+                    var parameterNames = method.GetParameters().Select(p => p.Name).ToArray();
+                    for (int i = 0; i < Math.Min(parameterNames.Length, parameters.Length); i++)
+                    {
+                        if (parameterNames[i] != null && parameters[i] != null)
+                        {
+                            var paramValue = this.ConvertParameterToPython(parameters[i]!);
+                            pythonCode = pythonCode.Replace($"{{{parameterNames[i]}}}", paramValue);
+                        }
+                    }
+                }
+                
+                this.Logger.LogDebug("Using Python code from [PythonCode] attribute: {Code}", pythonCode);
+                return pythonCode;
             }
+            else
+            {
+                // For enhanced executor, generate a default implementation rather than invoking
+                // This prevents infinite recursion when the instance is a proxy
+                this.Logger.LogDebug("No [PythonCode] attribute found, generating default Python code for method {MethodName}", method.Name);
+                return $"# Method: {method.Name}\nresult = None  # Enhanced executor default implementation";
+            }
+        }
 
-            if (!this.specializedExecutors.ContainsKey(typeof(ThreadAttribute)))
+        private string ConvertParameterToPython(object parameter)
+        {
+            return parameter switch
             {
-                this.RegisterSpecializedExecutor(typeof(ThreadAttribute), this.Device.Thread);
-            }
-
-            if (!this.specializedExecutors.ContainsKey(typeof(TeardownAttribute)))
-            {
-                this.RegisterSpecializedExecutor(typeof(TeardownAttribute), this.Device.Teardown);
-            }
+                string s => $"'{s.Replace("'", "\\'")}'",
+                int i => i.ToString(),
+                long l => l.ToString(),
+                float f => f.ToString("F", System.Globalization.CultureInfo.InvariantCulture),
+                double d => d.ToString("F", System.Globalization.CultureInfo.InvariantCulture),
+                bool b => b ? "True" : "False",
+                null => "None",
+                _ => $"'{parameter.ToString()?.Replace("'", "\\'") ?? "None"}'"
+            };
         }
 
         private string GenerateInterceptionCacheKey(MethodInfo method, Type? instanceType)
