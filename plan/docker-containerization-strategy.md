@@ -198,27 +198,32 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Build MicroPython unix port for testing
-WORKDIR /opt
-RUN git clone --depth 1 --branch v1.23.0 https://github.com/micropython/micropython.git \
-    && cd micropython \
-    && git submodule update --init --recursive \
-    && cd ports/unix \
-    && make submodules \
-    && make \
-    && make install \
-    && cd ../../../ \
-    && rm -rf micropython/.git
+# Build MicroPython unix port using the exact submodule version from Belay.NET
+# Copy the checked-out micropython submodule (preserves exact commit from .gitmodules)
+WORKDIR /workspace
+COPY micropython ./micropython
 
-# Create alternative build with debugging enabled for development
-RUN cd /opt && \
-    git clone --depth 1 --branch v1.23.0 https://github.com/micropython/micropython.git micropython-debug \
-    && cd micropython-debug/ports/unix \
-    && make submodules \
+# Build production MicroPython from the exact submodule commit
+WORKDIR /workspace/micropython/ports/unix
+RUN make submodules \
+    && make \
+    && make install
+
+# Create alternative build with debugging enabled for development  
+RUN make clean \
     && make DEBUG=1 \
-    && cp build-standard/micropython /usr/local/bin/micropython-debug \
-    && cd ../../../ \
-    && rm -rf micropython-debug
+    && cp build-standard/micropython /usr/local/bin/micropython-debug
+
+# Extract MicroPython version information for runtime environment
+RUN MICROPYTHON_VERSION=$(/usr/local/bin/micropython -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}-{sys.implementation.version}')" 2>/dev/null || echo "unknown") \
+    && echo "export MICROPYTHON_VERSION=${MICROPYTHON_VERSION}" >> /etc/environment \
+    && echo "MicroPython version: ${MICROPYTHON_VERSION}"
+
+# Clean up build artifacts to reduce image size but preserve source for reference
+RUN rm -rf /workspace/micropython/tests \
+    && rm -rf /workspace/micropython/docs \
+    && find /workspace/micropython -name "*.o" -delete \
+    && find /workspace/micropython -name "*.a" -delete
 
 # Install additional test tools and coverage utilities
 RUN dotnet tool install -g coverlet.console
@@ -263,7 +268,7 @@ WORKDIR /workspace
 # Environment variables for MicroPython testing
 ENV MICROPYTHON_EXECUTABLE=/usr/local/bin/micropython
 ENV MICROPYTHON_DEBUG_EXECUTABLE=/usr/local/bin/micropython-debug
-ENV MICROPYTHON_VERSION=1.23.0
+# MICROPYTHON_VERSION is set dynamically during build based on submodule version
 
 # Verify MicroPython installation and test subprocess communication
 RUN micropython --version && \
@@ -475,11 +480,12 @@ jobs:
 The containerized MicroPython unix port provides a consistent testing environment that eliminates the need to install and compile MicroPython on every CI run. This approach offers several key benefits:
 
 **Benefits of Containerized MicroPython**:
-- **Consistency**: Same MicroPython version across all environments (v1.23.0)
+- **Consistency**: Exact same MicroPython version across all environments (from submodule pin)
 - **Performance**: Pre-compiled binary eliminates 2-3 minute compilation time per CI run  
 - **Reliability**: Known working configuration with all required modules
 - **Debugging**: Debug build available for troubleshooting complex issues
 - **Validation**: Built-in health checks ensure subprocess communication works
+- **Version Control**: Automatically tracks Belay.NET's MicroPython submodule version
 
 #### Integration Test Configuration
 
@@ -555,8 +561,8 @@ MICROPYTHON_EXECUTABLE=/usr/local/bin/micropython
 # Debug build with additional logging
 MICROPYTHON_DEBUG_EXECUTABLE=/usr/local/bin/micropython-debug  
 
-# Version for test compatibility checks
-MICROPYTHON_VERSION=1.23.0
+# Version dynamically determined from submodule (e.g., "3.4.0-v1.25.0-535-g93ad32d52")
+MICROPYTHON_VERSION=<dynamic-from-submodule>
 ```
 
 #### Local Testing with MicroPython
@@ -635,7 +641,7 @@ services:
     environment:
       - MICROPYTHON_EXECUTABLE=/usr/local/bin/micropython
       - MICROPYTHON_DEBUG_EXECUTABLE=/usr/local/bin/micropython-debug
-      - MICROPYTHON_VERSION=1.23.0
+      - MICROPYTHON_VERSION=${MICROPYTHON_VERSION:-unknown}
     command: dotnet watch test
     
   test-subprocess:
@@ -754,7 +760,7 @@ RUN syft packages -o spdx-json > /sbom.json
 | Bandwidth Usage | 200MB/run | 50MB/run | 75% reduction |
 | Local Setup | 30-45 min | 5-10 min | 80% reduction |
 | Environment Consistency | Variable | Guaranteed | 100% |
-| MicroPython Version Control | Manual/Inconsistent | v1.23.0 (pinned) | Guaranteed consistency |
+| MicroPython Version Control | Manual/Inconsistent | Submodule pin (automatic) | Guaranteed consistency |
 | Test Environment Setup | 10-15 min | Instant | 100% elimination |
 
 ### Cost Savings
@@ -769,7 +775,7 @@ RUN syft packages -o spdx-json > /sbom.json
 
 ### Week 1: Foundation
 - [ ] Create Dockerfiles for all base images
-- [ ] Build and test MicroPython unix port (v1.23.0)
+- [ ] Build and test MicroPython unix port (from submodule pin)
 - [ ] Set up GitHub Container Registry
 - [ ] Build and publish initial images
 - [ ] Create security scanning workflow
