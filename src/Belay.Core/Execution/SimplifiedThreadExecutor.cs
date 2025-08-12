@@ -71,7 +71,7 @@ namespace Belay.Core.Execution {
             // Validate threading capability
             this.ValidateThreadingSupport();
 
-            return await this.ExecuteWithThreadPoliciesAsync<T>(pythonCode, threadAttribute, cancellationToken, callingMethod).ConfigureAwait(false);
+            return await this.ExecuteWithThreadPoliciesAsync<T>(pythonCode, cancellationToken, callingMethod).ConfigureAwait(false);
         }
 
         /// <summary>

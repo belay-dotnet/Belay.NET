@@ -105,7 +105,7 @@ namespace Belay.Core.Execution {
 
             // IMPORTANT: Extract Python code directly instead of delegating to avoid circular dependencies
             // Enhanced executor should extract Python code and execute directly, not delegate to other executors
-            string pythonCode = this.ExtractPythonCodeFromMethod(method, instance, parameters);
+            string pythonCode = this.ExtractPythonCodeFromMethod(method, parameters);
 
             this.Logger.LogDebug(
                 "Enhanced executor extracted Python code: {Code}",

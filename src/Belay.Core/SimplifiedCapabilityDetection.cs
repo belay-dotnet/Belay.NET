@@ -205,7 +205,7 @@ result
 
                 foreach (var feature in features) {
                     if (feature?.ToString() is string featureName) {
-                        supportedFeatures |= MapFeatureNameToFlag(featureName, logger);
+                        supportedFeatures |= MapFeatureNameToFlag(featureName);
                     }
                 }
 

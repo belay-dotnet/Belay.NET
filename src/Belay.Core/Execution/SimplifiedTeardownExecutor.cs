@@ -61,7 +61,7 @@ namespace Belay.Core.Execution {
             this.Logger.LogDebug("Applying [Teardown] attribute policies");
 
             try {
-                return await this.ExecuteWithTeardownPoliciesAsync<T>(pythonCode, teardownAttribute, cancellationToken, callingMethod).ConfigureAwait(false);
+                return await this.ExecuteWithTeardownPoliciesAsync<T>(pythonCode, cancellationToken, callingMethod).ConfigureAwait(false);
             }
             catch (Exception ex) {
                 // For teardown methods, attempt emergency cleanup on failure

@@ -74,7 +74,7 @@ namespace Belay.Core.Execution {
             var effectiveCancellationToken = timeoutCts?.Token ?? cancellationToken;
 
             try {
-                return await this.ExecuteWithSetupPoliciesAsync<T>(pythonCode, setupAttribute, effectiveCancellationToken, callingMethod).ConfigureAwait(false);
+                return await this.ExecuteWithSetupPoliciesAsync<T>(pythonCode, effectiveCancellationToken, callingMethod).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (timeoutCts?.Token.IsCancellationRequested == true) {
                 throw new TimeoutException($"Setup execution timed out after {setupAttribute.TimeoutMs}ms");
