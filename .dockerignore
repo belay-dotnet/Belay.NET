@@ -1,0 +1,90 @@
+# Git and version control
+.git/
+.gitignore
+.gitmodules
+.github/
+
+# Build outputs
+bin/
+obj/
+out/
+TestResults/
+artifacts/
+
+# IDE and editor files
+.vs/
+.vscode/
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.swp
+*.tmp
+*~
+
+# Dependency directories
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentation build outputs
+docs/_site/
+docs/api/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# Logs and temporary files
+logs/
+*.log
+tmp/
+temp/
+
+# Package files
+*.nupkg
+*.snupkg
+*.tgz
+*.tar.gz
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+
+# Secrets and configuration
+*.env
+.env.*
+appsettings.*.json
+!appsettings.json
+
+# Test artifacts
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+# Keep essential files for Docker builds
+!micropython/
+!docs/
+!src/
+!tests/
+!Directory.Build.props
+!Directory.Packages.props
+!global.json
+!*.sln
+!*.csproj
+!*.fsproj
+!*.vbproj

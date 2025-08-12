@@ -1,0 +1,296 @@
+name: CI (Docker-based)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  BASE_IMAGE_NAME: ghcr.io/belay-dotnet
+
+jobs:
+  # Ensure Docker images are available and up-to-date
+  setup-containers:
+    name: Setup Container Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      build-image: ${{ steps.setup.outputs.build-image }}
+      test-image: ${{ steps.setup.outputs.test-image }}
+      docs-image: ${{ steps.setup.outputs.docs-image }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Check if images exist
+        id: check
+        run: |
+          BUILD_EXISTS=$(docker manifest inspect ${{ env.BASE_IMAGE_NAME }}/belay-build-base:latest >/dev/null 2>&1 && echo "true" || echo "false")
+          TEST_EXISTS=$(docker manifest inspect ${{ env.BASE_IMAGE_NAME }}/belay-test-base:latest >/dev/null 2>&1 && echo "true" || echo "false")
+          DOCS_EXISTS=$(docker manifest inspect ${{ env.BASE_IMAGE_NAME }}/belay-docs-base:latest >/dev/null 2>&1 && echo "true" || echo "false")
+          
+          echo "build-exists=$BUILD_EXISTS" >> $GITHUB_OUTPUT
+          echo "test-exists=$TEST_EXISTS" >> $GITHUB_OUTPUT
+          echo "docs-exists=$DOCS_EXISTS" >> $GITHUB_OUTPUT
+
+      - name: Build missing images
+        if: steps.check.outputs.build-exists == 'false' || steps.check.outputs.test-exists == 'false' || steps.check.outputs.docs-exists == 'false'
+        run: |
+          # Trigger docker-build workflow if images don't exist
+          gh workflow run docker-build.yml --ref ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image outputs
+        id: setup
+        run: |
+          echo "build-image=${{ env.BASE_IMAGE_NAME }}/belay-build-base:latest" >> $GITHUB_OUTPUT
+          echo "test-image=${{ env.BASE_IMAGE_NAME }}/belay-test-base:latest" >> $GITHUB_OUTPUT
+          echo "docs-image=${{ env.BASE_IMAGE_NAME }}/belay-docs-base:latest" >> $GITHUB_OUTPUT
+
+  build-and-test:
+    name: Build and Test (Docker)
+    runs-on: ubuntu-latest
+    needs: setup-containers
+    container:
+      image: ${{ needs.setup-containers.outputs.test-image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: Verify MicroPython installation
+      run: |
+        micropython --version
+        test-micropython-subprocess
+
+    - name: Restore dependencies
+      run: dotnet restore Belay.NET.sln
+
+    - name: Build solution
+      run: dotnet build Belay.NET.sln --no-restore --configuration Release
+
+    - name: Run unit tests
+      run: |
+        dotnet test tests/Belay.Tests.Unit/Belay.Tests.Unit.csproj \
+          --no-build --configuration Release \
+          --logger trx --results-directory TestResults \
+          --collect:"XPlat Code Coverage" \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+    - name: Run integration tests (if available)
+      run: |
+        if [ -f "tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj" ]; then
+          dotnet test tests/Belay.Tests.Integration/Belay.Tests.Integration.csproj \
+            --no-build --configuration Release \
+            --logger trx --results-directory TestResults \
+            --collect:"XPlat Code Coverage"
+        fi
+
+    - name: Run subprocess tests (if available) 
+      run: |
+        if [ -f "tests/Belay.Tests.Subprocess/Belay.Tests.Subprocess.csproj" ]; then
+          dotnet test tests/Belay.Tests.Subprocess/Belay.Tests.Subprocess.csproj \
+            --no-build --configuration Release \
+            --logger trx --results-directory TestResults \
+            --collect:"XPlat Code Coverage"
+        fi
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-docker
+        path: TestResults
+
+    - name: Upload code coverage
+      uses: codecov/codecov-action@v4
+      if: always()
+      with:
+        directory: TestResults
+        fail_ci_if_error: false
+        flags: docker-ci
+
+  code-quality:
+    name: Code Quality (Docker)
+    runs-on: ubuntu-latest
+    needs: setup-containers
+    container:
+      image: ${{ needs.setup-containers.outputs.build-image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Restore dependencies
+      run: dotnet restore Belay.NET.sln
+
+    - name: Check code formatting
+      run: |
+        dotnet format --verify-no-changes --verbosity diagnostic
+
+    - name: Run static analysis
+      run: |
+        dotnet build Belay.NET.sln --configuration Release --verbosity normal
+
+  documentation-build:
+    name: Documentation Build (Docker)
+    runs-on: ubuntu-latest
+    needs: setup-containers
+    container:
+      image: ${{ needs.setup-containers.outputs.docs-image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Test DocFX build
+      run: |
+        if [ -f "docs/scripts/test-docfx.sh" ]; then
+          cd docs && bash scripts/test-docfx.sh
+        else
+          echo "DocFX test script not found, checking basic functionality"
+          docfx --version
+        fi
+
+    - name: Build documentation
+      run: |
+        if [ -f "docs/docfx.json" ]; then
+          cd docs && docfx build docfx.json
+        else
+          echo "DocFX configuration not found"
+        fi
+
+  security-scan:
+    name: Security Scan (Docker)
+    runs-on: ubuntu-latest
+    needs: setup-containers
+    container:
+      image: ${{ needs.setup-containers.outputs.build-image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Restore dependencies
+      run: dotnet restore Belay.NET.sln
+
+    - name: Check for vulnerable packages
+      run: |
+        dotnet list package --vulnerable --include-transitive || exit_code=$?
+        if [ $exit_code -ne 0 ]; then
+          echo "❌ Vulnerable packages detected"
+          exit 1
+        else
+          echo "✅ No vulnerable packages found"
+        fi
+
+  performance-benchmark:
+    name: Performance Benchmark (Docker)
+    runs-on: ubuntu-latest
+    needs: setup-containers
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    container:
+      image: ${{ needs.setup-containers.outputs.test-image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Verify MicroPython installation
+      run: |
+        micropython --version
+        test-micropython-subprocess
+
+    - name: Run performance benchmarks
+      run: |
+        if [ -f "tests/Belay.Tests.Performance/Belay.Tests.Performance.csproj" ]; then
+          dotnet run --project tests/Belay.Tests.Performance --configuration Release
+        else
+          echo "Performance tests not yet implemented"
+        fi
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-results
+        path: BenchmarkDotNet.Artifacts/
+
+  # Parallel execution of critical tests in legacy environment for comparison
+  legacy-validation:
+    name: Legacy Environment Validation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Build MicroPython unix port
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential gcc make
+        cd micropython/ports/unix
+        make submodules
+        make
+
+    - name: Quick validation build
+      run: |
+        dotnet restore Belay.NET.sln
+        dotnet build Belay.NET.sln --configuration Release
+
+    - name: Run critical tests only
+      run: |
+        dotnet test tests/Belay.Tests.Unit/Belay.Tests.Unit.csproj \
+          --configuration Release \
+          --filter "Category=Critical" \
+          --logger console
+      env:
+        MICROPYTHON_EXECUTABLE: ${{ github.workspace }}/micropython/ports/unix/build-standard/micropython
