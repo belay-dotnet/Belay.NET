@@ -39,7 +39,6 @@ USER docsbuilder
 # Install global npm packages for documentation
 RUN npm install -g \
     vitepress@latest \
-    @vitepress/theme-default \
     markdown-it \
     @types/node
 

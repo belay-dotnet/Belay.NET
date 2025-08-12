@@ -39,7 +39,6 @@ USER builder
 # Install global npm packages for development
 RUN npm install -g \
     vitepress@latest \
-    @vitepress/theme-default \
     markdown-it \
     @types/node
 
