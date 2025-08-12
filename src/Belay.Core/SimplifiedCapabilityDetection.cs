@@ -69,7 +69,7 @@ namespace Belay.Core {
                     cancellationToken);
 
                 // Parse the results into SimpleDeviceCapabilities
-                var capabilities = ParseDetectionResults(detectionResult, logger);
+                var capabilities = ParseDetectionResults(detectionResult);
 
                 logger?.LogDebug(
                     "Capability detection completed: Platform={Platform}, Features={FeatureCount}, Memory={Memory}",
@@ -173,8 +173,8 @@ result
         /// <param name="logger">Optional logger for diagnostic output.</param>
         /// <returns>A parsed SimpleDeviceCapabilities object.</returns>
         private static SimpleDeviceCapabilities ParseDetectionResults(
-            Dictionary<string, object> detectionResult,
-            ILogger? logger) {
+            Dictionary<string, object> detectionResult
+            ) {
             var capabilities = new SimpleDeviceCapabilities();
 
             // Parse platform information
