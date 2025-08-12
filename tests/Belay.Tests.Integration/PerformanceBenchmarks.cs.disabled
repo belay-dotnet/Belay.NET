@@ -1,7 +1,11 @@
 // Copyright (c) 2024 Belay.NET Contributors
 // Licensed under the Apache License, Version 2.0.
 // See the LICENSE file in the project root for more information.
+using System.Diagnostics;
+using System.Text;
 using Belay.Core.Communication;
+using Belay.Tests.Infrastructure;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,7 +16,7 @@ namespace Belay.Tests.Integration;
 [Trait("Category", "Performance")]
 [Trait("Category", "UnixPort")]
 public class PerformanceBenchmarks : IDisposable {
-    private readonly SubprocessDeviceCommunication _device;
+    private readonly IDeviceCommunication _device;
     private readonly ITestOutputHelper _output;
     private readonly ILogger<PerformanceBenchmarks> _logger;
 
@@ -32,9 +36,9 @@ public class PerformanceBenchmarks : IDisposable {
             micropythonPath = MicroPythonUnixPort.FindMicroPythonExecutable();
         }
 
-        _device = new SubprocessDeviceCommunication(
+        _device = new DeviceCommunicationFactory().CreateSubprocessDevice(
             micropythonPath!,
-            logger: loggerFactory.CreateLogger<SubprocessDeviceCommunication>());
+            loggerFactory.CreateLogger<IDeviceCommunication>());
     }
 
     [Fact]

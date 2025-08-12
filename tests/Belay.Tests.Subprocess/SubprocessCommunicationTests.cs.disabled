@@ -1,6 +1,12 @@
 // Copyright (c) 2024 Belay.NET Contributors
 // Licensed under the Apache License, Version 2.0.
 // See the LICENSE file in the project root for more information.
+using System.Diagnostics;
+using Belay.Core.Communication;
+using Belay.Core.Exceptions;
+using Belay.Tests.Infrastructure;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Belay.Tests.Subprocess;
@@ -9,7 +15,7 @@ namespace Belay.Tests.Subprocess;
 [Trait("Category", "UnixPort")]
 public class SubprocessCommunicationTests : IDisposable {
     private readonly ILoggerFactory _loggerFactory;
-    private readonly List<SubprocessDeviceCommunication> _devices = new();
+    private readonly List<IDeviceCommunication> _devices = new();
 
     public SubprocessCommunicationTests() {
         _loggerFactory = LoggerFactory.Create(builder => {
@@ -192,10 +198,10 @@ sys.exit(1)
     public async Task Should_Handle_Custom_Arguments() {
         // Arrange
         var micropythonPath = MicroPythonUnixPort.FindMicroPythonExecutable()!;
-        var device = new SubprocessDeviceCommunication(
+        var device = new DeviceCommunicationFactory().CreateSubprocessDevice(
             micropythonPath,
-            additionalArgs: new[] { "-O" }, // Optimization flag
-            logger: _loggerFactory.CreateLogger<SubprocessDeviceCommunication>());
+            _loggerFactory.CreateLogger<IDeviceCommunication>(),
+            additionalArgs: new[] { "-O" }); // Optimization flag
 
         _devices.Add(device);
 
@@ -268,21 +274,18 @@ os.getcwd()
         result.Should().Contain(Environment.CurrentDirectory);
     }
 
-    private SubprocessDeviceCommunication CreateDevice() {
+    private IDeviceCommunication CreateDevice() {
         // Get MicroPython path from environment or use default search
-        string? micropythonPath = Environment.GetEnvironmentVariable("MICROPYTHON_EXECUTABLE");
+        string? micropythonPath = Environment.GetEnvironmentVariable("MICROPYTHON_EXECUTABLE") ?? 
+                                 Environment.GetEnvironmentVariable("HOME") + "/belay.net/micropython/ports/unix/build-standard/micropython";
 
-        if (string.IsNullOrEmpty(micropythonPath)) {
-            micropythonPath = MicroPythonUnixPort.FindMicroPythonExecutable();
+        if (string.IsNullOrEmpty(micropythonPath) || !File.Exists(micropythonPath)) {
+            throw new InvalidOperationException("MicroPython executable not found. Set MICROPYTHON_EXECUTABLE environment variable or ensure MicroPython is built.");
         }
 
-        if (string.IsNullOrEmpty(micropythonPath)) {
-            throw new InvalidOperationException("MicroPython executable not found. Set MICROPYTHON_EXECUTABLE environment variable or ensure MicroPython is built in micropython/ports/unix/build-standard/micropython");
-        }
-
-        var device = new SubprocessDeviceCommunication(
+        var device = new DeviceCommunicationFactory().CreateSubprocessDevice(
             micropythonPath,
-            logger: _loggerFactory.CreateLogger<SubprocessDeviceCommunication>());
+            _loggerFactory.CreateLogger<IDeviceCommunication>());
 
         _devices.Add(device);
         return device;
