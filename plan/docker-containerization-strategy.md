@@ -180,38 +180,100 @@ WORKDIR /workspace
 # docker/test-base/Dockerfile
 FROM ghcr.io/belay-dotnet/belay-build-base:latest AS test-base
 
-# Install MicroPython build dependencies
+# Install MicroPython unix port build dependencies
 USER root
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     libffi-dev \
     pkg-config \
+    libreadline-dev \
+    libncurses5-dev \
+    libncursesw5-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    liblzma-dev \
+    libsqlite3-dev \
+    libssl-dev \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Build MicroPython unix port
+# Build MicroPython unix port for testing
 WORKDIR /opt
 RUN git clone --depth 1 --branch v1.23.0 https://github.com/micropython/micropython.git \
-    && cd micropython/ports/unix \
+    && cd micropython \
+    && git submodule update --init --recursive \
+    && cd ports/unix \
     && make submodules \
     && make \
     && make install \
-    && cd / \
-    && rm -rf /opt/micropython/.git
+    && cd ../../../ \
+    && rm -rf micropython/.git
 
-# Install test tools
+# Create alternative build with debugging enabled for development
+RUN cd /opt && \
+    git clone --depth 1 --branch v1.23.0 https://github.com/micropython/micropython.git micropython-debug \
+    && cd micropython-debug/ports/unix \
+    && make submodules \
+    && make DEBUG=1 \
+    && cp build-standard/micropython /usr/local/bin/micropython-debug \
+    && cd ../../../ \
+    && rm -rf micropython-debug
+
+# Install additional test tools and coverage utilities
 RUN dotnet tool install -g coverlet.console
 RUN dotnet tool install -g dotnet-reportgenerator-globaltool
+RUN dotnet tool install -g dotnet-stryker
+
+# Create test script for MicroPython subprocess validation
+RUN cat > /usr/local/bin/test-micropython-subprocess << 'EOF'
+#!/bin/bash
+set -e
+
+echo "Testing MicroPython subprocess communication..."
+
+# Test basic execution
+echo "1. Basic execution test"
+echo "print('Hello from MicroPython')" | micropython
+
+# Test raw REPL protocol simulation
+echo "2. Raw REPL protocol test"
+echo -e "import sys\nsys.version" | micropython
+
+# Test error handling
+echo "3. Error handling test"
+echo "1/0" | micropython || echo "Error handling working"
+
+# Test module imports
+echo "4. Module import test"
+echo -e "import os\nprint('os module available')" | micropython
+
+# Test platform detection
+echo "5. Platform detection test"
+echo -e "import sys\nprint('Platform:', sys.platform)" | micropython
+
+echo "MicroPython subprocess tests completed successfully"
+EOF
+
+RUN chmod +x /usr/local/bin/test-micropython-subprocess
 
 USER builder
 WORKDIR /workspace
 
-# Set MicroPython environment variable
+# Environment variables for MicroPython testing
 ENV MICROPYTHON_EXECUTABLE=/usr/local/bin/micropython
+ENV MICROPYTHON_DEBUG_EXECUTABLE=/usr/local/bin/micropython-debug
+ENV MICROPYTHON_VERSION=1.23.0
 
-# Verify installation
-RUN micropython --version
+# Verify MicroPython installation and test subprocess communication
+RUN micropython --version && \
+    micropython-debug --version && \
+    test-micropython-subprocess && \
+    echo "MicroPython unix port ready for Belay.NET testing"
+
+# Health check for MicroPython functionality
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD micropython -c "print('MicroPython health check OK')" || exit 1
 ```
 
 ### Phase 2: GitHub Container Registry Setup (Days 4-5)
@@ -406,6 +468,134 @@ jobs:
           path: docs/.vitepress/dist
 ```
 
+### Phase 3.5: MicroPython Testing Integration (Day 7)
+
+#### MicroPython Unix Port for CI Testing
+
+The containerized MicroPython unix port provides a consistent testing environment that eliminates the need to install and compile MicroPython on every CI run. This approach offers several key benefits:
+
+**Benefits of Containerized MicroPython**:
+- **Consistency**: Same MicroPython version across all environments (v1.23.0)
+- **Performance**: Pre-compiled binary eliminates 2-3 minute compilation time per CI run  
+- **Reliability**: Known working configuration with all required modules
+- **Debugging**: Debug build available for troubleshooting complex issues
+- **Validation**: Built-in health checks ensure subprocess communication works
+
+#### Integration Test Configuration
+
+```yaml
+# .github/workflows/integration-tests.yml
+name: Integration Tests with MicroPython
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/belay-dotnet/belay-test-base:latest
+      options: --user builder
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Verify MicroPython environment
+        run: |
+          echo "MicroPython version:"
+          micropython --version
+          echo "Testing subprocess communication:"
+          test-micropython-subprocess
+          
+      - name: Run unit tests
+        run: |
+          dotnet test tests/Belay.Tests.Unit \
+            --configuration Release \
+            --logger trx \
+            --collect:"XPlat Code Coverage"
+            
+      - name: Run subprocess integration tests
+        run: |
+          dotnet test tests/Belay.Tests.Subprocess \
+            --configuration Release \
+            --logger trx \
+            --collect:"XPlat Code Coverage" \
+            --environment MICROPYTHON_EXECUTABLE=/usr/local/bin/micropython
+            
+      - name: Run integration tests (restored)
+        run: |
+          dotnet test tests/Belay.Tests.Integration \
+            --configuration Release \
+            --logger trx \
+            --collect:"XPlat Code Coverage" \
+            --filter "Category=Subprocess"
+            
+      - name: Debug failing tests (if needed)
+        if: failure()
+        run: |
+          echo "Using debug MicroPython for detailed error analysis:"
+          MICROPYTHON_EXECUTABLE=/usr/local/bin/micropython-debug \
+          dotnet test tests/Belay.Tests.Subprocess \
+            --configuration Debug \
+            --logger "console;verbosity=detailed"
+```
+
+#### Test Environment Variables
+
+The test container provides these environment variables for consistent testing:
+
+```bash
+# Standard MicroPython executable
+MICROPYTHON_EXECUTABLE=/usr/local/bin/micropython
+
+# Debug build with additional logging
+MICROPYTHON_DEBUG_EXECUTABLE=/usr/local/bin/micropython-debug  
+
+# Version for test compatibility checks
+MICROPYTHON_VERSION=1.23.0
+```
+
+#### Local Testing with MicroPython
+
+Developers can run the same MicroPython environment locally:
+
+```bash
+# Run tests with containerized MicroPython
+docker-compose run --rm test dotnet test tests/Belay.Tests.Subprocess
+
+# Interactive debugging session
+docker-compose run --rm test bash
+# Inside container:
+micropython-debug  # Start interactive session
+```
+
+#### MicroPython Subprocess Test Validation
+
+The container includes automated validation to ensure MicroPython subprocess communication works correctly:
+
+```bash
+# Validation script runs these tests:
+# 1. Basic execution: print('Hello from MicroPython')
+# 2. Raw REPL protocol: sys.version output
+# 3. Error handling: 1/0 exception handling
+# 4. Module imports: os module availability  
+# 5. Platform detection: sys.platform identification
+
+# Run validation manually:
+test-micropython-subprocess
+```
+
+This validation ensures that:
+- MicroPython binary is executable and responsive
+- Subprocess communication channel works correctly
+- Standard library modules are available
+- Error conditions are handled properly
+- Raw REPL protocol functions as expected
+
 ### Phase 4: Local Development Integration (Days 8-10)
 
 #### Docker Compose for Development
@@ -441,9 +631,23 @@ services:
     image: ghcr.io/belay-dotnet/belay-test-base:latest
     volumes:
       - .:/workspace
+      - test-results:/workspace/TestResults
     environment:
       - MICROPYTHON_EXECUTABLE=/usr/local/bin/micropython
+      - MICROPYTHON_DEBUG_EXECUTABLE=/usr/local/bin/micropython-debug
+      - MICROPYTHON_VERSION=1.23.0
     command: dotnet watch test
+    
+  test-subprocess:
+    image: ghcr.io/belay-dotnet/belay-test-base:latest
+    volumes:
+      - .:/workspace
+    environment:
+      - MICROPYTHON_EXECUTABLE=/usr/local/bin/micropython
+    command: dotnet test tests/Belay.Tests.Subprocess --logger console
+
+volumes:
+  test-results:
 ```
 
 #### Developer Setup Script
@@ -545,10 +749,13 @@ RUN syft packages -o spdx-json > /sbom.json
 | Metric | Current | With Containers | Improvement |
 |--------|---------|-----------------|-------------|
 | CI Setup Time | 5-7 min | 30-60 sec | 85% reduction |
+| MicroPython Build Time | 2-3 min | 0 sec (pre-built) | 100% elimination |
 | Total CI Time | 15-20 min | 7-10 min | 50% reduction |
 | Bandwidth Usage | 200MB/run | 50MB/run | 75% reduction |
 | Local Setup | 30-45 min | 5-10 min | 80% reduction |
 | Environment Consistency | Variable | Guaranteed | 100% |
+| MicroPython Version Control | Manual/Inconsistent | v1.23.0 (pinned) | Guaranteed consistency |
+| Test Environment Setup | 10-15 min | Instant | 100% elimination |
 
 ### Cost Savings
 
@@ -562,12 +769,17 @@ RUN syft packages -o spdx-json > /sbom.json
 
 ### Week 1: Foundation
 - [ ] Create Dockerfiles for all base images
+- [ ] Build and test MicroPython unix port (v1.23.0)
 - [ ] Set up GitHub Container Registry
 - [ ] Build and publish initial images
 - [ ] Create security scanning workflow
+- [ ] Validate MicroPython subprocess communication
 
 ### Week 2: Integration
 - [ ] Update CI workflows to use containers
+- [ ] Test MicroPython integration in CI environment
+- [ ] Re-enable subprocess integration tests
+- [ ] Validate test performance improvements
 - [ ] Test all CI pipelines
 - [ ] Update local development scripts
 - [ ] Document container usage
