@@ -64,8 +64,7 @@ public static class ResultParser
         catch (Exception ex) when (!(ex is DeviceException))
         {
             throw new DeviceException(
-                $"Failed to parse device output as {typeof(T).Name}: {ex.Message}",
-                deviceOutput);
+                $"Failed to parse device output as {typeof(T).Name}: {ex.Message}", ex);
         }
     }
 

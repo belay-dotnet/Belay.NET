@@ -1,0 +1,116 @@
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
+
+using System.Reflection;
+using Microsoft.Extensions.Logging;
+
+namespace Belay.Core;
+
+/// <summary>
+/// Direct executor that handles all attribute types via AttributeHandler.
+/// Replaces the complex executor hierarchy with a single, focused implementation.
+/// </summary>
+public sealed class DirectExecutor : IDisposable
+{
+    private readonly IDeviceConnection device;
+    private readonly ILogger<DirectExecutor> logger;
+    private bool disposed = false;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DirectExecutor"/> class.
+    /// </summary>
+    /// <param name="device">The device connection to execute on.</param>
+    /// <param name="logger">Optional logger for diagnostic information.</param>
+    public DirectExecutor(IDeviceConnection device, ILogger<DirectExecutor>? logger = null)
+    {
+        this.device = device ?? throw new ArgumentNullException(nameof(device));
+        this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DirectExecutor>.Instance;
+    }
+
+    /// <summary>
+    /// Executes a method with return value using AttributeHandler.
+    /// </summary>
+    /// <typeparam name="T">The return type of the method.</typeparam>
+    /// <param name="method">The method to execute.</param>
+    /// <param name="args">The method arguments.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The result of the method execution.</returns>
+    public async Task<T> ExecuteAsync<T>(MethodInfo method, object[] args, CancellationToken cancellationToken = default)
+    {
+        this.ThrowIfDisposed();
+        
+        this.logger.LogDebug("Executing method: {Method} with {ArgCount} arguments", method.Name, args.Length);
+        
+        try
+        {
+            return await AttributeHandler.ExecuteMethod<T>(this.device, method, args, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Failed to execute method: {Method}", method.Name);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Executes a method without return value using AttributeHandler.
+    /// </summary>
+    /// <param name="method">The method to execute.</param>
+    /// <param name="args">The method arguments.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    public async Task ExecuteAsync(MethodInfo method, object[] args, CancellationToken cancellationToken = default)
+    {
+        await this.ExecuteAsync<string>(method, args, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes Python code directly on the device.
+    /// </summary>
+    /// <typeparam name="T">The return type.</typeparam>
+    /// <param name="pythonCode">The Python code to execute.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The result of the Python code execution.</returns>
+    public async Task<T> ExecutePythonAsync<T>(string pythonCode, CancellationToken cancellationToken = default)
+    {
+        this.ThrowIfDisposed();
+        
+        this.logger.LogDebug("Executing Python code directly: {Code}", pythonCode);
+        
+        return await this.device.ExecutePython<T>(pythonCode, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes Python code directly on the device without return value.
+    /// </summary>
+    /// <param name="pythonCode">The Python code to execute.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    public async Task ExecutePythonAsync(string pythonCode, CancellationToken cancellationToken = default)
+    {
+        await this.ExecutePythonAsync<string>(pythonCode, cancellationToken);
+    }
+
+    /// <summary>
+    /// Clears any cached execution state.
+    /// </summary>
+    public void ClearCache()
+    {
+        SimpleCache.Clear();
+        this.logger.LogDebug("Cleared execution cache");
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (this.disposed)
+            return;
+            
+        this.logger.LogDebug("Disposing DirectExecutor");
+        this.disposed = true;
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (this.disposed)
+            throw new ObjectDisposedException(nameof(DirectExecutor));
+    }
+}

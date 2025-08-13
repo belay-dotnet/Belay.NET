@@ -4,92 +4,71 @@
 namespace Belay.Extensions.Factories;
 
 using Belay.Core;
-using Belay.Core.Communication;
 using Belay.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 /// <summary>
-/// Default implementation of device factory.
+/// Default implementation of device factory for simplified architecture.
 /// </summary>
 internal class DeviceFactory : IDeviceFactory {
-    private readonly ICommunicatorFactory _communicatorFactory;
-    private readonly ILogger<Device> _logger;
-    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger<SimplifiedDevice> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeviceFactory"/> class.
     /// </summary>
-    /// <param name="communicatorFactory">The communicator factory.</param>
     /// <param name="logger">The logger for device instances.</param>
-    /// <param name="loggerFactory">The logger factory for executor loggers.</param>
-    public DeviceFactory(
-        ICommunicatorFactory communicatorFactory,
-        ILogger<Device> logger,
-        ILoggerFactory loggerFactory) {
-        this._communicatorFactory = communicatorFactory;
+    public DeviceFactory(ILogger<SimplifiedDevice> logger) {
         this._logger = logger;
-        this._loggerFactory = loggerFactory;
     }
 
     /// <inheritdoc/>
-    public Device CreateDevice(IDeviceCommunication communicator) {
-        return new Device(communicator, this._logger, this._loggerFactory);
+    public SimplifiedDevice CreateDevice(DeviceConnection connection) {
+        return new SimplifiedDevice(connection, this._logger);
     }
 
     /// <inheritdoc/>
-    public Device CreateSerialDevice(string portName, int? baudRate = null) {
-        var communicator = this._communicatorFactory.CreateSerialCommunicator(portName, baudRate);
-        return this.CreateDevice(communicator);
+    public SimplifiedDevice CreateSerialDevice(string portName, int? baudRate = null) {
+        var connection = new DeviceConnection(DeviceConnection.ConnectionType.Serial, portName);
+        return this.CreateDevice(connection);
     }
 
     /// <inheritdoc/>
-    public Device CreateSubprocessDevice(string executablePath, string[]? arguments = null) {
-        var communicator = this._communicatorFactory.CreateSubprocessCommunicator(executablePath, arguments);
-        return this.CreateDevice(communicator);
+    public SimplifiedDevice CreateSubprocessDevice(string executablePath, string[]? arguments = null) {
+        var connectionString = arguments?.Length > 0
+            ? $"{executablePath} {string.Join(" ", arguments)}"
+            : executablePath;
+        var connection = new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, connectionString);
+        return this.CreateDevice(connection);
     }
 }
 
 /// <summary>
-/// Default implementation of communicator factory.
+/// Default implementation of communicator factory (deprecated - kept for compatibility).
 /// </summary>
 internal class CommunicatorFactory : ICommunicatorFactory {
-    private readonly ILogger<SerialDeviceCommunication> _serialLogger;
-    private readonly ILogger<SubprocessDeviceCommunication> _subprocessLogger;
-    private readonly IOptions<BelayConfiguration> _configuration;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CommunicatorFactory"/> class.
     /// </summary>
-    /// <param name="serialLogger">Logger for serial communicators.</param>
-    /// <param name="subprocessLogger">Logger for subprocess communicators.</param>
-    /// <param name="configuration">The configuration options.</param>
-    public CommunicatorFactory(
-        ILogger<SerialDeviceCommunication> serialLogger,
-        ILogger<SubprocessDeviceCommunication> subprocessLogger,
-        IOptions<BelayConfiguration> configuration) {
-        this._serialLogger = serialLogger;
-        this._subprocessLogger = subprocessLogger;
-        this._configuration = configuration;
+    public CommunicatorFactory() {
     }
 
     /// <inheritdoc/>
-    public IDeviceCommunication CreateSerialCommunicator(string portName, int? baudRate = null) {
-        var effectiveBaudRate = baudRate ?? this._configuration.Value.Communication.Serial.DefaultBaudRate;
-        var timeout = this._configuration.Value.Communication.Serial.ReadTimeoutMs;
-
-        return new SerialDeviceCommunication(portName, effectiveBaudRate, timeout, this._serialLogger);
+    public DeviceConnection CreateSerialCommunicator(string portName, int? baudRate = null) {
+        return new DeviceConnection(DeviceConnection.ConnectionType.Serial, portName);
     }
 
     /// <inheritdoc/>
-    public IDeviceCommunication CreateSubprocessCommunicator(string executablePath, string[]? arguments = null) {
-        return new SubprocessDeviceCommunication(executablePath, arguments ?? Array.Empty<string>(), this._subprocessLogger);
+    public DeviceConnection CreateSubprocessCommunicator(string executablePath, string[]? arguments = null) {
+        var connectionString = arguments?.Length > 0
+            ? $"{executablePath} {string.Join(" ", arguments)}"
+            : executablePath;
+        return new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, connectionString);
     }
 }
 
 /// <summary>
-/// Default implementation of executor factory.
-/// Provides access to simplified executors from the Device instance.
+/// Default implementation of executor factory for simplified architecture.
 /// </summary>
 internal class ExecutorFactory : IExecutorFactory {
     /// <summary>
@@ -99,26 +78,26 @@ internal class ExecutorFactory : IExecutorFactory {
     }
 
     /// <inheritdoc/>
-    public Belay.Core.Execution.IExecutor GetTaskExecutor(Device device) {
-        // Return the simplified task executor from the device instance
-        return device.Task;
+    public DirectExecutor GetTaskExecutor(SimplifiedDevice device) {
+        // All executors are now unified into DirectExecutor
+        return new DirectExecutor(device);
     }
 
     /// <inheritdoc/>
-    public Belay.Core.Execution.IExecutor GetSetupExecutor(Device device) {
-        // Return the simplified setup executor from the device instance
-        return device.Setup;
+    public DirectExecutor GetSetupExecutor(SimplifiedDevice device) {
+        // All executors are now unified into DirectExecutor
+        return new DirectExecutor(device);
     }
 
     /// <inheritdoc/>
-    public Belay.Core.Execution.IExecutor GetTeardownExecutor(Device device) {
-        // Return the simplified teardown executor from the device instance
-        return device.Teardown;
+    public DirectExecutor GetTeardownExecutor(SimplifiedDevice device) {
+        // All executors are now unified into DirectExecutor
+        return new DirectExecutor(device);
     }
 
     /// <inheritdoc/>
-    public Belay.Core.Execution.IExecutor GetThreadExecutor(Device device) {
-        // Return the simplified thread executor from the device instance
-        return device.Thread;
+    public DirectExecutor GetThreadExecutor(SimplifiedDevice device) {
+        // All executors are now unified into DirectExecutor
+        return new DirectExecutor(device);
     }
 }

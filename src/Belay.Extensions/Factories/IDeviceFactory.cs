@@ -4,19 +4,17 @@
 namespace Belay.Extensions.Factories;
 
 using Belay.Core;
-using Belay.Core.Communication;
-using Belay.Core.Execution;
 
 /// <summary>
 /// Factory for creating device instances with dependency injection.
 /// </summary>
 public interface IDeviceFactory {
     /// <summary>
-    /// Creates a device instance with the specified communicator.
+    /// Creates a device instance with the specified connection.
     /// </summary>
-    /// <param name="communicator">The device communicator.</param>
+    /// <param name="connection">The device connection.</param>
     /// <returns>A configured device instance.</returns>
-    Device CreateDevice(IDeviceCommunication communicator);
+    SimplifiedDevice CreateDevice(DeviceConnection connection);
 
     /// <summary>
     /// Creates a device instance with serial communication.
@@ -24,7 +22,7 @@ public interface IDeviceFactory {
     /// <param name="portName">The serial port name.</param>
     /// <param name="baudRate">Optional baud rate (uses configuration default if not specified).</param>
     /// <returns>A configured device instance.</returns>
-    Device CreateSerialDevice(string portName, int? baudRate = null);
+    SimplifiedDevice CreateSerialDevice(string portName, int? baudRate = null);
 
     /// <summary>
     /// Creates a device instance with subprocess communication for testing.
@@ -32,11 +30,11 @@ public interface IDeviceFactory {
     /// <param name="executablePath">Path to the MicroPython executable.</param>
     /// <param name="arguments">Optional command-line arguments.</param>
     /// <returns>A configured device instance.</returns>
-    Device CreateSubprocessDevice(string executablePath, string[]? arguments = null);
+    SimplifiedDevice CreateSubprocessDevice(string executablePath, string[]? arguments = null);
 }
 
 /// <summary>
-/// Factory for creating communication instances.
+/// Factory for creating communication instances (deprecated - kept for compatibility).
 /// </summary>
 public interface ICommunicatorFactory {
     /// <summary>
@@ -45,7 +43,7 @@ public interface ICommunicatorFactory {
     /// <param name="portName">The serial port name.</param>
     /// <param name="baudRate">Optional baud rate (uses configuration default if not specified).</param>
     /// <returns>A configured serial communicator.</returns>
-    IDeviceCommunication CreateSerialCommunicator(string portName, int? baudRate = null);
+    DeviceConnection CreateSerialCommunicator(string portName, int? baudRate = null);
 
     /// <summary>
     /// Creates a subprocess communicator.
@@ -53,12 +51,11 @@ public interface ICommunicatorFactory {
     /// <param name="executablePath">Path to the MicroPython executable.</param>
     /// <param name="arguments">Optional command-line arguments.</param>
     /// <returns>A configured subprocess communicator.</returns>
-    IDeviceCommunication CreateSubprocessCommunicator(string executablePath, string[]? arguments = null);
+    DeviceConnection CreateSubprocessCommunicator(string executablePath, string[]? arguments = null);
 }
 
 /// <summary>
-/// Factory for creating executor instances.
-/// Provides access to the simplified executors from Device instances.
+/// Factory for creating executor instances for simplified architecture.
 /// </summary>
 public interface IExecutorFactory {
     /// <summary>
@@ -66,26 +63,26 @@ public interface IExecutorFactory {
     /// </summary>
     /// <param name="device">The device instance.</param>
     /// <returns>The device's task executor.</returns>
-    IExecutor GetTaskExecutor(Device device);
+    DirectExecutor GetTaskExecutor(SimplifiedDevice device);
 
     /// <summary>
     /// Gets the setup executor instance from the device.
     /// </summary>
     /// <param name="device">The device instance.</param>
     /// <returns>The device's setup executor.</returns>
-    IExecutor GetSetupExecutor(Device device);
+    DirectExecutor GetSetupExecutor(SimplifiedDevice device);
 
     /// <summary>
     /// Gets the teardown executor instance from the device.
     /// </summary>
     /// <param name="device">The device instance.</param>
     /// <returns>The device's teardown executor.</returns>
-    IExecutor GetTeardownExecutor(Device device);
+    DirectExecutor GetTeardownExecutor(SimplifiedDevice device);
 
     /// <summary>
     /// Gets the thread executor instance from the device.
     /// </summary>
     /// <param name="device">The device instance.</param>
     /// <returns>The device's thread executor.</returns>
-    IExecutor GetThreadExecutor(Device device);
+    DirectExecutor GetThreadExecutor(SimplifiedDevice device);
 }

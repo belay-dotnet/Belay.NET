@@ -117,7 +117,7 @@ public class DeviceConnectivityHealthCheck : IHealthCheck {
 
             try {
                 // Attempt a simple connectivity test
-                await device.ExecuteAsync("print('health_check')", combinedCts.Token).ConfigureAwait(false);
+                await device.ExecutePython("print('health_check')", combinedCts.Token).ConfigureAwait(false);
 
                 data["connectivity"] = "healthy";
                 data["connection_type"] = isSerialPort ? "serial" : "subprocess";

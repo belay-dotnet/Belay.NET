@@ -3,7 +3,6 @@
 
 namespace Belay.Core {
     using System;
-    using Belay.Core.Communication;
 
     /// <summary>
     /// Simple state tracking for MicroPython device operations.

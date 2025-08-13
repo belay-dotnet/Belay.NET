@@ -86,7 +86,7 @@ public static class AttributeHandler
         }
         catch (OperationCanceledException) when (timeoutSource?.Token.IsCancellationRequested == true)
         {
-            throw new DeviceTimeoutException(policies.Timeout ?? TimeSpan.FromSeconds(30), pythonCode);
+            throw new DeviceException($"Device operation timed out after {policies.Timeout ?? TimeSpan.FromSeconds(30)}");
         }
     }
 

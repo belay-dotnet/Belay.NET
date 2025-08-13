@@ -2,7 +2,6 @@
 // Licensed under the MIT License.
 
 using System.Reflection;
-using Belay.Core.Communication;
 using Microsoft.Extensions.Logging;
 
 namespace Belay.Core;
@@ -13,29 +12,29 @@ namespace Belay.Core;
 /// </summary>
 public class SimplifiedDevice : IDeviceConnection
 {
-    private readonly IDeviceCommunication communication;
+    private readonly DeviceConnection connection;
     private readonly ILogger<SimplifiedDevice> logger;
     private bool disposed = false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SimplifiedDevice"/> class.
     /// </summary>
-    /// <param name="communication">The device communication interface.</param>
+    /// <param name="connection">The device connection interface.</param>
     /// <param name="logger">Optional logger for diagnostic information.</param>
-    public SimplifiedDevice(IDeviceCommunication communication, ILogger<SimplifiedDevice>? logger = null)
+    public SimplifiedDevice(DeviceConnection connection, ILogger<SimplifiedDevice>? logger = null)
     {
-        this.communication = communication ?? throw new ArgumentNullException(nameof(communication));
+        this.connection = connection ?? throw new ArgumentNullException(nameof(connection));
         this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<SimplifiedDevice>.Instance;
     }
 
     /// <inheritdoc />
-    public bool IsConnected => this.communication.State == DeviceConnectionState.Connected;
+    public bool IsConnected => this.connection.State == DeviceConnectionState.Connected;
 
     /// <inheritdoc />
     public string DeviceInfo => "MicroPython Device"; // TODO: Implement actual device info detection
 
     /// <inheritdoc />
-    public string ConnectionString => "Device Connection"; // TODO: Add connection string to IDeviceCommunication
+    public string ConnectionString => this.connection.ConnectionString;
 
     /// <inheritdoc />
     public async Task<T> ExecutePython<T>(string code, CancellationToken cancellationToken = default)
@@ -46,7 +45,7 @@ public class SimplifiedDevice : IDeviceConnection
         {
             this.logger.LogDebug("Executing Python code: {Code}", code);
             
-            var result = await this.communication.ExecuteAsync(code, cancellationToken);
+            var result = await this.connection.ExecuteAsync(code, cancellationToken);
             
             this.logger.LogDebug("Python execution completed. Output: {Output}", result);
             
@@ -54,11 +53,7 @@ public class SimplifiedDevice : IDeviceConnection
         }
         catch (Exception ex) when (!(ex is DeviceException))
         {
-            throw new DeviceException($"Failed to execute Python code: {ex.Message}", ex)
-            {
-                ExecutedCode = code,
-                ConnectionString = this.ConnectionString
-            };
+            throw new DeviceException($"Failed to execute Python code: {ex.Message}", ex);
         }
     }
 
@@ -82,7 +77,7 @@ public class SimplifiedDevice : IDeviceConnection
             try
             {
                 await File.WriteAllBytesAsync(tempFile, data, cancellationToken);
-                await this.communication.PutFileAsync(tempFile, devicePath, cancellationToken);
+                await this.connection.PutFileAsync(tempFile, devicePath, cancellationToken);
             }
             finally
             {
@@ -94,10 +89,7 @@ public class SimplifiedDevice : IDeviceConnection
         }
         catch (Exception ex) when (!(ex is DeviceException))
         {
-            throw new DeviceException($"Failed to write file '{devicePath}': {ex.Message}", ex)
-            {
-                ConnectionString = this.ConnectionString
-            };
+            throw new DeviceException($"Failed to write file '{devicePath}': {ex.Message}", ex);
         }
     }
 
@@ -110,7 +102,7 @@ public class SimplifiedDevice : IDeviceConnection
         {
             this.logger.LogDebug("Reading file from device: {Path}", devicePath);
             
-            var data = await this.communication.GetFileAsync(devicePath, cancellationToken);
+            var data = await this.connection.GetFileAsync(devicePath, cancellationToken);
             
             this.logger.LogDebug("File read completed: {Path} ({Size} bytes)", devicePath, data.Length);
             
@@ -118,10 +110,7 @@ public class SimplifiedDevice : IDeviceConnection
         }
         catch (Exception ex) when (!(ex is DeviceException))
         {
-            throw new DeviceException($"Failed to read file '{devicePath}': {ex.Message}", ex)
-            {
-                ConnectionString = this.ConnectionString
-            };
+            throw new DeviceException($"Failed to read file '{devicePath}': {ex.Message}", ex);
         }
     }
 
@@ -140,10 +129,7 @@ public class SimplifiedDevice : IDeviceConnection
         }
         catch (Exception ex) when (!(ex is DeviceException))
         {
-            throw new DeviceException($"Failed to delete file '{devicePath}': {ex.Message}", ex)
-            {
-                ConnectionString = this.ConnectionString
-            };
+            throw new DeviceException($"Failed to delete file '{devicePath}': {ex.Message}", ex);
         }
     }
 
@@ -167,10 +153,7 @@ public class SimplifiedDevice : IDeviceConnection
         }
         catch (Exception ex) when (!(ex is DeviceException))
         {
-            throw new DeviceException($"Failed to list files in '{devicePath}': {ex.Message}", ex)
-            {
-                ConnectionString = this.ConnectionString
-            };
+            throw new DeviceException($"Failed to list files in '{devicePath}': {ex.Message}", ex);
         }
     }
 
@@ -194,10 +177,7 @@ public class SimplifiedDevice : IDeviceConnection
         }
         catch (Exception ex) when (!(ex is DeviceException))
         {
-            throw new DeviceException($"Failed to execute method '{method.Name}': {ex.Message}", ex)
-            {
-                ConnectionString = this.ConnectionString
-            };
+            throw new DeviceException($"Failed to execute method '{method.Name}': {ex.Message}", ex);
         }
     }
 
@@ -219,12 +199,8 @@ public class SimplifiedDevice : IDeviceConnection
         
         this.logger.LogInformation("Connecting to device: {ConnectionString}", this.ConnectionString);
         
-        // Wait for connected state since IDeviceCommunication doesn't have explicit Connect method
-        // This is a limitation of the current interface design
-        if (this.communication.State != DeviceConnectionState.Connected)
-        {
-            throw new DeviceException("Device communication is not in connected state");
-        }
+        // Use the DeviceConnection's connect method
+        await this.connection.ConnectAsync(cancellationToken);
         
         this.logger.LogInformation("Connected to device successfully");
     }
@@ -250,9 +226,8 @@ public class SimplifiedDevice : IDeviceConnection
         SimpleCache.Clear();
         this.logger.LogDebug("Cleared device cache on disconnect");
         
-        // IDeviceCommunication doesn't expose disconnect method
-        // Disposal will handle cleanup
-        await Task.CompletedTask;
+        // Use the DeviceConnection's disconnect method
+        await this.connection.DisconnectAsync(cancellationToken);
         
         this.logger.LogInformation("Disconnected from device");
     }
@@ -274,7 +249,7 @@ public class SimplifiedDevice : IDeviceConnection
             this.logger.LogWarning(ex, "Error during device disconnection in Dispose");
         }
         
-        this.communication?.Dispose();
+        this.connection?.Dispose();
         this.disposed = true;
     }
 

@@ -4,7 +4,6 @@
 namespace Belay.Sync {
     using System;
     using System.Text.RegularExpressions;
-    using Belay.Core.Communication;
 
     /// <summary>
     /// Provides utilities for handling device file paths in a cross-platform manner.

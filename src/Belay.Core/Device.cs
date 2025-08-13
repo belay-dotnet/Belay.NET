@@ -3,8 +3,6 @@
 
 namespace Belay.Core;
 
-using Belay.Core.Communication;
-using Belay.Core.Discovery;
 using Belay.Core.Execution;
 using Microsoft.Extensions.Logging;
 
@@ -43,48 +41,45 @@ using Microsoft.Extensions.Logging;
 /// </code>
 /// </example>
 public class Device : IDisposable {
-    private readonly IDeviceCommunication communication;
+    private readonly DeviceConnection connection;
     private readonly ILogger<Device> logger;
     private readonly IExecutionContextService executionContextService;
-    private readonly Lazy<SimplifiedTaskExecutor> taskExecutor;
-    private readonly Lazy<SimplifiedSetupExecutor> setupExecutor;
-    private readonly Lazy<SimplifiedThreadExecutor> threadExecutor;
-    private readonly Lazy<SimplifiedTeardownExecutor> teardownExecutor;
+    private readonly Lazy<DirectExecutor> executor;
     private bool disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Device"/> class.
     /// </summary>
-    /// <param name="communication">The device communication implementation.</param>
+    /// <param name="connection">The device connection implementation.</param>
     /// <param name="logger">Optional logger for device operations.</param>
-    public Device(IDeviceCommunication communication, ILogger<Device>? logger = null)
-        : this(communication, logger, null) {
+    public Device(DeviceConnection connection, ILogger<Device>? logger = null)
+        : this(connection, logger, null) {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Device"/> class.
     /// </summary>
-    /// <param name="communication">The device communication implementation.</param>
+    /// <param name="connection">The device connection implementation.</param>
     /// <param name="logger">Optional logger for device operations.</param>
     /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
-    public Device(IDeviceCommunication communication, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null)
-        : this(communication, logger, loggerFactory, null) {
+    public Device(DeviceConnection connection, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null)
+        : this(connection, logger, loggerFactory, null) {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Device"/> class with dependency injection support.
     /// </summary>
-    /// <param name="communication">The device communication implementation.</param>
+    /// <param name="connection">The device connection implementation.</param>
     /// <param name="logger">Logger for device operations.</param>
     /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
     /// <param name="executionContextService">Optional execution context service for secure method detection.</param>
-    public Device(IDeviceCommunication communication, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null, IExecutionContextService? executionContextService = null) {
-        this.communication = communication ?? throw new ArgumentNullException(nameof(communication));
+    public Device(DeviceConnection connection, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null, IExecutionContextService? executionContextService = null) {
+        this.connection = connection ?? throw new ArgumentNullException(nameof(connection));
         this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Device>.Instance;
 
-        // Forward events from communication layer
-        this.communication.OutputReceived += (sender, args) => this.OutputReceived?.Invoke(this, args);
-        this.communication.StateChanged += (sender, args) => {
+        // Forward events from connection layer
+        this.connection.OutputReceived += (sender, args) => this.OutputReceived?.Invoke(this, args);
+        this.connection.StateChanged += (sender, args) => {
             // Update device state when connection state changes
             this.State.ConnectionState = args.NewState;
             this.StateChanged?.Invoke(this, args);
@@ -97,13 +92,11 @@ public class Device : IDisposable {
         this.executionContextService = executionContextService ?? new ExecutionContextService();
 
         // Initialize device state with current connection state
-        this.State.ConnectionState = this.communication.State;
+        this.State.ConnectionState = this.connection.State;
 
-        // Initialize simplified executors without session management dependencies
-        this.taskExecutor = new Lazy<SimplifiedTaskExecutor>(() => new SimplifiedTaskExecutor(this, executorLoggerFactory.CreateLogger<SimplifiedTaskExecutor>(), executionContextService: this.executionContextService));
-        this.setupExecutor = new Lazy<SimplifiedSetupExecutor>(() => new SimplifiedSetupExecutor(this, executorLoggerFactory.CreateLogger<SimplifiedSetupExecutor>(), executionContextService: this.executionContextService));
-        this.threadExecutor = new Lazy<SimplifiedThreadExecutor>(() => new SimplifiedThreadExecutor(this, executorLoggerFactory.CreateLogger<SimplifiedThreadExecutor>(), executionContextService: this.executionContextService));
-        this.teardownExecutor = new Lazy<SimplifiedTeardownExecutor>(() => new SimplifiedTeardownExecutor(this, executorLoggerFactory.CreateLogger<SimplifiedTeardownExecutor>(), executionContextService: this.executionContextService));
+        // Initialize single direct executor using AttributeHandler
+        var deviceConnection = new SimplifiedDevice(this.connection, executorLoggerFactory.CreateLogger<SimplifiedDevice>());
+        this.executor = new Lazy<DirectExecutor>(() => new DirectExecutor(deviceConnection, executorLoggerFactory.CreateLogger<DirectExecutor>()));
     }
 
     /// <summary>
@@ -123,7 +116,7 @@ public class Device : IDisposable {
     /// This property is maintained for backward compatibility. Use the State property
     /// for accessing the full device state including capabilities and operation tracking.
     /// </remarks>
-    public DeviceConnectionState ConnectionState => this.communication.State;
+    public DeviceConnectionState ConnectionState => this.connection.State;
 
     /// <summary>
     /// Gets the device state including capabilities, current operations, and connection status.
@@ -148,47 +141,21 @@ public class Device : IDisposable {
     public DeviceState State { get; } = new DeviceState();
 
     /// <summary>
-    /// Gets the communication interface for this device.
+    /// Gets the connection interface for this device.
     /// Internal use for executors and session management.
     /// </summary>
-    internal IDeviceCommunication Communication => this.communication;
+    internal DeviceConnection Connection => this.connection;
 
     /// <summary>
-    /// Gets the simplified task executor for methods decorated with [Task] attribute.
+    /// Gets the direct executor that handles all attribute types via AttributeHandler.
     /// </summary>
     /// <remarks>
-    /// This simplified executor provides direct device communication without session management
-    /// overhead while maintaining all [Task] attribute policies including caching, timeouts,
-    /// and exclusive execution.
+    /// This unified executor replaces the complex hierarchy with a single implementation
+    /// that handles [Task], [Setup], [Thread], and [Teardown] attributes using the
+    /// AttributeHandler for policy enforcement and SimpleCache for caching.
     /// </remarks>
-    public SimplifiedTaskExecutor Task => this.taskExecutor.Value;
+    public DirectExecutor Executor => this.executor.Value;
 
-    /// <summary>
-    /// Gets the simplified setup executor for methods decorated with [Setup] attribute.
-    /// </summary>
-    /// <remarks>
-    /// This simplified executor provides direct device communication for setup operations
-    /// with enhanced initialization support and capability-aware optimizations.
-    /// </remarks>
-    public SimplifiedSetupExecutor Setup => this.setupExecutor.Value;
-
-    /// <summary>
-    /// Gets the simplified thread executor for methods decorated with [Thread] attribute.
-    /// </summary>
-    /// <remarks>
-    /// This simplified executor provides direct device communication for thread operations
-    /// with capability validation and thread management without session overhead.
-    /// </remarks>
-    public SimplifiedThreadExecutor Thread => this.threadExecutor.Value;
-
-    /// <summary>
-    /// Gets the simplified teardown executor for methods decorated with [Teardown] attribute.
-    /// </summary>
-    /// <remarks>
-    /// This simplified executor provides direct device communication for teardown operations
-    /// with graceful error handling and emergency cleanup capabilities.
-    /// </remarks>
-    public SimplifiedTeardownExecutor Teardown => this.teardownExecutor.Value;
 
     /// <summary>
     /// Connect to the MicroPython device and perform capability detection.
@@ -221,18 +188,10 @@ public class Device : IDisposable {
         this.State.SetCurrentOperation("Connect");
 
         try {
-            if (this.communication is SerialDeviceCommunication serial) {
-                await serial.ConnectAsync(cancellationToken);
-            }
-            else if (this.communication is SubprocessDeviceCommunication subprocess) {
-                await subprocess.StartAsync(cancellationToken);
-            }
-            else {
-                throw new NotSupportedException($"Communication type {this.communication.GetType().Name} is not supported");
-            }
+            await this.connection.ConnectAsync(cancellationToken);
 
             // Update state after successful connection
-            this.State.ConnectionState = this.communication.State;
+            this.State.ConnectionState = this.connection.State;
 
             this.logger.LogInformation("Successfully connected to device, performing capability detection");
 
@@ -240,7 +199,7 @@ public class Device : IDisposable {
             try {
                 this.State.SetCurrentOperation("CapabilityDetection");
                 this.State.Capabilities = await SimplifiedCapabilityDetection.DetectAsync(
-                    this.communication, this.logger, cancellationToken);
+                    this.connection, this.logger, cancellationToken);
                 this.logger.LogDebug("Capability detection completed: {Capabilities}", this.State.Capabilities);
             }
             catch (Exception ex) {
@@ -278,12 +237,7 @@ public class Device : IDisposable {
             this.logger.LogError(ex, "Error executing teardown cleanup during disconnect");
         }
 
-        if (this.communication is SerialDeviceCommunication serial) {
-            await serial.DisconnectAsync(cancellationToken);
-        }
-        else if (this.communication is SubprocessDeviceCommunication subprocess) {
-            await subprocess.StopAsync(cancellationToken);
-        }
+        await this.connection.DisconnectAsync(cancellationToken);
 
         this.logger.LogInformation("Disconnected from device");
     }
@@ -297,8 +251,7 @@ public class Device : IDisposable {
     /// <returns>The execution result as a string.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the device has been disposed.</exception>
     /// <exception cref="ArgumentException">Thrown when code is null or empty.</exception>
-    /// <exception cref="DeviceConnectionException">Thrown when the device is not connected.</exception>
-    /// <exception cref="DeviceExecutionException">Thrown when code execution fails on the device.</exception>
+    /// <exception cref="DeviceException">Thrown when device communication or execution fails.</exception>
     /// <example>
     /// <code>
     /// var device = Device.FromConnectionString("serial:COM3");
@@ -322,26 +275,8 @@ public class Device : IDisposable {
         this.State.SetCurrentOperation("ExecuteCode");
 
         try {
-            // Check if we have an execution context with an attributed method and route through appropriate executor
-            var executionContext = this.executionContextService.Current;
-            if (executionContext?.TaskAttribute != null) {
-                return await this.taskExecutor.Value.ApplyPoliciesAndExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (executionContext?.SetupAttribute != null) {
-                return await this.setupExecutor.Value.ApplyPoliciesAndExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (executionContext?.ThreadAttribute != null) {
-                return await this.threadExecutor.Value.ApplyPoliciesAndExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (executionContext?.TeardownAttribute != null) {
-                return await this.teardownExecutor.Value.ApplyPoliciesAndExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
-            }
-
-            // Direct execution without policies
-            return await this.communication.ExecuteAsync(code, cancellationToken).ConfigureAwait(false);
+            // Use unified DirectExecutor for all code execution
+            return await this.Executor.ExecutePythonAsync<string>(code, cancellationToken).ConfigureAwait(false);
         }
         finally {
             this.State.CompleteOperation();
@@ -358,8 +293,7 @@ public class Device : IDisposable {
     /// <returns>The execution result cast to the specified type.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the device has been disposed.</exception>
     /// <exception cref="ArgumentException">Thrown when code is null or empty.</exception>
-    /// <exception cref="DeviceConnectionException">Thrown when the device is not connected.</exception>
-    /// <exception cref="DeviceExecutionException">Thrown when code execution fails on the device.</exception>
+    /// <exception cref="DeviceException">Thrown when device communication or execution fails.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the result cannot be converted to type T.</exception>
     /// <example>
     /// <code>
@@ -386,26 +320,8 @@ public class Device : IDisposable {
         this.State.SetCurrentOperation("ExecuteCode");
 
         try {
-            // Check if we have an execution context with an attributed method and route through appropriate executor
-            var executionContext = this.executionContextService.Current;
-            if (executionContext?.TaskAttribute != null) {
-                return await this.taskExecutor.Value.ApplyPoliciesAndExecuteAsync<T>(code, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (executionContext?.SetupAttribute != null) {
-                return await this.setupExecutor.Value.ApplyPoliciesAndExecuteAsync<T>(code, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (executionContext?.ThreadAttribute != null) {
-                return await this.threadExecutor.Value.ApplyPoliciesAndExecuteAsync<T>(code, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (executionContext?.TeardownAttribute != null) {
-                return await this.teardownExecutor.Value.ApplyPoliciesAndExecuteAsync<T>(code, cancellationToken).ConfigureAwait(false);
-            }
-
-            // Direct execution without policies
-            return await this.communication.ExecuteAsync<T>(code, cancellationToken).ConfigureAwait(false);
+            // Use unified DirectExecutor for all code execution
+            return await this.Executor.ExecutePythonAsync<T>(code, cancellationToken).ConfigureAwait(false);
         }
         finally {
             this.State.CompleteOperation();
@@ -428,7 +344,7 @@ public class Device : IDisposable {
 
         this.State.SetCurrentOperation("FileTransfer");
         try {
-            await this.communication.PutFileAsync(localPath, remotePath, cancellationToken);
+            await this.connection.PutFileAsync(localPath, remotePath, cancellationToken);
             this.logger.LogInformation("Successfully transferred file to device");
         }
         finally {
@@ -451,7 +367,7 @@ public class Device : IDisposable {
 
         this.State.SetCurrentOperation("FileRetrieval");
         try {
-            byte[] content = await this.communication.GetFileAsync(remotePath, cancellationToken);
+            byte[] content = await this.connection.GetFileAsync(remotePath, cancellationToken);
             this.logger.LogInformation("Successfully retrieved file from device ({Size} bytes)", content.Length);
             return content;
         }
@@ -493,22 +409,23 @@ public class Device : IDisposable {
         string type = parts[0].ToLowerInvariant();
         string parameter = parts[1];
 
-        IDeviceCommunication communication = type switch {
-            "serial" => new SerialDeviceCommunication(parameter, logger: loggerFactory?.CreateLogger<SerialDeviceCommunication>()),
-            "subprocess" => new SubprocessDeviceCommunication(parameter, logger: loggerFactory?.CreateLogger<SubprocessDeviceCommunication>()),
+        DeviceConnection.ConnectionType connectionType = type switch {
+            "serial" => DeviceConnection.ConnectionType.Serial,
+            "subprocess" => DeviceConnection.ConnectionType.Subprocess,
             _ => throw new ArgumentException($"Unsupported connection type: {type}"),
         };
 
-        return new Device(communication, loggerFactory?.CreateLogger<Device>(), loggerFactory);
+        var connection = new DeviceConnection(connectionType, parameter, loggerFactory?.CreateLogger<DeviceConnection>());
+        return new Device(connection, loggerFactory?.CreateLogger<Device>(), loggerFactory);
     }
 
     /// <summary>
     /// Discover available MicroPython devices on the system.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Array of discovered device information.</returns>
-    public static async Task<Discovery.DeviceInfo[]> DiscoverDevicesAsync(CancellationToken cancellationToken = default) {
-        return await SerialDeviceDiscovery.DiscoverMicroPythonDevicesAsync(cancellationToken);
+    /// <returns>Array of connection strings for discovered devices.</returns>
+    public static async Task<string[]> DiscoverDevicesAsync(CancellationToken cancellationToken = default) {
+        return await DeviceDiscovery.DiscoverDevicesAsync(cancellationToken);
     }
 
     /// <summary>
@@ -518,12 +435,12 @@ public class Device : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A Device instance for the first discovered device, or null if none found.</returns>
     public static async Task<Device?> DiscoverFirstAsync(ILoggerFactory? loggerFactory = null, CancellationToken cancellationToken = default) {
-        Discovery.DeviceInfo[] devices = await DiscoverDevicesAsync(cancellationToken);
-        if (devices.Length == 0) {
+        var connection = await DeviceDiscovery.DiscoverFirstAsync(cancellationToken);
+        if (connection == null) {
             return null;
         }
 
-        return FromConnectionString(devices[0].ConnectionString, loggerFactory);
+        return new Device(connection, loggerFactory?.CreateLogger<Device>(), loggerFactory);
     }
 
     /// <summary>
@@ -549,15 +466,10 @@ public class Device : IDisposable {
         var context = new MethodExecutionContext(method, instance, parameters);
         using var contextScope = this.executionContextService.SetContext(context);
 
-        // Find the appropriate executor for this method
-        var executor = this.GetExecutorForMethod(method);
-        if (executor == null) {
-            throw new InvalidOperationException($"No suitable executor found for method '{method.Name}'. Ensure the method has a supported attribute ([Task], [Setup], [Thread], or [Teardown]).");
-        }
+        // Use unified DirectExecutor for all method execution via AttributeHandler
+        this.logger.LogDebug("Executing method {MethodName} using DirectExecutor with secure execution context", method.Name);
 
-        this.logger.LogDebug("Executing method {MethodName} using {ExecutorType} with secure execution context", method.Name, executor.GetType().Name);
-
-        return await executor.ExecuteAsync<T>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
+        return await this.Executor.ExecuteAsync<T>(method, parameters ?? Array.Empty<object>(), cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -572,41 +484,16 @@ public class Device : IDisposable {
         await this.ExecuteMethodAsync<object>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Gets the appropriate executor for a method based on its attributes.
-    /// </summary>
-    /// <param name="method">The method to get an executor for.</param>
-    /// <returns>The executor that can handle the method, or null if none found.</returns>
-    private Execution.IExecutor? GetExecutorForMethod(System.Reflection.MethodInfo method) {
-        // Check executors in order of priority
-        if (this.Task.CanHandle(method)) {
-            return this.Task;
-        }
-
-        if (this.Setup.CanHandle(method)) {
-            return this.Setup;
-        }
-
-        if (this.Thread.CanHandle(method)) {
-            return this.Thread;
-        }
-
-        if (this.Teardown.CanHandle(method)) {
-            return this.Teardown;
-        }
-
-        return null;
-    }
 
     /// <summary>
     /// Gets device identification information for cache key generation.
     /// </summary>
     /// <returns>A tuple containing device identifier and firmware version.</returns>
     internal (string DeviceId, string FirmwareVersion) GetDeviceIdentification() {
-        var deviceId = this.communication switch {
-            SerialDeviceCommunication serial => $"serial:{serial.PortName}",
-            SubprocessDeviceCommunication subprocess => "subprocess:micropython",
-            _ => $"unknown:{this.communication.GetType().Name}",
+        var deviceId = this.connection.Type switch {
+            DeviceConnection.ConnectionType.Serial => $"serial:{this.connection.ConnectionString}",
+            DeviceConnection.ConnectionType.Subprocess => "subprocess:micropython",
+            _ => $"unknown:{this.connection.GetType().Name}",
         };
 
         // TODO: Get actual firmware version from device using sys.implementation or uos.uname()
@@ -622,12 +509,12 @@ public class Device : IDisposable {
             return;
         }
 
-        // Dispose simplified executors if they have been initialized
-        if (this.taskExecutor.IsValueCreated) {
-            this.taskExecutor.Value?.Dispose();
+        // Dispose unified executor if it has been initialized
+        if (this.executor.IsValueCreated) {
+            this.executor.Value?.Dispose();
         }
 
-        this.communication?.Dispose();
+        this.connection?.Dispose();
         this.disposed = true;
     }
 }

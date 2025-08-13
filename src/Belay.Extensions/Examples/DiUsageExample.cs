@@ -105,10 +105,10 @@ public static class DiUsageExample {
             // Create a device using the factory
             using var device = this._deviceFactory.CreateSubprocessDevice("micropython");
             try {
-                await device.ConnectAsync();
+                await device.Connect();
 
                 // Execute some Python code
-                var result = await device.ExecuteAsync<int>("2 + 3");
+                var result = await device.ExecutePython<int>("2 + 3");
                 this._logger.LogInformation("Calculation result: {Result}", result);
 
                 // Get executors using the factory (though in the simplified architecture,
@@ -117,7 +117,7 @@ public static class DiUsageExample {
                 this._logger.LogDebug("Task executor type: {ExecutorType}", taskExecutor.GetType().Name);
 
                 // Note: In the simplified architecture, you typically use Device methods directly:
-                var complexResult = await device.ExecuteAsync<string>("import sys; sys.version");
+                var complexResult = await device.ExecutePython<string>("import sys; sys.version");
                 this._logger.LogInformation("Python version: {Version}", complexResult);
             }
             catch (Exception ex) {

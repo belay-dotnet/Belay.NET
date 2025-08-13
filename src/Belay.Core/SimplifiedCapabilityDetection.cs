@@ -6,7 +6,6 @@ namespace Belay.Core {
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using Belay.Core.Communication;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -37,7 +36,7 @@ namespace Belay.Core {
         /// <param name="cancellationToken">Cancellation token for the operation.</param>
         /// <returns>A <see cref="Task{SimpleDeviceCapabilities}"/> containing the detected capabilities.</returns>
         /// <exception cref="ArgumentNullException">Thrown when communication is null.</exception>
-        /// <exception cref="DeviceConnectionException">Thrown when the device is not connected.</exception>
+        /// <exception cref="DeviceException">Thrown when the device is not connected.</exception>
         /// <example>
         /// <code>
         /// var capabilities = await SimplifiedCapabilityDetection.DetectAsync(
@@ -49,14 +48,14 @@ namespace Belay.Core {
         /// </code>
         /// </example>
         public static async Task<SimpleDeviceCapabilities> DetectAsync(
-            IDeviceCommunication communication,
+            DeviceConnection connection,
             ILogger? logger = null,
             CancellationToken cancellationToken = default) {
-            if (communication == null) {
-                throw new ArgumentNullException(nameof(communication));
+            if (connection == null) {
+                throw new ArgumentNullException(nameof(connection));
             }
 
-            if (communication.State != DeviceConnectionState.Connected) {
+            if (connection.State != DeviceConnectionState.Connected) {
                 throw new InvalidOperationException("Device must be connected before capability detection");
             }
 
@@ -64,7 +63,7 @@ namespace Belay.Core {
 
             try {
                 // Execute the batched capability detection script
-                var detectionResult = await communication.ExecuteAsync<Dictionary<string, object>>(
+                var detectionResult = await connection.ExecuteAsync<Dictionary<string, object>>(
                     BatchedCapabilityDetectionScript,
                     cancellationToken);
 

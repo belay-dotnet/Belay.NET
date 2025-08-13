@@ -94,10 +94,10 @@ namespace Belay.Core.Execution {
             this.MethodName = methodName ?? method?.Name;
 
             // Extract attributes for fast access
-            this.TaskAttribute = method?.GetAttribute<TaskAttribute>();
-            this.SetupAttribute = method?.GetAttribute<SetupAttribute>();
-            this.ThreadAttribute = method?.GetAttribute<ThreadAttribute>();
-            this.TeardownAttribute = method?.GetAttribute<TeardownAttribute>();
+            this.TaskAttribute = method?.GetCustomAttribute<TaskAttribute>();
+            this.SetupAttribute = method?.GetCustomAttribute<SetupAttribute>();
+            this.ThreadAttribute = method?.GetCustomAttribute<ThreadAttribute>();
+            this.TeardownAttribute = method?.GetCustomAttribute<TeardownAttribute>();
         }
 
         /// <summary>

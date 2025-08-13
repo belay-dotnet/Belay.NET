@@ -283,13 +283,13 @@ public static class MicroPythonUnixPort {
 /// </summary>
 public static class SubprocessTestHelper {
     /// <summary>
-    /// Create a SubprocessDeviceCommunication instance for testing.
+    /// Create a DeviceConnection instance for testing.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public static async Task<Communication.SubprocessDeviceCommunication> CreateTestDeviceAsync() {
+    public static async Task<DeviceConnection> CreateTestDeviceAsync() {
         string executablePath = await MicroPythonUnixPort.FindExecutableAsync();
-        var device = new Communication.SubprocessDeviceCommunication(executablePath);
-        await device.StartAsync();
+        var device = new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, executablePath);
+        await device.ConnectAsync();
         return device;
     }
 

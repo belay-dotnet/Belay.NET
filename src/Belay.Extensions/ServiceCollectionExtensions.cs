@@ -3,8 +3,6 @@
 
 namespace Belay.Extensions;
 
-using Belay.Core.Exceptions;
-using Belay.Core.Extensions;
 using Belay.Extensions.Configuration;
 using Belay.Extensions.Factories;
 using Belay.Extensions.HealthChecks;
@@ -175,8 +173,8 @@ public static class ServiceCollectionExtensions {
         // Add core services
         services.AddBelayCore();
         services.AddBelayFactories();
-        services.AddBelayExceptionHandling();
 
+        // Exception handling simplified - no services needed
         return services;
     }
 
@@ -197,8 +195,8 @@ public static class ServiceCollectionExtensions {
         // Add core services
         services.AddBelayCore();
         services.AddBelayFactories();
-        services.AddBelayExceptionHandling();
 
+        // Exception handling simplified - no services needed
         return services;
     }
 

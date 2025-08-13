@@ -5,7 +5,6 @@ namespace Belay.Core.Examples;
 
 using System.Threading.Tasks;
 using Belay.Attributes;
-using Belay.Core.Communication;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -16,10 +15,10 @@ public class SimpleDevice : Device {
     /// <summary>
     /// Initializes a new instance of the <see cref="SimpleDevice"/> class.
     /// </summary>
-    /// <param name="communication">The device communication implementation.</param>
+    /// <param name="connection">The device connection implementation.</param>
     /// <param name="logger">Optional logger for device operations.</param>
-    public SimpleDevice(IDeviceCommunication communication, ILogger<Device>? logger = null)
-        : base(communication, logger) {
+    public SimpleDevice(DeviceConnection connection, ILogger<Device>? logger = null)
+        : base(connection, logger) {
     }
 
     /// <summary>

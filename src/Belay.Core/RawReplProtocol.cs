@@ -53,10 +53,7 @@ public static class RawReplProtocol
         }
         catch (Exception ex) when (!(ex is DeviceException))
         {
-            throw new DeviceException($"Raw REPL execution failed: {ex.Message}", ex)
-            {
-                ExecutedCode = pythonCode
-            };
+            throw new DeviceException($"Raw REPL execution failed: {ex.Message}", ex);
         }
     }
 
@@ -97,10 +94,7 @@ public static class RawReplProtocol
         }
         catch (Exception ex) when (!(ex is DeviceException))
         {
-            throw new DeviceException($"Raw-Paste execution failed: {ex.Message}", ex)
-            {
-                ExecutedCode = pythonCode
-            };
+            throw new DeviceException($"Raw-Paste execution failed: {ex.Message}", ex);
         }
     }
 

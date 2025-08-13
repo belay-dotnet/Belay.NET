@@ -11,7 +11,6 @@ namespace Belay.Sync {
     using System.Threading;
     using System.Threading.Tasks;
     using Belay.Core;
-    using Belay.Core.Communication;
     using Microsoft.Extensions.Logging;
 
     /// <summary>
@@ -47,7 +46,7 @@ namespace Belay.Sync {
                 var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 return ParseListResult(result);
             }
-            catch (DeviceExecutionException ex) when (ex.Message.Contains("OSError") || ex.Message.Contains("ENOENT")) {
+            catch (DeviceException ex) when (ex.Message.Contains("OSError") || ex.Message.Contains("ENOENT")) {
                 throw new DirectoryNotFoundException($"Directory not found: {normalizedPath}", ex);
             }
         }
@@ -184,7 +183,7 @@ except OSError as e:
                     throw new IOException($"Failed to delete file {normalizedPath}: {trimmed[6..]}");
                 }
             }
-            catch (DeviceExecutionException ex) when (!ex.Message.Contains("not_found")) {
+            catch (DeviceException ex) when (!ex.Message.Contains("not_found")) {
                 throw new IOException($"Failed to delete file {normalizedPath}", ex);
             }
         }
@@ -232,7 +231,7 @@ except OSError as e:
                     throw new IOException($"Failed to create directory {normalizedPath}: {trimmed[6..]}");
                 }
             }
-            catch (DeviceExecutionException ex) {
+            catch (DeviceException ex) {
                 throw new IOException($"Failed to create directory {normalizedPath}", ex);
             }
         }
@@ -294,7 +293,7 @@ except OSError as e:
                     throw new IOException($"Failed to delete directory {normalizedPath}: {trimmed[6..]}");
                 }
             }
-            catch (DeviceExecutionException ex) {
+            catch (DeviceException ex) {
                 throw new IOException($"Failed to delete directory {normalizedPath}", ex);
             }
         }
