@@ -29,7 +29,8 @@ internal class DeviceFactory : IDeviceFactory {
 
     /// <inheritdoc/>
     public SimplifiedDevice CreateSerialDevice(string portName, int? baudRate = null) {
-        var connection = new DeviceConnection(DeviceConnection.ConnectionType.Serial, portName);
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance;
+        var connection = new DeviceConnection(DeviceConnection.ConnectionType.Serial, portName, logger);
         return this.CreateDevice(connection);
     }
 
@@ -38,7 +39,8 @@ internal class DeviceFactory : IDeviceFactory {
         var connectionString = arguments?.Length > 0
             ? $"{executablePath} {string.Join(" ", arguments)}"
             : executablePath;
-        var connection = new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, connectionString);
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance;
+        var connection = new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, connectionString, logger);
         return this.CreateDevice(connection);
     }
 }
@@ -55,7 +57,8 @@ internal class CommunicatorFactory : ICommunicatorFactory {
 
     /// <inheritdoc/>
     public DeviceConnection CreateSerialCommunicator(string portName, int? baudRate = null) {
-        return new DeviceConnection(DeviceConnection.ConnectionType.Serial, portName);
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance;
+        return new DeviceConnection(DeviceConnection.ConnectionType.Serial, portName, logger);
     }
 
     /// <inheritdoc/>
@@ -63,7 +66,8 @@ internal class CommunicatorFactory : ICommunicatorFactory {
         var connectionString = arguments?.Length > 0
             ? $"{executablePath} {string.Join(" ", arguments)}"
             : executablePath;
-        return new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, connectionString);
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance;
+        return new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, connectionString, logger);
     }
 }
 

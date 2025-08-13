@@ -1,0 +1,1170 @@
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
+
+using System.Diagnostics;
+using System.IO.Ports;
+using System.Runtime.InteropServices;
+using System.Text;
+using Microsoft.Extensions.Logging;
+
+namespace Belay.Core;
+
+/// <summary>
+/// Unified device connection that handles both serial and subprocess communication.
+/// Replaces the complex communication abstraction hierarchy with a single, direct implementation.
+/// </summary>
+public sealed class DeviceConnection : IDisposable
+{
+    private readonly ILogger<DeviceConnection> logger;
+    
+    /// <summary>
+    /// Gets the type of connection being used.
+    /// </summary>
+    public ConnectionType Type { get; }
+    
+    /// <summary>
+    /// Gets the connection string used to establish the connection.
+    /// </summary>
+    public string ConnectionString { get; }
+    
+    // Serial connection fields
+    private SerialPort? serialPort;
+    private LinuxSerialConnection? linuxSerial;
+    
+    // Subprocess connection fields
+    private Process? process;
+    private StreamWriter? processInput;
+    private StreamReader? processOutput;
+    
+    private bool disposed = false;
+
+    /// <summary>
+    /// Defines the type of connection to establish.
+    /// </summary>
+    public enum ConnectionType
+    {
+        /// <summary>Serial port connection.</summary>
+        Serial,
+        
+        /// <summary>Subprocess connection.</summary>
+        Subprocess
+    }
+
+    /// <summary>
+    /// Gets the current connection state.
+    /// </summary>
+    public DeviceConnectionState State { get; private set; } = DeviceConnectionState.Disconnected;
+
+    /// <summary>
+    /// Event raised when output is received from the device.
+    /// </summary>
+    public event EventHandler<DeviceOutputEventArgs>? OutputReceived;
+
+    /// <summary>
+    /// Event raised when device connection state changes.
+    /// </summary>
+    public event EventHandler<DeviceStateChangeEventArgs>? StateChanged;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DeviceConnection"/> class.
+    /// </summary>
+    /// <param name="type">The type of connection to establish.</param>
+    /// <param name="connectionString">The connection string (port name for serial, command for subprocess).</param>
+    /// <param name="logger">Optional logger for diagnostic information.</param>
+    public DeviceConnection(ConnectionType type, string connectionString, ILogger<DeviceConnection>? logger = null)
+    {
+        this.Type = type;
+        this.ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+        this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance;
+    }
+
+    /// <summary>
+    /// Connects to the device.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task ConnectAsync(CancellationToken cancellationToken = default)
+    {
+        if (this.disposed)
+            throw new ObjectDisposedException(nameof(DeviceConnection));
+
+        this.SetState(DeviceConnectionState.Connecting);
+        
+        try
+        {
+            switch (this.Type)
+            {
+                case ConnectionType.Serial:
+                    await this.ConnectSerialAsync(cancellationToken);
+                    break;
+                    
+                case ConnectionType.Subprocess:
+                    await this.ConnectSubprocessAsync(cancellationToken);
+                    break;
+                    
+                default:
+                    throw new ArgumentException($"Unsupported connection type: {this.Type}");
+            }
+
+            this.SetState(DeviceConnectionState.Connected);
+            this.logger.LogInformation("Connected to device via {ConnectionType}: {ConnectionString}", 
+                this.Type, this.ConnectionString);
+        }
+        catch (Exception ex)
+        {
+            this.SetState(DeviceConnectionState.Error);
+            this.logger.LogError(ex, "Failed to connect to device");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Disconnects from the device.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task DisconnectAsync(CancellationToken cancellationToken = default)
+    {
+        if (this.disposed)
+            return;
+
+        try
+        {
+            switch (this.Type)
+            {
+                case ConnectionType.Serial:
+                    this.serialPort?.Close();
+                    this.serialPort?.Dispose();
+                    this.serialPort = null;
+                    
+                    this.linuxSerial?.Close();
+                    this.linuxSerial?.Dispose();
+                    this.linuxSerial = null;
+                    break;
+                    
+                case ConnectionType.Subprocess:
+                    this.processInput?.Close();
+                    this.processOutput?.Close();
+                    if (this.process != null && !this.process.HasExited)
+                    {
+                        this.process.Kill();
+                        await this.process.WaitForExitAsync(cancellationToken);
+                    }
+                    this.process?.Dispose();
+                    this.process = null;
+                    this.processInput = null;
+                    this.processOutput = null;
+                    break;
+            }
+
+            this.SetState(DeviceConnectionState.Disconnected);
+            this.logger.LogInformation("Disconnected from device");
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Error during disconnect");
+        }
+    }
+
+    /// <summary>
+    /// Executes Python code on the device and returns the result.
+    /// </summary>
+    /// <param name="code">The Python code to execute.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The execution result as a string.</returns>
+    public async Task<string> ExecuteAsync(string code, CancellationToken cancellationToken = default)
+    {
+        if (this.disposed)
+            throw new ObjectDisposedException(nameof(DeviceConnection));
+
+        if (string.IsNullOrWhiteSpace(code))
+            throw new ArgumentException("Code cannot be null or empty", nameof(code));
+
+        if (this.State != DeviceConnectionState.Connected)
+            throw new InvalidOperationException("Device is not connected");
+
+        this.SetState(DeviceConnectionState.Executing);
+        
+        try
+        {
+            this.logger.LogDebug("Executing code: {Code}", code.Trim());
+            
+            // Use raw REPL protocol for reliable execution
+            string result = await this.ExecuteRawReplAsync(code, cancellationToken);
+            
+            this.logger.LogDebug("Execution completed, result length: {Length}", result.Length);
+            return result;
+        }
+        finally
+        {
+            this.SetState(DeviceConnectionState.Connected);
+        }
+    }
+
+    /// <summary>
+    /// Executes Python code on the device and returns the result as a typed object.
+    /// </summary>
+    /// <typeparam name="T">The expected return type.</typeparam>
+    /// <param name="code">The Python code to execute.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The execution result cast to the specified type.</returns>
+    public async Task<T> ExecuteAsync<T>(string code, CancellationToken cancellationToken = default)
+    {
+        string result = await this.ExecuteAsync(code, cancellationToken);
+        
+        if (string.IsNullOrWhiteSpace(result))
+        {
+            if (typeof(T) == typeof(string))
+                return (T)(object)string.Empty;
+                
+            if (typeof(T).IsValueType)
+                return default(T)!;
+        }
+
+        return ResultParser.ParseResult<T>(result);
+    }
+
+    /// <summary>
+    /// Transfers a file from the local system to the device.
+    /// </summary>
+    /// <param name="localPath">Path to the local file.</param>
+    /// <param name="remotePath">Path where the file should be stored on the device.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task PutFileAsync(string localPath, string remotePath, CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(localPath))
+            throw new FileNotFoundException($"Local file not found: {localPath}");
+
+        byte[] fileContent = await File.ReadAllBytesAsync(localPath, cancellationToken);
+        string base64Content = Convert.ToBase64String(fileContent);
+        
+        string code = $@"
+import binascii
+with open('{remotePath}', 'wb') as f:
+    f.write(binascii.a2b_base64('{base64Content}'))
+";
+        
+        await this.ExecuteAsync(code, cancellationToken);
+        this.logger.LogDebug("File transferred: {LocalPath} -> {RemotePath}", localPath, remotePath);
+    }
+
+    /// <summary>
+    /// Retrieves a file from the device to the local system.
+    /// </summary>
+    /// <param name="remotePath">Path to the file on the device.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The file contents as a byte array.</returns>
+    public async Task<byte[]> GetFileAsync(string remotePath, CancellationToken cancellationToken = default)
+    {
+        string code = $@"
+import binascii
+with open('{remotePath}', 'rb') as f:
+    content = f.read()
+    print(binascii.b2a_base64(content).decode().strip())
+";
+        
+        string base64Content = await this.ExecuteAsync(code, cancellationToken);
+        byte[] fileContent = Convert.FromBase64String(base64Content.Trim());
+        
+        this.logger.LogDebug("File retrieved: {RemotePath} ({Size} bytes)", remotePath, fileContent.Length);
+        return fileContent;
+    }
+
+    private async Task ConnectSerialAsync(CancellationToken cancellationToken)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            // Use System.IO.Ports on Windows
+            this.serialPort = new SerialPort(this.ConnectionString, 115200, Parity.None, 8, StopBits.One)
+            {
+                ReadTimeout = 5000,
+                WriteTimeout = 5000,
+                NewLine = "\r\n"
+            };
+            
+            this.serialPort.Open();
+            
+            // Wait for device to be ready
+            await Task.Delay(100, cancellationToken);
+            
+            // Send Ctrl-B to ensure we're in normal REPL mode
+            this.serialPort.Write("\x02");
+            await Task.Delay(100, cancellationToken);
+        }
+        else
+        {
+            // Use Linux-compatible serial connection
+            this.linuxSerial = new LinuxSerialConnection(this.ConnectionString);
+            await this.linuxSerial.OpenAsync();
+            
+            // Wait for device to be ready
+            await Task.Delay(100, cancellationToken);
+            
+            // Send Ctrl-B to ensure we're in normal REPL mode
+            await this.linuxSerial.WriteAsync("\x02");
+            await Task.Delay(100, cancellationToken);
+        }
+    }
+
+    private async Task ConnectSubprocessAsync(CancellationToken cancellationToken)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = this.ConnectionString,
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+
+        this.process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start subprocess");
+        this.processInput = this.process.StandardInput;
+        this.processOutput = this.process.StandardOutput;
+        
+        // Wait for process to be ready
+        await Task.Delay(500, cancellationToken);
+        
+        // Send Ctrl-B to ensure we're in normal REPL mode
+        await this.processInput.WriteAsync("\x02");
+        await this.processInput.FlushAsync();
+        await Task.Delay(100, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes code using adaptive raw REPL protocol with automatic fallback to paste mode.
+    /// Implements ICD-001 specification with sophisticated flow control and device-specific handling.
+    /// </summary>
+    private async Task<string> ExecuteRawReplAsync(string code, CancellationToken cancellationToken)
+    {
+        try
+        {
+            this.logger.LogInformation("Starting adaptive raw REPL execution for code: {CodePreview}", 
+                code.Length > 100 ? code.Substring(0, 100) + "..." : code);
+            
+            // Adaptive Protocol Selection based on code size and device capabilities
+            bool shouldUsePasteMode = this.ShouldUsePasteMode(code);
+            
+            if (shouldUsePasteMode)
+            {
+                this.logger.LogInformation("Using Raw-Paste mode for large code transfer ({Size} bytes)", code.Length);
+                return await this.ExecuteWithPasteModeAsync(code, cancellationToken);
+            }
+            else
+            {
+                this.logger.LogInformation("Using basic Raw REPL mode");
+                try
+                {
+                    return await this.ExecuteBasicRawReplAsync(code, cancellationToken);
+                }
+                catch (DeviceException ex) when (ex.Message.Contains("timeout") || ex.Message.Contains("flow control"))
+                {
+                    this.logger.LogWarning("Basic Raw REPL failed, falling back to Raw-Paste mode: {Error}", ex.Message);
+                    return await this.ExecuteWithPasteModeAsync(code, cancellationToken);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Adaptive raw REPL execution failed, attempting emergency cleanup");
+            
+            // Attempt emergency exit from raw mode
+            try
+            {
+                await this.EnsureNormalModeAsync(cancellationToken);
+            }
+            catch (Exception cleanupEx)
+            {
+                this.logger.LogWarning(cleanupEx, "Emergency cleanup also failed");
+            }
+            throw;
+        }
+    }
+    
+    /// <summary>
+    /// Determines whether to use Raw-Paste mode based on code characteristics and device capabilities.
+    /// </summary>
+    private bool ShouldUsePasteMode(string code)
+    {
+        // Use paste mode for large code transfers (>500 bytes)
+        if (code.Length > 500)
+            return true;
+            
+        // Use paste mode for code with complex structures (multiple lines, indentation)
+        if (code.Contains('\n') && code.Count(c => c == '\n') > 3)
+            return true;
+            
+        // Use paste mode for code with special characters that might interfere with flow
+        if (code.Contains('\x04') || code.Contains('\x01') || code.Contains('\x02'))
+            return true;
+            
+        return false;
+    }
+    
+    /// <summary>
+    /// Executes code using basic Raw REPL protocol (original simplified approach).
+    /// </summary>
+    private async Task<string> ExecuteBasicRawReplAsync(string code, CancellationToken cancellationToken)
+    {
+        // Phase 1: Enter raw mode and verify prompt
+        await this.EnterRawModeAsync(cancellationToken);
+        
+        // Phase 2: Send code directly
+        this.logger.LogDebug("Sending Python code via basic Raw REPL");
+        await this.WriteAsync(code);
+        
+        // Phase 3: Execute code
+        this.logger.LogDebug("Sending execution command (Ctrl-D)");
+        await this.WriteAsync("\x04");
+        
+        // Phase 4: Read execution result with basic timeout
+        string result = await this.ReadExecutionResultAsync(cancellationToken);
+        
+        // Phase 5: Exit raw mode
+        await this.ExitRawModeAsync(cancellationToken);
+        
+        this.logger.LogInformation("Basic Raw REPL execution completed successfully");
+        return result;
+    }
+    
+    /// <summary>
+    /// Executes code using Raw-Paste mode with sophisticated flow control and window management.
+    /// Implements full ICD-001 Raw-Paste protocol specification.
+    /// </summary>
+    private async Task<string> ExecuteWithPasteModeAsync(string code, CancellationToken cancellationToken)
+    {
+        // Phase 1: Enter raw mode
+        await this.EnterRawModeAsync(cancellationToken);
+        
+        // Phase 2: Enter Raw-Paste mode
+        this.logger.LogDebug("Entering Raw-Paste mode");
+        await this.WriteAsync("\x05\x01"); // RAW_PASTE + version
+        
+        // Phase 3: Negotiate window size
+        var windowSize = await this.NegotiateWindowSizeAsync(cancellationToken);
+        this.logger.LogDebug("Negotiated window size: {WindowSize} bytes", windowSize);
+        
+        // Phase 4: Send code with flow control
+        await this.SendCodeWithFlowControlAsync(code, windowSize, cancellationToken);
+        
+        // Phase 5: Execute code
+        this.logger.LogDebug("Sending execution command (Ctrl-D)");
+        await this.WriteAsync("\x04");
+        
+        // Phase 6: Read execution result with extended timeout for large operations
+        string result = await this.ReadExecutionResultWithTimeoutAsync(
+            this.CalculateExtendedTimeout(code), cancellationToken);
+        
+        // Phase 7: Exit raw mode
+        await this.ExitRawModeAsync(cancellationToken);
+        
+        this.logger.LogInformation("Raw-Paste mode execution completed successfully");
+        return result;
+    }
+
+    /// <summary>
+    /// Enters raw REPL mode and verifies the expected prompt per ICD-001.
+    /// </summary>
+    private async Task EnterRawModeAsync(CancellationToken cancellationToken)
+    {
+        const int maxRetries = 3;
+        
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            this.logger.LogDebug("Raw mode entry attempt {Attempt}", attempt + 1);
+            
+            // Clear any buffered data first
+            await this.ClearBuffersAsync();
+            
+            // Send Ctrl-A to enter raw mode
+            await this.WriteAsync("\x01");
+            
+            // Read response with timeout
+            var response = await this.ReadWithTimeoutAsync(TimeSpan.FromMilliseconds(1000), cancellationToken);
+            
+            this.logger.LogDebug("Raw mode response: {Response}", 
+                response.Replace("\r", "\\r").Replace("\n", "\\n").Replace("\x04", "\\x04"));
+            
+            if (response.Contains("raw REPL"))
+            {
+                this.logger.LogInformation("Successfully entered raw REPL mode");
+                return;
+            }
+            
+            // If we didn't get raw REPL, try to reset state
+            if (attempt < maxRetries - 1)
+            {
+                this.logger.LogWarning("Raw mode entry attempt {Attempt} failed, trying reset", attempt + 1);
+                
+                // Try Ctrl-B then Ctrl-A to reset state
+                await this.WriteAsync("\x02");
+                await Task.Delay(100, cancellationToken);
+                await this.WriteAsync("\x01");
+                
+                var retryResponse = await this.ReadWithTimeoutAsync(TimeSpan.FromMilliseconds(1000), cancellationToken);
+                
+                this.logger.LogDebug("Reset retry response: {Response}", 
+                    retryResponse.Replace("\r", "\\r").Replace("\n", "\\n").Replace("\x04", "\\x04"));
+                
+                if (retryResponse.Contains("raw REPL"))
+                {
+                    this.logger.LogInformation("Successfully entered raw REPL mode after reset");
+                    return;
+                }
+                
+                await Task.Delay(200, cancellationToken);
+            }
+        }
+        
+        throw new DeviceException($"Failed to enter raw REPL mode after {maxRetries} attempts");
+    }
+
+    /// <summary>
+    /// Reads the execution result according to ICD-001 protocol markers.
+    /// Two-phase read: acknowledgment then actual output.
+    /// </summary>
+    private async Task<string> ReadExecutionResultAsync(CancellationToken cancellationToken)
+    {
+        this.logger.LogDebug("Starting execution result read - waiting for acknowledgment");
+        
+        // Phase 1: Read and verify the OK acknowledgment
+        var ackResponse = await this.ReadUntilAsync("OK\x04\x04>", TimeSpan.FromMilliseconds(2000), cancellationToken);
+        
+        this.logger.LogDebug("Received acknowledgment: {Ack}", 
+            ackResponse.Replace("\x04", "\\x04").Replace("\r", "\\r").Replace("\n", "\\n"));
+        
+        // Phase 2: Now read the actual Python output until final marker
+        this.logger.LogDebug("Reading actual execution output");
+        var outputResponse = await this.ReadUntilAsync("\x04>", TimeSpan.FromMilliseconds(10000), cancellationToken);
+        
+        this.logger.LogDebug("Received output: {Output}", 
+            outputResponse.Replace("\x04", "\\x04").Replace("\r", "\\r").Replace("\n", "\\n"));
+        
+        // Extract the actual result
+        var result = outputResponse.TrimEnd('\x04', '>').Trim('\r', '\n', ' ');
+        
+        this.logger.LogInformation("Extracted execution result: '{Result}'", result);
+        
+        return result;
+    }
+
+    /// <summary>
+    /// Exits raw REPL mode cleanly.
+    /// </summary>
+    private async Task ExitRawModeAsync(CancellationToken cancellationToken)
+    {
+        this.logger.LogDebug("Exiting raw REPL mode");
+        await this.WriteAsync("\x02"); // Ctrl-B to exit raw mode
+        await Task.Delay(100, cancellationToken); // Brief pause for mode transition
+        
+        // Verify we're back in normal mode by reading any response
+        var response = await this.ReadWithTimeoutAsync(TimeSpan.FromMilliseconds(500), cancellationToken);
+        this.logger.LogDebug("Exit raw mode response: {Response}", 
+            response.Replace("\r", "\\r").Replace("\n", "\\n"));
+    }
+    
+    /// <summary>
+    /// Ensures the device is in normal REPL mode with comprehensive recovery.
+    /// </summary>
+    private async Task EnsureNormalModeAsync(CancellationToken cancellationToken)
+    {
+        this.logger.LogDebug("Ensuring device is in normal mode");
+        
+        // Send Ctrl-B to exit raw mode
+        await this.WriteAsync("\x02");
+        await Task.Delay(100, cancellationToken);
+        
+        // Send Ctrl-C to interrupt any running code
+        await this.WriteAsync("\x03");
+        await Task.Delay(100, cancellationToken);
+        
+        // Send a newline and check for >>> prompt
+        await this.WriteAsync("\r\n");
+        var response = await this.ReadWithTimeoutAsync(TimeSpan.FromMilliseconds(500), cancellationToken);
+        
+        this.logger.LogDebug("Normal mode check response: {Response}", 
+            response.Replace("\r", "\\r").Replace("\n", "\\n"));
+        
+        if (!response.Contains(">>>"))
+        {
+            this.logger.LogWarning("Did not see normal REPL prompt, sending soft reset");
+            // Force a soft reset
+            await this.WriteAsync("\x04");
+            await Task.Delay(1000, cancellationToken); // Wait for reset
+        }
+    }
+
+    private async Task WriteAsync(string data)
+    {
+        switch (this.Type)
+        {
+            case ConnectionType.Serial:
+                if (this.serialPort != null)
+                {
+                    this.serialPort.Write(data);
+                }
+                else if (this.linuxSerial != null)
+                {
+                    await this.linuxSerial.WriteAsync(data);
+                }
+                else
+                {
+                    throw new InvalidOperationException("No serial connection available");
+                }
+                break;
+                
+            case ConnectionType.Subprocess:
+                await this.processInput!.WriteAsync(data);
+                await this.processInput.FlushAsync();
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Reads data until a specific terminator is found or timeout occurs.
+    /// </summary>
+    private async Task<string> ReadUntilAsync(string terminator, TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        var result = new StringBuilder();
+        var buffer = new char[1024];
+        var startTime = DateTime.UtcNow;
+        
+        while (!cancellationToken.IsCancellationRequested && DateTime.UtcNow - startTime < timeout)
+        {
+            bool dataReceived = false;
+            
+            switch (this.Type)
+            {
+                case ConnectionType.Serial:
+                    if (this.serialPort != null)
+                    {
+                        if (this.serialPort.BytesToRead > 0)
+                        {
+                            string data = this.serialPort.ReadExisting();
+                            result.Append(data);
+                            dataReceived = true;
+                            
+                            // Check for terminator
+                            if (result.ToString().Contains(terminator))
+                            {
+                                return result.ToString();
+                            }
+                        }
+                    }
+                    else if (this.linuxSerial != null)
+                    {
+                        if (this.linuxSerial.BytesToRead > 0)
+                        {
+                            string data = await this.linuxSerial.ReadExistingAsync();
+                            if (!string.IsNullOrEmpty(data))
+                            {
+                                result.Append(data);
+                                dataReceived = true;
+                                
+                                // Check for terminator
+                                if (result.ToString().Contains(terminator))
+                                {
+                                    return result.ToString();
+                                }
+                            }
+                        }
+                    }
+                    break;
+                    
+                case ConnectionType.Subprocess:
+                    try
+                    {
+                        int bytesRead = await this.processOutput!.ReadAsync(buffer, 0, buffer.Length);
+                        if (bytesRead > 0)
+                        {
+                            string data = new string(buffer, 0, bytesRead);
+                            result.Append(data);
+                            dataReceived = true;
+                            
+                            // Check for terminator
+                            if (result.ToString().Contains(terminator))
+                            {
+                                return result.ToString();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogWarning(ex, "Error reading from subprocess");
+                    }
+                    break;
+            }
+            
+            // If no data received, wait briefly to avoid busy looping
+            if (!dataReceived)
+            {
+                await Task.Delay(50, cancellationToken);
+            }
+        }
+        
+        var response = result.ToString();
+        if (string.IsNullOrEmpty(response))
+        {
+            throw new DeviceException($"Timeout waiting for terminator '{terminator}' after {timeout.TotalMilliseconds}ms");
+        }
+        
+        this.logger.LogWarning("ReadUntilAsync timeout, got {Length} chars, looking for: {Terminator}", 
+            response.Length, terminator.Replace("\x04", "\\x04"));
+        return response;
+    }
+
+    /// <summary>
+    /// Clears any buffered data to prevent reading stale responses.
+    /// </summary>
+    private async Task ClearBuffersAsync()
+    {
+        switch (this.Type)
+        {
+            case ConnectionType.Serial:
+                if (this.serialPort?.IsOpen == true)
+                {
+                    this.serialPort.DiscardInBuffer();
+                    this.serialPort.DiscardOutBuffer();
+                    this.logger.LogDebug("Cleared serial port buffers");
+                }
+                else if (this.linuxSerial?.IsOpen == true)
+                {
+                    this.linuxSerial.DiscardBuffers();
+                    this.logger.LogDebug("Cleared Linux serial buffers");
+                }
+                break;
+                
+            case ConnectionType.Subprocess:
+                if (this.processOutput != null)
+                {
+                    // Read and discard any pending data
+                    var discarded = 0;
+                    try
+                    {
+                        while (this.processOutput.Peek() >= 0)
+                        {
+                            this.processOutput.Read();
+                            discarded++;
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore errors during buffer clearing
+                    }
+                    
+                    if (discarded > 0)
+                    {
+                        this.logger.LogDebug("Discarded {Count} buffered characters from subprocess", discarded);
+                    }
+                }
+                break;
+        }
+        
+        // Brief delay to allow any in-flight data to settle
+        await Task.Delay(50);
+    }
+    
+    /// <summary>
+    /// Reads data with a timeout, returning whatever is available.
+    /// </summary>
+    private async Task<string> ReadWithTimeoutAsync(TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        var result = new StringBuilder();
+        var buffer = new char[1024];
+        var startTime = DateTime.UtcNow;
+        
+        while (!cancellationToken.IsCancellationRequested && DateTime.UtcNow - startTime < timeout)
+        {
+            bool dataReceived = false;
+            
+            switch (this.Type)
+            {
+                case ConnectionType.Serial:
+                    if (this.serialPort != null)
+                    {
+                        if (this.serialPort.BytesToRead > 0)
+                        {
+                            string data = this.serialPort.ReadExisting();
+                            result.Append(data);
+                            dataReceived = true;
+                        }
+                    }
+                    else if (this.linuxSerial != null)
+                    {
+                        if (this.linuxSerial.BytesToRead > 0)
+                        {
+                            string data = await this.linuxSerial.ReadExistingAsync();
+                            if (!string.IsNullOrEmpty(data))
+                            {
+                                result.Append(data);
+                                dataReceived = true;
+                            }
+                        }
+                    }
+                    break;
+                    
+                case ConnectionType.Subprocess:
+                    try
+                    {
+                        if (this.processOutput!.Peek() >= 0)
+                        {
+                            int bytesRead = await this.processOutput.ReadAsync(buffer, 0, buffer.Length);
+                            if (bytesRead > 0)
+                            {
+                                string data = new string(buffer, 0, bytesRead);
+                                result.Append(data);
+                                dataReceived = true;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogWarning(ex, "Error reading from subprocess during timeout read");
+                    }
+                    break;
+            }
+            
+            // If no data received, wait briefly to avoid busy looping
+            if (!dataReceived)
+            {
+                await Task.Delay(20, cancellationToken);
+            }
+        }
+        
+        return result.ToString();
+    }
+    
+    /// <summary>
+    /// Negotiates window size with the device for Raw-Paste mode flow control.
+    /// Implements ICD-001 window size negotiation protocol.
+    /// </summary>
+    private async Task<int> NegotiateWindowSizeAsync(CancellationToken cancellationToken)
+    {
+        this.logger.LogDebug("Negotiating Raw-Paste window size");
+        
+        var windowBuffer = new byte[2];
+        var bytesRead = 0;
+        var timeout = TimeSpan.FromMilliseconds(2000);
+        var startTime = DateTime.UtcNow;
+        
+        while (bytesRead < 2 && DateTime.UtcNow - startTime < timeout)
+        {
+            switch (this.Type)
+            {
+                case ConnectionType.Serial:
+                    if (this.serialPort != null)
+                    {
+                        if (this.serialPort.BytesToRead > 0)
+                        {
+                            var available = Math.Min(this.serialPort.BytesToRead, 2 - bytesRead);
+                            var buffer = new byte[available];
+                            this.serialPort.Read(buffer, 0, available);
+                            Array.Copy(buffer, 0, windowBuffer, bytesRead, available);
+                            bytesRead += available;
+                        }
+                    }
+                    else if (this.linuxSerial != null)
+                    {
+                        if (this.linuxSerial.BytesToRead > 0)
+                        {
+                            var available = Math.Min(2, 2 - bytesRead);
+                            var buffer = new byte[available];
+                            int read = await this.linuxSerial.ReadAsync(buffer, 0, available);
+                            if (read > 0)
+                            {
+                                Array.Copy(buffer, 0, windowBuffer, bytesRead, read);
+                                bytesRead += read;
+                            }
+                        }
+                    }
+                    break;
+                    
+                case ConnectionType.Subprocess:
+                    try
+                    {
+                        var remainingBytes = 2 - bytesRead;
+                        var buffer = new char[remainingBytes];
+                        var read = await this.processOutput!.ReadAsync(buffer, 0, remainingBytes);
+                        for (int i = 0; i < read; i++)
+                        {
+                            windowBuffer[bytesRead + i] = (byte)buffer[i];
+                        }
+                        bytesRead += read;
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogWarning(ex, "Error reading window size from subprocess");
+                    }
+                    break;
+            }
+            
+            if (bytesRead < 2)
+            {
+                await Task.Delay(50, cancellationToken);
+            }
+        }
+        
+        if (bytesRead < 2)
+        {
+            throw new DeviceException($"Failed to negotiate window size: only received {bytesRead} of 2 bytes");
+        }
+        
+        // Window size is big-endian 16-bit integer per ICD-001
+        var windowSize = (windowBuffer[0] << 8) | windowBuffer[1];
+        
+        this.logger.LogInformation("Raw-Paste window size negotiated: {WindowSize} bytes", windowSize);
+        
+        // Clamp window size to reasonable bounds for stability
+        if (windowSize < 32)
+        {
+            this.logger.LogWarning("Device reported very small window size {Size}, using minimum 32", windowSize);
+            windowSize = 32;
+        }
+        else if (windowSize > 2048)
+        {
+            this.logger.LogWarning("Device reported very large window size {Size}, clamping to 2048", windowSize);
+            windowSize = 2048;
+        }
+        
+        return windowSize;
+    }
+    
+    /// <summary>
+    /// Sends code to device with sophisticated flow control per ICD-001 specification.
+    /// Implements windowed transmission with acknowledgment-based flow control.
+    /// </summary>
+    private async Task SendCodeWithFlowControlAsync(string code, int windowSize, CancellationToken cancellationToken)
+    {
+        var codeBytes = Encoding.UTF8.GetBytes(code);
+        var offset = 0;
+        
+        this.logger.LogDebug("Sending {TotalBytes} bytes in chunks of {WindowSize} with flow control", 
+            codeBytes.Length, windowSize);
+        
+        while (offset < codeBytes.Length)
+        {
+            var chunkSize = Math.Min(windowSize, codeBytes.Length - offset);
+            
+            this.logger.LogTrace("Sending chunk: offset={Offset}, size={ChunkSize}", offset, chunkSize);
+            
+            // Send chunk
+            switch (this.Type)
+            {
+                case ConnectionType.Serial:
+                    if (this.serialPort != null)
+                    {
+                        this.serialPort.Write(codeBytes, offset, chunkSize);
+                    }
+                    else if (this.linuxSerial != null)
+                    {
+                        var chunk = new byte[chunkSize];
+                        Array.Copy(codeBytes, offset, chunk, 0, chunkSize);
+                        await this.linuxSerial.WriteAsync(chunk);
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("No serial connection available");
+                    }
+                    break;
+                    
+                case ConnectionType.Subprocess:
+                    var chunkString = Encoding.UTF8.GetString(codeBytes, offset, chunkSize);
+                    await this.processInput!.WriteAsync(chunkString);
+                    await this.processInput.FlushAsync();
+                    break;
+            }
+            
+            offset += chunkSize;
+            
+            // Wait for flow control acknowledgment if more data remains
+            if (offset < codeBytes.Length)
+            {
+                await this.WaitForFlowControlAckAsync(cancellationToken);
+            }
+        }
+        
+        this.logger.LogInformation("Code transmission completed: {TotalBytes} bytes sent", codeBytes.Length);
+    }
+    
+    /// <summary>
+    /// Waits for flow control acknowledgment byte (0x01) from device.
+    /// Implements ICD-001 flow control acknowledgment protocol.
+    /// </summary>
+    private async Task WaitForFlowControlAckAsync(CancellationToken cancellationToken)
+    {
+        var timeout = TimeSpan.FromMilliseconds(5000);
+        var startTime = DateTime.UtcNow;
+        
+        while (DateTime.UtcNow - startTime < timeout && !cancellationToken.IsCancellationRequested)
+        {
+            switch (this.Type)
+            {
+                case ConnectionType.Serial:
+                    if (this.serialPort != null)
+                    {
+                        if (this.serialPort.BytesToRead > 0)
+                        {
+                            var ackByte = this.serialPort.ReadByte();
+                            if (ackByte == 0x01)
+                            {
+                                this.logger.LogTrace("Received flow control acknowledgment (0x01)");
+                                return;
+                            }
+                            else
+                            {
+                                throw new DeviceException($"Unexpected flow control byte: 0x{ackByte:X2}, expected 0x01");
+                            }
+                        }
+                    }
+                    else if (this.linuxSerial != null)
+                    {
+                        if (this.linuxSerial.BytesToRead > 0)
+                        {
+                            var buffer = new byte[1];
+                            int bytesRead = await this.linuxSerial.ReadAsync(buffer, 0, 1);
+                            if (bytesRead > 0)
+                            {
+                                if (buffer[0] == 0x01)
+                                {
+                                    this.logger.LogTrace("Received flow control acknowledgment (0x01)");
+                                    return;
+                                }
+                                else
+                                {
+                                    throw new DeviceException($"Unexpected flow control byte: 0x{buffer[0]:X2}, expected 0x01");
+                                }
+                            }
+                        }
+                    }
+                    break;
+                    
+                case ConnectionType.Subprocess:
+                    try
+                    {
+                        if (this.processOutput!.Peek() >= 0)
+                        {
+                            var ackChar = this.processOutput.Read();
+                            if (ackChar == 0x01)
+                            {
+                                this.logger.LogTrace("Received flow control acknowledgment (0x01)");
+                                return;
+                            }
+                            else
+                            {
+                                throw new DeviceException($"Unexpected flow control byte: 0x{ackChar:X2}, expected 0x01");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        this.logger.LogWarning(ex, "Error reading flow control acknowledgment");
+                    }
+                    break;
+            }
+            
+            await Task.Delay(50, cancellationToken);
+        }
+        
+        throw new DeviceException("Timeout waiting for flow control acknowledgment");
+    }
+    
+    /// <summary>
+    /// Calculates device-specific timeout based on code complexity and device characteristics.
+    /// Implements adaptive timeout strategy for different device types and code complexity.
+    /// </summary>
+    private TimeSpan CalculateExtendedTimeout(string code)
+    {
+        // Base timeout for simple operations
+        var baseTimeout = TimeSpan.FromMilliseconds(2000);
+        
+        // Scale timeout based on code length
+        var lengthFactor = Math.Max(1.0, code.Length / 1000.0);
+        
+        // Scale timeout based on code complexity (loops, imports, etc.)
+        var complexityFactor = 1.0;
+        if (code.Contains("import "))
+            complexityFactor += 0.5;
+        if (code.Contains("for ") || code.Contains("while "))
+            complexityFactor += 0.3;
+        if (code.Contains("time.sleep"))
+            complexityFactor += 2.0; // Sleep operations need much longer timeout
+        
+        // Device-specific timeout adjustments based on connection type
+        var deviceFactor = this.Type switch
+        {
+            ConnectionType.Serial => 1.0,     // Serial devices are typically faster
+            ConnectionType.Subprocess => 1.5, // Subprocess may have overhead
+            _ => 1.0
+        };
+        
+        var calculatedTimeout = TimeSpan.FromMilliseconds(
+            baseTimeout.TotalMilliseconds * lengthFactor * complexityFactor * deviceFactor);
+        
+        // Clamp to reasonable bounds
+        var minTimeout = TimeSpan.FromMilliseconds(1000);
+        var maxTimeout = TimeSpan.FromMilliseconds(30000);
+        
+        if (calculatedTimeout < minTimeout)
+            calculatedTimeout = minTimeout;
+        else if (calculatedTimeout > maxTimeout)
+            calculatedTimeout = maxTimeout;
+        
+        this.logger.LogDebug("Calculated timeout: {Timeout}ms (length={LengthFactor:F1}, complexity={ComplexityFactor:F1}, device={DeviceFactor:F1})",
+            calculatedTimeout.TotalMilliseconds, lengthFactor, complexityFactor, deviceFactor);
+        
+        return calculatedTimeout;
+    }
+    
+    /// <summary>
+    /// Reads execution result with adaptive timeout handling.
+    /// Implements device-specific timeout strategies for robust communication.
+    /// </summary>
+    private async Task<string> ReadExecutionResultWithTimeoutAsync(TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        this.logger.LogDebug("Reading execution result with extended timeout: {Timeout}ms", timeout.TotalMilliseconds);
+        
+        // Phase 1: Read and verify the OK acknowledgment
+        var ackResponse = await this.ReadUntilAsync("OK\x04\x04>", timeout, cancellationToken);
+        
+        this.logger.LogDebug("Received acknowledgment: {Ack}", 
+            ackResponse.Replace("\x04", "\\x04").Replace("\r", "\\r").Replace("\n", "\\n"));
+        
+        // Phase 2: Read the actual Python output with extended timeout
+        this.logger.LogDebug("Reading actual execution output with extended timeout");
+        var outputResponse = await this.ReadUntilAsync("\x04>", timeout, cancellationToken);
+        
+        this.logger.LogDebug("Received output: {Output}", 
+            outputResponse.Replace("\x04", "\\x04").Replace("\r", "\\r").Replace("\n", "\\n"));
+        
+        // Extract the actual result
+        var result = outputResponse.TrimEnd('\x04', '>').Trim('\r', '\n', ' ');
+        
+        this.logger.LogInformation("Extracted execution result: '{Result}'", result);
+        
+        return result;
+    }
+
+    private void SetState(DeviceConnectionState newState)
+    {
+        var oldState = this.State;
+        this.State = newState;
+        
+        this.StateChanged?.Invoke(this, new DeviceStateChangeEventArgs(oldState, newState));
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (this.disposed)
+            return;
+
+        try
+        {
+            this.DisconnectAsync(CancellationToken.None).Wait(1000);
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "Error during dispose");
+        }
+
+        this.disposed = true;
+    }
+}

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>BelayHardwareValidation</RootNamespace>
+    <AssemblyName>BelayHardwareValidation</AssemblyName>
+    <NoWarn>SA1210,SA1413,SA1518,SA1028,SA1503,SA1316,SA1122,SA0001,S1118,S3903,S1172</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\Belay.Core\Belay.Core.csproj" />
+  </ItemGroup>
+</Project>

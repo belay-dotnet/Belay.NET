@@ -288,7 +288,8 @@ public static class SubprocessTestHelper {
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public static async Task<DeviceConnection> CreateTestDeviceAsync() {
         string executablePath = await MicroPythonUnixPort.FindExecutableAsync();
-        var device = new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, executablePath);
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance;
+        var device = new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, executablePath, logger);
         await device.ConnectAsync();
         return device;
     }

@@ -1,8 +1,8 @@
-# Critical Issues Priority Plan - Post-Session Management Refactoring
+# Critical Issues Priority Plan - Post-Architectural Simplification
 
-**Date**: 2025-08-12  
-**Status**: 🚨 CI BLOCKED - URGENT ACTION REQUIRED  
-**Context**: Session management refactoring complete but CI is failing
+**Date**: 2025-08-13  
+**Status**: 🚨 HARDWARE INTEGRATION BLOCKED - RAW REPL PROTOCOL BROKEN  
+**Context**: Aggressive architectural simplification complete but raw REPL protocol not functioning
 
 ## Executive Summary
 
@@ -11,51 +11,54 @@ The session management refactoring is functionally complete with 95.9% local tes
 ## Current State
 
 ### ✅ Completed
-- Session management refactoring (Issue 002-102)
-- CI compilation errors fixed
-- Documentation site deployment restored
+- Aggressive architectural simplification (50-97% code reduction)
+- Core build successful (Belay.Core, Belay.Extensions, Belay.Sync)
+- Simplified to single DeviceConnection class
 
 ### 🚨 Critical Blockers
-1. **Infinite recursion** in enhanced executor (stack overflow in CI)
-2. **Integration tests disabled** (5 test files renamed to .disabled)
-3. **Code formatting violations** (60+ files)
-4. **Outdated documentation** (architecture changes not reflected)
+1. **Raw REPL protocol broken** - Hardware shows REPL prompt instead of executing code
+2. **No prompt verification** - Assumes raw mode without checking
+3. **Incorrect result parsing** - Wrong completion markers, improper parsing
+4. **Integration tests need updating** for simplified architecture
 
 ## Priority Order and Timeline
 
-### Week 1: CI Restoration (CRITICAL PATH)
+### Week 1: Hardware Integration Restoration (CRITICAL PATH)
 
-#### Day 1-2: Issue 002-111 - Fix Infinite Recursion (CRITICAL)
+#### Day 1-2: Issue 001-012 - Fix Raw REPL Protocol (CRITICAL)
 **Status**: 🚨 IMMEDIATE ACTION REQUIRED  
-**Why First**: Blocks all CI/CD operations  
+**Why First**: Blocks all hardware testing and core functionality  
 **Approach**:
-- Add recursion detection guard
-- Fix executor delegation chain
-- Break circular dependency between EnhancedExecutor and SimplifiedTaskExecutor
+- Implement proper raw mode prompt verification
+- Fix result parsing with correct markers (\x04>)
+- Add timeout handling and retry logic
+- Test with available hardware device
 
-**Success Metric**: CI unit tests pass without stack overflow
+**Success Metric**: Python code executes successfully on Raspberry Pi Pico
 
-#### Day 3: Issue 002-113 - Code Formatting Cleanup (HIGH)
-**Status**: ⏳ READY TO START  
-**Why Second**: Quick win, unblocks CI quality gate  
+#### Day 2-3: Hardware Validation & Testing (HIGH)
+**Status**: ⏳ BLOCKED BY ISSUE 001-012  
+**Why Second**: Validates core functionality  
 **Approach**:
-- Run `dotnet format` on entire solution
-- Fix StyleCop violations
-- Update .editorconfig
+- Test with Raspberry Pi Pico at /dev/usb/tty-Board_in_FS_mode-e6614c311b7e6f35
+- Verify subprocess MicroPython communication
+- Test error conditions and recovery
+- Validate timeout handling
 
-**Success Metric**: `dotnet format --verify-no-changes` passes
+**Success Metric**: All basic Python operations work on hardware
 
 ### Week 2: Test Infrastructure Restoration
 
-#### Day 4-7: Issue 002-112 - Integration Test Restoration (HIGH)
-**Status**: ⏳ BLOCKED BY 002-111  
+#### Day 3-4: Integration Test Updates (HIGH)
+**Status**: ⏳ BLOCKED BY RAW REPL FIX  
 **Why Third**: Critical for regression prevention  
 **Approach**:
-- Update tests for new session management
-- Fix Belay.Tests.Infrastructure
-- Re-enable tests incrementally
+- Update tests for simplified architecture
+- Remove references to deleted components
+- Create new tests for DeviceConnection
+- Test both serial and subprocess paths
 
-**Success Metric**: All .disabled files restored and passing
+**Success Metric**: Core integration tests passing
 
 ### Week 3: Documentation and Stabilization
 
@@ -73,12 +76,12 @@ The session management refactoring is functionally complete with 95.9% local tes
 
 ```mermaid
 graph TD
-    A[002-111: Infinite Recursion Fix] --> B[002-113: Code Formatting]
-    A --> C[002-112: Integration Tests]
-    C --> D[002-114: Documentation]
-    B --> E[CI Fully Passing]
-    C --> E
-    E --> F[v0.2.0 Release Ready]
+    A[001-012: Raw REPL Protocol Fix] --> B[Hardware Validation]
+    A --> C[Integration Test Updates]
+    B --> D[Documentation Updates]
+    C --> E[CI Fully Passing]
+    B --> E
+    E --> F[Hardware Integration Ready]
     D --> F
 ```
 
@@ -86,17 +89,17 @@ graph TD
 
 | Issue | Risk Level | Impact | Mitigation |
 |-------|-----------|--------|------------|
-| 002-111 | CRITICAL | CI completely blocked | Immediate focus, pair programming if needed |
-| 002-112 | HIGH | No integration testing | Incremental restoration, temporary workarounds |
-| 002-113 | MEDIUM | CI quality gate fails | Automated tooling, one-time effort |
-| 002-114 | LOW | User confusion | Can be updated post-release if needed |
+| 001-012 | CRITICAL | No hardware communication | Immediate focus, follow ICD-001 spec exactly |
+| Hardware Test | HIGH | Cannot validate functionality | Use available Pico device for testing |
+| Integration Tests | MEDIUM | No automated testing | Update for simplified architecture |
+| Documentation | LOW | Outdated examples | Update after core functionality restored |
 
 ## Resource Allocation
 
 ### Immediate (Day 1-2)
-- **Primary Focus**: Issue 002-111 (Infinite Recursion)
-- **Approach**: Single developer, deep focus
-- **Support**: Code review from principal-code-reviewer agent
+- **Primary Focus**: Issue 001-012 (Raw REPL Protocol Fix)
+- **Approach**: Follow ICD-001 specification exactly
+- **Testing**: Use Raspberry Pi Pico at /dev/usb/tty-Board_in_FS_mode-e6614c311b7e6f35
 
 ### Short-term (Day 3-7)
 - **Parallel Work**: 
@@ -165,7 +168,7 @@ Once all critical issues are resolved:
 
 ## Notes
 
-**Critical Success Factor**: Issue 002-111 (Infinite Recursion) must be resolved first. No other work should proceed until CI is unblocked.
+**Critical Success Factor**: Issue 001-012 (Raw REPL Protocol) must be fixed first. No hardware testing can proceed until Python code execution works.
 
 **Communication**: Daily updates on progress, immediate escalation if blockers found.
 

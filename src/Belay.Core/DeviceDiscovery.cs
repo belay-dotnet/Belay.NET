@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.IO.Ports;
+using Microsoft.Extensions.Logging;
 
 namespace Belay.Core;
 
@@ -49,6 +50,7 @@ public static class DeviceDiscovery
         if (parts.Length != 2)
             return null;
 
-        return new DeviceConnection(DeviceConnection.ConnectionType.Serial, parts[1]);
+        var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance;
+        return new DeviceConnection(DeviceConnection.ConnectionType.Serial, parts[1], logger);
     }
 }
