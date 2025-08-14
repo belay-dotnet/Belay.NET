@@ -188,8 +188,11 @@ public sealed class ExecutorManager : IDisposable
     /// </summary>
     private void RegisterDefaultExecutors()
     {
-        // Register TaskExecutor as the primary executor
-        RegisterExecutor(new TaskExecutor());
+        // Register executors in priority order (highest priority first)
+        RegisterExecutor(new TaskExecutor());      // Priority 100
+        RegisterExecutor(new SetupExecutor());     // Priority 90
+        RegisterExecutor(new TeardownExecutor());  // Priority 80
+        RegisterExecutor(new ThreadExecutor());    // Priority 70
 
         logger.LogDebug("Registered default executors");
     }

@@ -32,7 +32,7 @@ public abstract class BaseExecutor : IExecutor
     public abstract bool CanHandle(MethodInfo method);
 
     /// <inheritdoc />
-    public async Task<T> ExecuteAsync<T>(ExecutionContext context, CancellationToken cancellationToken = default)
+    public virtual async Task<T> ExecuteAsync<T>(ExecutionContext context, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         

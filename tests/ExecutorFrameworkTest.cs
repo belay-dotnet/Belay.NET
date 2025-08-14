@@ -47,6 +47,103 @@ public class ExecutorFrameworkTest
         }
     }
 
+    public async Task<bool> TestSetupExecutorBasics()
+    {
+        try
+        {
+            // Test setup method with critical flag
+            var method = typeof(TestMethods).GetMethod(nameof(TestMethods.InitializeHardware))!;
+            var args = new object[] { };
+
+            // Execute the method
+            await executorFramework.ExecuteAsync<object>(method, args);
+
+            Console.WriteLine($"✅ SetupExecutor test passed");
+            Console.WriteLine($"✅ Generated Python: {mockDevice.LastExecutedCode}");
+            Console.WriteLine($"✅ Contains setup context: {mockDevice.LastExecutedCode.Contains("Setup method:")}");
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ SetupExecutor test failed: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> TestTeardownExecutorBasics()
+    {
+        try
+        {
+            // Test teardown method with error handling
+            var method = typeof(TestMethods).GetMethod(nameof(TestMethods.SaveState))!;
+            var args = new object[] { };
+
+            // Execute the method
+            await executorFramework.ExecuteAsync<object>(method, args);
+
+            Console.WriteLine($"✅ TeardownExecutor test passed");
+            Console.WriteLine($"✅ Generated Python: {mockDevice.LastExecutedCode}");
+            Console.WriteLine($"✅ Contains teardown context: {mockDevice.LastExecutedCode.Contains("Teardown method:")}");
+            Console.WriteLine($"✅ Contains error handling: {mockDevice.LastExecutedCode.Contains("try:")}");
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ TeardownExecutor test failed: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> TestThreadExecutorBasics()
+    {
+        try
+        {
+            // Test thread method with configuration
+            var method = typeof(TestMethods).GetMethod(nameof(TestMethods.StartSensorMonitoring))!;
+            var args = new object[] { 1000 };
+
+            // Execute the method
+            await executorFramework.ExecuteAsync<object>(method, args);
+
+            Console.WriteLine($"✅ ThreadExecutor test passed");
+            Console.WriteLine($"✅ Generated Python: {mockDevice.LastExecutedCode}");
+            Console.WriteLine($"✅ Contains thread context: {mockDevice.LastExecutedCode.Contains("Thread method:")}");
+            Console.WriteLine($"✅ Contains _thread usage: {mockDevice.LastExecutedCode.Contains("_thread.start_new_thread")}");
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ ThreadExecutor test failed: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<bool> TestAllExecutorTypes()
+    {
+        Console.WriteLine("🧪 Testing all executor types...");
+        
+        var taskResult = await TestTaskExecutorBasics();
+        var setupResult = await TestSetupExecutorBasics();
+        var teardownResult = await TestTeardownExecutorBasics(); 
+        var threadResult = await TestThreadExecutorBasics();
+        
+        var allPassed = taskResult && setupResult && teardownResult && threadResult;
+        
+        if (allPassed)
+        {
+            Console.WriteLine("🎉 All executor types working correctly!");
+        }
+        else
+        {
+            Console.WriteLine("❌ Some executor types failed");
+        }
+        
+        return allPassed;
+    }
+
     public void TestExecutorStatistics()
     {
         try
@@ -75,7 +172,7 @@ public class ExecutorFrameworkTest
 }
 
 /// <summary>
-/// Test methods decorated with various attributes for testing.
+/// Test methods decorated with various attributes for testing all executor types.
 /// </summary>
 public static class TestMethods
 {
@@ -91,6 +188,42 @@ public static class TestMethods
     {
         // This method would be converted to Python: device_info()
         return string.Empty;
+    }
+
+    [Setup(Order = 1, Critical = true)]
+    public static void InitializeHardware()
+    {
+        // This method would be converted to Python: hardware() with setup context
+    }
+
+    [Setup(Order = 2, TimeoutMs = 10000)]
+    public static void ConfigureSensors()
+    {
+        // This method would be converted to Python: sensors() with setup context
+    }
+
+    [Teardown(Order = 1, IgnoreErrors = false)]
+    public static void StopOperations()
+    {
+        // This method would be converted to Python: operations() with teardown context
+    }
+
+    [Teardown(Order = 2, IgnoreErrors = true)]
+    public static void SaveState()
+    {
+        // This method would be converted to Python: state() with teardown context and error handling
+    }
+
+    [Thread(Name = "sensor_monitor", AutoRestart = true, Priority = ThreadPriority.High)]
+    public static void StartSensorMonitoring(int intervalMs)
+    {
+        // This method would be converted to Python thread creation with monitoring wrapper
+    }
+
+    [Thread]
+    public static void StartBackgroundTask()
+    {
+        // This method would be converted to Python thread creation with auto-generated name
     }
 }
 
