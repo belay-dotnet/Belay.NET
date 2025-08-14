@@ -3,13 +3,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Belay.Core;
 
 public class ComprehensiveHardwareTest
 {
     private static readonly string[] TestDevices = {
         "/dev/usb/tty-USB_JTAG_serial_debug_unit-40:4C:CA:5B:20:94",   // ESP32C6
-        "/dev/usb/tty-STM32_STLink-066FFF303430484257255318"             // STM32WB55
+        "/dev/usb/tty-Board_in_FS_mode-a8100d7bd7092d6e"               // STM32WB55
     };
     
     public static async Task<int> Main(string[] args)

@@ -21,4 +21,9 @@ public class DeviceException : Exception
     /// <param name="message">The error message.</param>
     /// <param name="innerException">The inner exception.</param>
     public DeviceException(string message, Exception innerException) : base(message, innerException) { }
+
+    /// <summary>
+    /// Gets or sets the Python code that was being executed when the error occurred.
+    /// </summary>
+    public string? ExecutedCode { get; set; }
 }

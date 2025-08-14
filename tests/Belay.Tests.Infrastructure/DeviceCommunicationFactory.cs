@@ -24,7 +24,7 @@ public class DeviceCommunicationFactory {
         var connectionString = additionalArgs?.Length > 0 
             ? $"{micropythonPath} {string.Join(" ", additionalArgs)}"
             : micropythonPath;
-        return new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, connectionString);
+        return new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, connectionString, logger as ILogger<DeviceConnection> ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance);
     }
 }
 
