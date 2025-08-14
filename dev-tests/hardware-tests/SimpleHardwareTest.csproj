@@ -16,10 +16,10 @@
 
   <ItemGroup>
     <Reference Include="Belay.Core">
-      <HintPath>src\Belay.Core\bin\Debug\net8.0\Belay.Core.dll</HintPath>
+      <HintPath>..\..\src\Belay.Core\bin\Debug\net8.0\Belay.Core.dll</HintPath>
     </Reference>
     <Reference Include="Belay.Attributes">
-      <HintPath>src\Belay.Attributes\bin\Debug\net8.0\Belay.Attributes.dll</HintPath>
+      <HintPath>..\..\src\Belay.Attributes\bin\Debug\net8.0\Belay.Attributes.dll</HintPath>
     </Reference>
   </ItemGroup>
 

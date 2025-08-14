@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="src\Belay.Core\Belay.Core.csproj" />
+    <ProjectReference Include="..\..\src\Belay.Core\Belay.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,20 +22,20 @@
     <Compile Remove="docs\**" />
     <Compile Remove="examples\**" />
     <Compile Remove="archive\**" />
-    <Compile Remove="src\Belay.Extensions\**" />
-    <Compile Remove="src\Belay.Sync\**" />
+    <Compile Remove="..\..\src\Belay.Extensions\**" />
+    <Compile Remove="..\..\src\Belay.Sync\**" />
     <EmbeddedResource Remove="tests\**" />
     <EmbeddedResource Remove="docs\**" />
     <EmbeddedResource Remove="examples\**" />
     <EmbeddedResource Remove="archive\**" />
-    <EmbeddedResource Remove="src\Belay.Extensions\**" />
-    <EmbeddedResource Remove="src\Belay.Sync\**" />
+    <EmbeddedResource Remove="..\..\src\Belay.Extensions\**" />
+    <EmbeddedResource Remove="..\..\src\Belay.Sync\**" />
     <None Remove="tests\**" />
     <None Remove="docs\**" />
     <None Remove="examples\**" />
     <None Remove="archive\**" />
-    <None Remove="src\Belay.Extensions\**" />
-    <None Remove="src\Belay.Sync\**" />
+    <None Remove="..\..\src\Belay.Extensions\**" />
+    <None Remove="..\..\src\Belay.Sync\**" />
   </ItemGroup>
 
 </Project>

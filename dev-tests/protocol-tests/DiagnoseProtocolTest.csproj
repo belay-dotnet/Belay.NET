@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="src\Belay.Core\Belay.Core.csproj" />
+    <ProjectReference Include="..\..\src\Belay.Core\Belay.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

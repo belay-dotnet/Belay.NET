@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Belay.Core/Belay.Core.csproj" />
-    <ProjectReference Include="../../../src/Belay.Attributes/Belay.Attributes.csproj" />
+    <ProjectReference Include="../../src/Belay.Core/Belay.Core.csproj" />
+    <ProjectReference Include="../../src/Belay.Attributes/Belay.Attributes.csproj" />
   </ItemGroup>
 
 </Project>
