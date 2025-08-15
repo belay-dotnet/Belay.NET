@@ -1,17 +1,16 @@
 // Copyright (c) Belay.NET. All rights reserved.
 // Licensed under the MIT License.
 
+namespace Belay.Core;
+
 using System.Reflection;
 using Microsoft.Extensions.Logging;
-
-namespace Belay.Core;
 
 /// <summary>
 /// Direct executor that handles all attribute types via AttributeHandler.
 /// Replaces the complex executor hierarchy with a single, focused implementation.
 /// </summary>
-public sealed class DirectExecutor : IDisposable
-{
+public sealed class DirectExecutor : IDisposable {
     private readonly IDeviceConnection device;
     private readonly ILogger<DirectExecutor> logger;
     private bool disposed = false;
@@ -21,8 +20,7 @@ public sealed class DirectExecutor : IDisposable
     /// </summary>
     /// <param name="device">The device connection to execute on.</param>
     /// <param name="logger">Optional logger for diagnostic information.</param>
-    public DirectExecutor(IDeviceConnection device, ILogger<DirectExecutor>? logger = null)
-    {
+    public DirectExecutor(IDeviceConnection device, ILogger<DirectExecutor>? logger = null) {
         this.device = device ?? throw new ArgumentNullException(nameof(device));
         this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DirectExecutor>.Instance;
     }
@@ -35,18 +33,15 @@ public sealed class DirectExecutor : IDisposable
     /// <param name="args">The method arguments.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The result of the method execution.</returns>
-    public async Task<T> ExecuteAsync<T>(MethodInfo method, object[] args, CancellationToken cancellationToken = default)
-    {
+    public async Task<T> ExecuteAsync<T>(MethodInfo method, object[] args, CancellationToken cancellationToken = default) {
         this.ThrowIfDisposed();
-        
+
         this.logger.LogDebug("Executing method: {Method} with {ArgCount} arguments", method.Name, args.Length);
-        
-        try
-        {
+
+        try {
             return await AttributeHandler.ExecuteMethod<T>(this.device, method, args, cancellationToken);
         }
-        catch (Exception ex)
-        {
+        catch (Exception ex) {
             this.logger.LogError(ex, "Failed to execute method: {Method}", method.Name);
             throw;
         }
@@ -58,8 +53,8 @@ public sealed class DirectExecutor : IDisposable
     /// <param name="method">The method to execute.</param>
     /// <param name="args">The method arguments.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    public async Task ExecuteAsync(MethodInfo method, object[] args, CancellationToken cancellationToken = default)
-    {
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    public async Task ExecuteAsync(MethodInfo method, object[] args, CancellationToken cancellationToken = default) {
         await this.ExecuteAsync<string>(method, args, cancellationToken);
     }
 
@@ -70,12 +65,11 @@ public sealed class DirectExecutor : IDisposable
     /// <param name="pythonCode">The Python code to execute.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The result of the Python code execution.</returns>
-    public async Task<T> ExecutePythonAsync<T>(string pythonCode, CancellationToken cancellationToken = default)
-    {
+    public async Task<T> ExecutePythonAsync<T>(string pythonCode, CancellationToken cancellationToken = default) {
         this.ThrowIfDisposed();
-        
+
         this.logger.LogDebug("Executing Python code directly: {Code}", pythonCode);
-        
+
         return await this.device.ExecutePython<T>(pythonCode, cancellationToken);
     }
 
@@ -84,33 +78,32 @@ public sealed class DirectExecutor : IDisposable
     /// </summary>
     /// <param name="pythonCode">The Python code to execute.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
-    public async Task ExecutePythonAsync(string pythonCode, CancellationToken cancellationToken = default)
-    {
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+    public async Task ExecutePythonAsync(string pythonCode, CancellationToken cancellationToken = default) {
         await this.ExecutePythonAsync<string>(pythonCode, cancellationToken);
     }
 
     /// <summary>
     /// Clears any cached execution state.
     /// </summary>
-    public void ClearCache()
-    {
+    public void ClearCache() {
         SimpleCache.Clear();
         this.logger.LogDebug("Cleared execution cache");
     }
 
     /// <inheritdoc />
-    public void Dispose()
-    {
-        if (this.disposed)
+    public void Dispose() {
+        if (this.disposed) {
             return;
-            
+        }
+
         this.logger.LogDebug("Disposing DirectExecutor");
         this.disposed = true;
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (this.disposed)
+    private void ThrowIfDisposed() {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(DirectExecutor));
+        }
     }
 }

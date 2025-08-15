@@ -12,54 +12,49 @@ namespace Belay.Core.Tests;
 /// <summary>
 /// Unit tests for the AdaptiveChunkOptimizer class.
 /// </summary>
-public class AdaptiveChunkOptimizerTests
-{
+public class AdaptiveChunkOptimizerTests {
     private readonly ILogger logger = NullLogger.Instance;
 
     [Fact]
-    public void Constructor_WithValidParameters_InitializesCorrectly()
-    {
+    public void Constructor_WithValidParameters_InitializesCorrectly() {
         // Arrange
         const int initialChunkSize = 512;
 
         // Act
-        var optimizer = new AdaptiveChunkOptimizer(initialChunkSize, this.logger);
+        var optimizer = new AdaptiveChunkOptimizer(initialChunkSize, logger);
 
         // Assert
         Assert.Equal(initialChunkSize, optimizer.GetOptimalChunkSize());
     }
 
     [Fact]
-    public void Constructor_WithTooSmallChunkSize_ClampsToMinimum()
-    {
+    public void Constructor_WithTooSmallChunkSize_ClampsToMinimum() {
         // Arrange
         const int tooSmallChunkSize = 32; // Below minimum of 64
 
         // Act
-        var optimizer = new AdaptiveChunkOptimizer(tooSmallChunkSize, this.logger);
+        var optimizer = new AdaptiveChunkOptimizer(tooSmallChunkSize, logger);
 
         // Assert
         Assert.Equal(64, optimizer.GetOptimalChunkSize()); // Should be clamped to minimum
     }
 
     [Fact]
-    public void Constructor_WithTooLargeChunkSize_ClampsToMaximum()
-    {
+    public void Constructor_WithTooLargeChunkSize_ClampsToMaximum() {
         // Arrange
         const int tooLargeChunkSize = 8192; // Above maximum of 4096
 
         // Act
-        var optimizer = new AdaptiveChunkOptimizer(tooLargeChunkSize, this.logger);
+        var optimizer = new AdaptiveChunkOptimizer(tooLargeChunkSize, logger);
 
         // Assert
         Assert.Equal(4096, optimizer.GetOptimalChunkSize()); // Should be clamped to maximum
     }
 
     [Fact]
-    public void RecordTransfer_WithInvalidParameters_DoesNotCrash()
-    {
+    public void RecordTransfer_WithInvalidParameters_DoesNotCrash() {
         // Arrange
-        var optimizer = new AdaptiveChunkOptimizer(256, this.logger);
+        var optimizer = new AdaptiveChunkOptimizer(256, logger);
 
         // Act & Assert - should not throw
         optimizer.RecordTransfer(0, TimeSpan.FromMilliseconds(100)); // Zero bytes
@@ -68,10 +63,9 @@ public class AdaptiveChunkOptimizerTests
     }
 
     [Fact]
-    public void RecordTransfer_WithMultipleMeasurements_UpdatesStats()
-    {
+    public void RecordTransfer_WithMultipleMeasurements_UpdatesStats() {
         // Arrange
-        var optimizer = new AdaptiveChunkOptimizer(256, this.logger);
+        var optimizer = new AdaptiveChunkOptimizer(256, logger);
 
         // Act
         optimizer.RecordTransfer(256, TimeSpan.FromMilliseconds(100));
@@ -86,15 +80,13 @@ public class AdaptiveChunkOptimizerTests
     }
 
     [Fact]
-    public void RecordTransfer_WithImprovingPerformance_IncreasesChunkSize()
-    {
+    public void RecordTransfer_WithImprovingPerformance_IncreasesChunkSize() {
         // Arrange
-        var optimizer = new AdaptiveChunkOptimizer(256, this.logger);
+        var optimizer = new AdaptiveChunkOptimizer(256, logger);
         var initialChunkSize = optimizer.GetOptimalChunkSize();
 
         // Act - Record several transfers with improving performance
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             // Simulate improving performance (faster transfers)
             var duration = TimeSpan.FromMilliseconds(100 - i * 5); // Getting faster
             optimizer.RecordTransfer(256, duration);
@@ -106,22 +98,19 @@ public class AdaptiveChunkOptimizerTests
     }
 
     [Fact]
-    public void RecordTransfer_WithDegradingPerformance_DecreasesChunkSize()
-    {
+    public void RecordTransfer_WithDegradingPerformance_DecreasesChunkSize() {
         // Arrange
-        var optimizer = new AdaptiveChunkOptimizer(1024, this.logger); // Start with larger chunk
-        
+        var optimizer = new AdaptiveChunkOptimizer(1024, logger); // Start with larger chunk
+
         // First, establish a baseline with good performance
-        for (int i = 0; i < 5; i++)
-        {
+        for (int i = 0; i < 5; i++) {
             optimizer.RecordTransfer(1024, TimeSpan.FromMilliseconds(50));
         }
-        
+
         var initialChunkSize = optimizer.GetOptimalChunkSize();
 
         // Act - Record transfers with degrading performance
-        for (int i = 0; i < 10; i++)
-        {
+        for (int i = 0; i < 10; i++) {
             // Simulate degrading performance (slower transfers)
             var duration = TimeSpan.FromMilliseconds(200 + i * 50); // Getting slower
             optimizer.RecordTransfer(optimizer.GetOptimalChunkSize(), duration);
@@ -133,21 +122,17 @@ public class AdaptiveChunkOptimizerTests
     }
 
     [Fact]
-    public void RecordTransfer_ChunkSizeStaysWithinBounds()
-    {
+    public void RecordTransfer_ChunkSizeStaysWithinBounds() {
         // Arrange
-        var optimizer = new AdaptiveChunkOptimizer(256, this.logger);
+        var optimizer = new AdaptiveChunkOptimizer(256, logger);
 
         // Act - Record many transfers with extreme performance variations
-        for (int i = 0; i < 50; i++)
-        {
-            if (i % 2 == 0)
-            {
+        for (int i = 0; i < 50; i++) {
+            if (i % 2 == 0) {
                 // Very fast transfers
                 optimizer.RecordTransfer(optimizer.GetOptimalChunkSize(), TimeSpan.FromMilliseconds(1));
             }
-            else
-            {
+            else {
                 // Very slow transfers
                 optimizer.RecordTransfer(optimizer.GetOptimalChunkSize(), TimeSpan.FromMilliseconds(5000));
             }
@@ -160,11 +145,10 @@ public class AdaptiveChunkOptimizerTests
     }
 
     [Fact]
-    public void GetStats_ReturnsCorrectInitialValues()
-    {
+    public void GetStats_ReturnsCorrectInitialValues() {
         // Arrange
         const int initialChunkSize = 512;
-        var optimizer = new AdaptiveChunkOptimizer(initialChunkSize, this.logger);
+        var optimizer = new AdaptiveChunkOptimizer(initialChunkSize, logger);
 
         // Act
         var stats = optimizer.GetStats();
@@ -179,29 +163,24 @@ public class AdaptiveChunkOptimizerTests
     }
 
     [Fact]
-    public void ThreadSafety_ConcurrentAccess_DoesNotCrash()
-    {
+    public void ThreadSafety_ConcurrentAccess_DoesNotCrash() {
         // Arrange
-        var optimizer = new AdaptiveChunkOptimizer(256, this.logger);
+        var optimizer = new AdaptiveChunkOptimizer(256, logger);
         const int numberOfThreads = 10;
         const int transfersPerThread = 100;
 
         // Act
         var tasks = new Task[numberOfThreads];
-        for (int t = 0; t < numberOfThreads; t++)
-        {
-            tasks[t] = Task.Run(() =>
-            {
-                for (int i = 0; i < transfersPerThread; i++)
-                {
+        for (int t = 0; t < numberOfThreads; t++) {
+            tasks[t] = Task.Run(() => {
+                for (int i = 0; i < transfersPerThread; i++) {
                     // Simulate concurrent transfers with varying performance
                     var chunkSize = optimizer.GetOptimalChunkSize();
                     var duration = TimeSpan.FromMilliseconds(50 + (i % 100));
                     optimizer.RecordTransfer(chunkSize, duration);
-                    
+
                     // Occasionally read stats
-                    if (i % 10 == 0)
-                    {
+                    if (i % 10 == 0) {
                         _ = optimizer.GetStats();
                     }
                 }
@@ -210,7 +189,7 @@ public class AdaptiveChunkOptimizerTests
 
         // Assert - should complete without throwing
         Task.WaitAll(tasks);
-        
+
         // Verify final state is reasonable
         var finalStats = optimizer.GetStats();
         Assert.True(finalStats.MeasurementCount <= numberOfThreads * transfersPerThread);
@@ -218,26 +197,21 @@ public class AdaptiveChunkOptimizerTests
     }
 
     [Fact]
-    public void GetOptimalChunkSize_ThreadSafety_ConsistentReads()
-    {
+    public void GetOptimalChunkSize_ThreadSafety_ConsistentReads() {
         // Arrange
-        var optimizer = new AdaptiveChunkOptimizer(256, this.logger);
+        var optimizer = new AdaptiveChunkOptimizer(256, logger);
         const int numberOfReads = 1000;
 
         // Act - Read chunk size from multiple threads while recording transfers
-        var readTask = Task.Run(() =>
-        {
-            for (int i = 0; i < numberOfReads; i++)
-            {
+        var readTask = Task.Run(() => {
+            for (int i = 0; i < numberOfReads; i++) {
                 var chunkSize = optimizer.GetOptimalChunkSize();
                 Assert.True(chunkSize >= 64 && chunkSize <= 4096, $"Invalid chunk size: {chunkSize}");
             }
         });
 
-        var writeTask = Task.Run(() =>
-        {
-            for (int i = 0; i < numberOfReads / 10; i++)
-            {
+        var writeTask = Task.Run(() => {
+            for (int i = 0; i < numberOfReads / 10; i++) {
                 optimizer.RecordTransfer(256, TimeSpan.FromMilliseconds(50 + i));
             }
         });

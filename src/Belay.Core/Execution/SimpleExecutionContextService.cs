@@ -7,19 +7,15 @@ namespace Belay.Core.Execution;
 /// Simple execution context service implementation.
 /// Minimal implementation that provides no-op context management.
 /// </summary>
-public class SimpleExecutionContextService : IExecutionContextService
-{
+public class SimpleExecutionContextService : IExecutionContextService {
     /// <inheritdoc/>
-    public IDisposable SetContext(MethodExecutionContext context)
-    {
+    public IDisposable SetContext(MethodExecutionContext context) {
         // Return a no-op disposable for simplified implementation
         return new NoOpDisposable();
     }
 
-    private class NoOpDisposable : IDisposable
-    {
-        public void Dispose()
-        {
+    private class NoOpDisposable : IDisposable {
+        public void Dispose() {
             // No-op implementation
         }
     }

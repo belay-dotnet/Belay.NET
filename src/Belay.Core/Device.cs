@@ -87,7 +87,6 @@ public class Device : IDisposable {
 
         var executorLoggerFactory = loggerFactory ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
 
-
         // Use injected execution context service or create a simple default one
         this.executionContextService = executionContextService ?? new SimpleExecutionContextService();
 
@@ -155,7 +154,6 @@ public class Device : IDisposable {
     /// AttributeHandler for policy enforcement and SimpleCache for caching.
     /// </remarks>
     public DirectExecutor Executor => this.executor.Value;
-
 
     /// <summary>
     /// Connect to the MicroPython device and perform capability detection.
@@ -483,7 +481,6 @@ public class Device : IDisposable {
     public async Task ExecuteMethodAsync(System.Reflection.MethodInfo method, object? instance = null, object?[]? parameters = null, CancellationToken cancellationToken = default) {
         await this.ExecuteMethodAsync<object>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
     }
-
 
     /// <summary>
     /// Gets device identification information for cache key generation.

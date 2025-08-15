@@ -1,3 +1,6 @@
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
+
 namespace Belay.Core;
 
 /// <summary>
@@ -5,8 +8,7 @@ namespace Belay.Core;
 /// Focuses on essential operations without over-abstraction.
 /// See ICD-002 for complete specification.
 /// </summary>
-public interface IDeviceConnection : IDisposable
-{
+public interface IDeviceConnection : IDisposable {
     /// <summary>
     /// Executes Python code on the device and returns the raw string output.
     /// </summary>
@@ -30,6 +32,7 @@ public interface IDeviceConnection : IDisposable
     /// <param name="devicePath">The path on the device where to write the file.</param>
     /// <param name="data">The file data to write.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task WriteFile(string devicePath, byte[] data, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -45,6 +48,7 @@ public interface IDeviceConnection : IDisposable
     /// </summary>
     /// <param name="devicePath">The path on the device to delete.</param>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task DeleteFile(string devicePath, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -59,11 +63,13 @@ public interface IDeviceConnection : IDisposable
     /// Connects to the device.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task Connect(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Disconnects from the device.
     /// </summary>
+    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     Task Disconnect();
 
     /// <summary>

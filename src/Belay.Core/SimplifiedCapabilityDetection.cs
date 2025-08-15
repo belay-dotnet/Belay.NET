@@ -31,6 +31,7 @@ namespace Belay.Core {
         /// <summary>
         /// Detects device capabilities using a single batched Python script execution.
         /// </summary>
+        /// <param name="connection"></param>
         /// <param name="communication">The device communication interface.</param>
         /// <param name="logger">Optional logger for diagnostic output.</param>
         /// <param name="cancellationToken">Cancellation token for the operation.</param>
@@ -172,8 +173,7 @@ result
         /// <param name="logger">Optional logger for diagnostic output.</param>
         /// <returns>A parsed SimpleDeviceCapabilities object.</returns>
         private static SimpleDeviceCapabilities ParseDetectionResults(
-            Dictionary<string, object> detectionResult
-            ) {
+            Dictionary<string, object> detectionResult) {
             var capabilities = new SimpleDeviceCapabilities();
 
             // Parse platform information

@@ -1,14 +1,16 @@
-using System.Collections.Concurrent;
-using System.Linq;
+// Copyright (c) Belay.NET. All rights reserved.
+// Licensed under the MIT License.
 
 namespace Belay.Core;
+
+using System.Collections.Concurrent;
+using System.Linq;
 
 /// <summary>
 /// Simple, efficient caching implementation that replaces the complex caching infrastructure.
 /// Uses basic memoization suitable for MicroPython device operations.
 /// </summary>
-public static class SimpleCache
-{
+public static class SimpleCache {
     private static readonly ConcurrentDictionary<string, object> Cache = new();
     private const int MaxCacheEntries = 1000;
 
@@ -19,8 +21,7 @@ public static class SimpleCache
     /// <param name="key">The cache key.</param>
     /// <param name="factory">The factory function to create the value if not cached.</param>
     /// <returns>The cached or newly created value.</returns>
-    public static T GetOrCreate<T>(string key, Func<T> factory)
-    {
+    public static T GetOrCreate<T>(string key, Func<T> factory) {
         var typedKey = $"{typeof(T).FullName}::{key}";
         EnforceSizeLimit();
         return (T)Cache.GetOrAdd(typedKey, _ => factory()!);
@@ -34,14 +35,15 @@ public static class SimpleCache
     /// <param name="key">The cache key.</param>
     /// <param name="factory">The async factory function to create the value if not cached.</param>
     /// <returns>The cached or newly created value.</returns>
-    public static async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
-    {
+    public static async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory) {
         var typedKey = $"{typeof(T).FullName}::{key}";
         EnforceSizeLimit();
+
         // Use GetOrAdd with lazy evaluation to ensure single factory execution
-        var lazy = (Lazy<Task<T>>)Cache.GetOrAdd(typedKey, 
+        var lazy = (Lazy<Task<T>>)Cache.GetOrAdd(
+            typedKey,
             _ => new Lazy<Task<T>>(() => factory(), LazyThreadSafetyMode.ExecutionAndPublication));
-        
+
         return await lazy.Value;
     }
 
@@ -72,19 +74,15 @@ public static class SimpleCache
     /// <summary>
     /// Enforces the maximum cache size limit by removing entries when needed.
     /// </summary>
-    private static void EnforceSizeLimit()
-    {
-        while (Cache.Count >= MaxCacheEntries)
-        {
+    private static void EnforceSizeLimit() {
+        while (Cache.Count >= MaxCacheEntries) {
             // Remove entries until we're under the limit
             // Simple FIFO eviction - remove first found entry
             var firstKey = Cache.Keys.FirstOrDefault();
-            if (firstKey != null)
-            {
+            if (firstKey != null) {
                 Cache.TryRemove(firstKey, out _);
             }
-            else
-            {
+            else {
                 break; // Shouldn't happen, but prevent infinite loop
             }
         }

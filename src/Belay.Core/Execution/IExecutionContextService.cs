@@ -7,8 +7,7 @@ namespace Belay.Core.Execution;
 /// Simple execution context service interface.
 /// Minimal stub to replace the sophisticated execution context system.
 /// </summary>
-public interface IExecutionContextService
-{
+public interface IExecutionContextService {
     /// <summary>
     /// Sets the execution context for the current operation.
     /// </summary>

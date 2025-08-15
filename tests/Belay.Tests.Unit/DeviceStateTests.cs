@@ -18,7 +18,7 @@ public class DeviceStateTests {
     public void DeviceState_InitialState_IsCorrect() {
         // Arrange
         var deviceState = new DeviceState();
-        
+
         // Act & Assert
         deviceState.Capabilities.Should().BeNull("capabilities not detected yet");
         deviceState.CurrentOperation.Should().BeNull("no operation in progress");
@@ -30,10 +30,10 @@ public class DeviceStateTests {
     public void DeviceState_SetConnectionState_UpdatesCorrectly() {
         // Arrange
         var deviceState = new DeviceState();
-        
+
         // Act - Note: ConnectionState has internal setter, so this tests the initial state
         // In real usage, this would be set by DeviceConnection internally
-        
+
         // Assert
         deviceState.ConnectionState.Should().Be(DeviceConnectionState.Disconnected);
     }
@@ -43,17 +43,17 @@ public class DeviceStateTests {
         // Arrange
         var deviceState = new DeviceState();
         var operationName = "TestOperation";
-        
+
         // Act
         deviceState.SetCurrentOperation(operationName);
-        
+
         // Assert
         deviceState.CurrentOperation.Should().Be(operationName);
         deviceState.LastOperationTime.Should().BeNull("operation not completed yet");
-        
+
         // Act - Complete operation
         deviceState.CompleteOperation();
-        
+
         // Assert
         deviceState.CurrentOperation.Should().BeNull("operation completed");
         deviceState.LastOperationTime.Should().NotBeNull("operation completed with timestamp");

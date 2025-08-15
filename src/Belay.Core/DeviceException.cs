@@ -7,18 +7,23 @@ namespace Belay.Core;
 /// Simple exception for all device-related errors.
 /// Follows simple error handling pattern with minimal complexity.
 /// </summary>
-public class DeviceException : Exception
-{
+public class DeviceException : Exception {
     /// <summary>
     /// Initializes a new instance of the <see cref="DeviceException"/> class.
     /// </summary>
     /// <param name="message">The error message.</param>
-    public DeviceException(string message) : base(message) { }
+    public DeviceException(string message)
+        : base(message)
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeviceException"/> class.
     /// </summary>
     /// <param name="message">The error message.</param>
     /// <param name="innerException">The inner exception.</param>
-    public DeviceException(string message, Exception innerException) : base(message, innerException) { }
+    public DeviceException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
 }
