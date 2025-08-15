@@ -81,11 +81,6 @@ public class CommunicationConfiguration {
     /// Gets or sets the serial communication configuration.
     /// </summary>
     public SerialConfiguration Serial { get; set; } = new();
-
-    /// <summary>
-    /// Gets or sets the raw REPL configuration.
-    /// </summary>
-    public RawReplConfiguration RawRepl { get; set; } = new();
 }
 
 /// <summary>
@@ -106,26 +101,6 @@ public class SerialConfiguration {
     /// Gets or sets the write timeout in milliseconds.
     /// </summary>
     public int WriteTimeoutMs { get; set; } = 1000;
-}
-
-/// <summary>
-/// Configuration for Raw REPL protocol.
-/// </summary>
-public class RawReplConfiguration {
-    /// <summary>
-    /// Gets or sets the initialization timeout in milliseconds.
-    /// </summary>
-    public int InitializationTimeoutMs { get; set; } = 2000;
-
-    /// <summary>
-    /// Gets or sets the window size for flow control.
-    /// </summary>
-    public int WindowSize { get; set; } = 256;
-
-    /// <summary>
-    /// Gets or sets the maximum retries for protocol operations.
-    /// </summary>
-    public int MaxRetries { get; set; } = 3;
 }
 
 /// <summary>

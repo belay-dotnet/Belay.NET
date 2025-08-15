@@ -36,16 +36,7 @@ public class BelayConfigurationTests {
         Assert.That(config.SerialPortPatterns, Contains.Item("/dev/ttyACM*"));
     }
 
-    [Test]
-    public void RawReplConfiguration_DefaultValues_AreSetCorrectly() {
-        // Act
-        var config = new RawReplConfiguration();
-
-        // Assert
-        Assert.That(config.InitializationTimeoutMs, Is.EqualTo(2000));
-        Assert.That(config.WindowSize, Is.EqualTo(256));
-        Assert.That(config.MaxRetries, Is.EqualTo(3));
-    }
+    // RawReplConfiguration removed as part of simplified architecture
 
     [Test]
     public void ExceptionHandlingConfiguration_DefaultValues_AreSetCorrectly() {

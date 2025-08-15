@@ -88,8 +88,8 @@ public class Device : IDisposable {
         var executorLoggerFactory = loggerFactory ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
 
 
-        // Use injected execution context service or create a default one
-        this.executionContextService = executionContextService ?? new ExecutionContextService();
+        // Use injected execution context service or create a simple default one
+        this.executionContextService = executionContextService ?? new SimpleExecutionContextService();
 
         // Initialize device state with current connection state
         this.State.ConnectionState = this.connection.State;
