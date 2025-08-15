@@ -275,7 +275,7 @@ public sealed class DeviceConnection : IDisposable {
     }
 
     private async Task SendControlCharacterAsync(Stream stream, byte controlChar, CancellationToken cancellationToken) {
-        byte[] buffer =[controlChar];
+        byte[] buffer = [controlChar];
         await stream.WriteAsync(buffer, cancellationToken);
         await stream.FlushAsync(cancellationToken);
     }

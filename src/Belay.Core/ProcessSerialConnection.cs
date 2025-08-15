@@ -69,7 +69,7 @@ public sealed class ProcessSerialConnection : IDisposable {
                 FileName = "bash",
                 Arguments = $"-c \"echo -ne '{EscapeForBash(data)}' > {this.portPath}\"",
                 UseShellExecute = false,
-                RedirectStandardError = true
+                RedirectStandardError = true,
             },
         };
 
@@ -100,7 +100,7 @@ public sealed class ProcessSerialConnection : IDisposable {
                     Arguments = $"{timeoutMs / 1000.0:F1}s cat {this.portPath}",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
-                    RedirectStandardError = true
+                    RedirectStandardError = true,
                 },
             };
 
@@ -144,7 +144,7 @@ public sealed class ProcessSerialConnection : IDisposable {
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
                 },
             };
 

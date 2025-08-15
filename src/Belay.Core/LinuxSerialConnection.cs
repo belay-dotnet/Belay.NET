@@ -147,7 +147,7 @@ public sealed class LinuxSerialConnection : IDisposable {
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
                 },
             };
 

@@ -39,7 +39,7 @@ public class SimpleRawRepl : IDisposable {
     private const byte CTRLE = 0x05; // Raw-paste mode prefix
 
     // Raw-paste mode initialization sequence
-    private static readonly byte[] RAWPASTEINIT =[CTRLE, (byte)'A', CTRLA];
+    private static readonly byte[] RAWPASTEINIT = [CTRLE, (byte)'A', CTRLA];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SimpleRawRepl"/> class.
