@@ -138,7 +138,7 @@ jobs:
 
     - name: Check code formatting
       run: |
-        dotnet format --verify-no-changes --verbosity diagnostic
+        dotnet format Belay.NET.sln --verify-no-changes --verbosity diagnostic
 
     - name: Run static analysis
       run: |
