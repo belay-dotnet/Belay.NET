@@ -47,8 +47,8 @@ public class SimpleRawRepl : IDisposable {
     /// <param name="stream">The communication stream to the device.</param>
     /// <param name="logger">The logger for diagnostic information.</param>
     public SimpleRawRepl(Stream stream, ILogger logger) {
-        stream = stream ?? throw new ArgumentNullException(nameof(stream));
-        logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.stream = stream ?? throw new ArgumentNullException(nameof(stream));
+        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>

@@ -13,8 +13,7 @@ public class DeviceException : Exception {
     /// </summary>
     /// <param name="message">The error message.</param>
     public DeviceException(string message)
-        : base(message)
-    {
+        : base(message) {
     }
 
     /// <summary>
@@ -23,7 +22,6 @@ public class DeviceException : Exception {
     /// <param name="message">The error message.</param>
     /// <param name="innerException">The inner exception.</param>
     public DeviceException(string message, Exception innerException)
-        : base(message, innerException)
-    {
+        : base(message, innerException) {
     }
 }
