@@ -34,7 +34,7 @@ public sealed class DirectExecutor : IDisposable {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The result of the method execution.</returns>
     public async Task<T> ExecuteAsync<T>(MethodInfo method, object[] args, CancellationToken cancellationToken = default) {
-        this.ThrowIfDisposed();
+        ThrowIfDisposed();
 
         logger.LogDebug("Executing method: {Method} with {ArgCount} arguments", method.Name, args.Length);
 
@@ -55,7 +55,7 @@ public sealed class DirectExecutor : IDisposable {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task ExecuteAsync(MethodInfo method, object[] args, CancellationToken cancellationToken = default) {
-        await this.ExecuteAsync<string>(method, args, cancellationToken);
+        await ExecuteAsync<string>(method, args, cancellationToken);
     }
 
     /// <summary>
@@ -66,7 +66,7 @@ public sealed class DirectExecutor : IDisposable {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The result of the Python code execution.</returns>
     public async Task<T> ExecutePythonAsync<T>(string pythonCode, CancellationToken cancellationToken = default) {
-        this.ThrowIfDisposed();
+        ThrowIfDisposed();
 
         logger.LogDebug("Executing Python code directly: {Code}", pythonCode);
 
@@ -80,7 +80,7 @@ public sealed class DirectExecutor : IDisposable {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task ExecutePythonAsync(string pythonCode, CancellationToken cancellationToken = default) {
-        await this.ExecutePythonAsync<string>(pythonCode, cancellationToken);
+        await ExecutePythonAsync<string>(pythonCode, cancellationToken);
     }
 
     /// <summary>
@@ -93,16 +93,16 @@ public sealed class DirectExecutor : IDisposable {
 
     /// <inheritdoc />
     public void Dispose() {
-        if (this.disposed) {
+        if (disposed) {
             return;
         }
 
         logger.LogDebug("Disposing DirectExecutor");
-        this.disposed = true;
+        disposed = true;
     }
 
     private void ThrowIfDisposed() {
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(DirectExecutor));
         }
     }

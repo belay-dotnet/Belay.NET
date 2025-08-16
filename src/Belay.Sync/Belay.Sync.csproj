@@ -7,6 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);SA1101</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

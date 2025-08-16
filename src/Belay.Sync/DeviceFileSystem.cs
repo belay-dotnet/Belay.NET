@@ -26,8 +26,8 @@ namespace Belay.Sync {
         /// <param name="device">The device to perform file system operations on.</param>
         /// <param name="logger">Optional logger for diagnostic information.</param>
         public DeviceFileSystem(Device device, ILogger<DeviceFileSystem>? logger = null) {
-            device = device ?? throw new ArgumentNullException(nameof(device));
-            logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceFileSystem>.Instance;
+            this.device = device ?? throw new ArgumentNullException(nameof(device));
+            this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceFileSystem>.Instance;
         }
 
         /// <inheritdoc />
