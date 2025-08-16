@@ -61,11 +61,11 @@ public class SimpleRawRepl : IDisposable {
     /// <exception cref="InvalidOperationException">Thrown when concurrent operations are detected or object is disposed.</exception>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task EnterRawReplAsync(bool softReset = true, int timeoutSeconds = 10, CancellationToken cancellationToken = default) {
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(SimpleRawRepl));
         }
 
-        if (this.inRawRepl) {
+        if (inRawRepl) {
             return;
         }
 
@@ -80,7 +80,7 @@ public class SimpleRawRepl : IDisposable {
         await stream.FlushAsync(cancellationToken);
 
         // Step 2: Flush input (without relying on serial.flushInput())
-        await this.DrainInputAsync(cancellationToken);
+        await DrainInputAsync(cancellationToken);
 
         // Step 3: Send Ctrl-A to enter raw REPL (with carriage return as per official mpremote)
         await stream.WriteAsync(new byte[] { (byte)'\r', CTRLA }, cancellationToken);
@@ -91,7 +91,7 @@ public class SimpleRawRepl : IDisposable {
 
         if (softReset) {
             // Wait for raw REPL prompt - be flexible with line endings and content
-            var data = await this.ReadUntilAsync(">", timeoutSeconds, "prompt", cancellationToken);
+            var data = await ReadUntilAsync(">", timeoutSeconds, "prompt", cancellationToken);
             logger.LogDebug("Raw REPL prompt response: '{Data}' (length: {Length})", data.Replace("\r", "\\r").Replace("\n", "\\n"), data.Length);
 
             // Accept either full prompt or just the ">" indicating raw REPL mode
@@ -108,14 +108,14 @@ public class SimpleRawRepl : IDisposable {
             await stream.WriteAsync(new byte[] { CTRLD }, cancellationToken);
 
             // Wait for "soft reboot" - be flexible with line endings
-            data = await this.ReadUntilAsync("soft reboot", timeoutSeconds, "soft_reboot", cancellationToken);
+            data = await ReadUntilAsync("soft reboot", timeoutSeconds, "soft_reboot", cancellationToken);
             if (!data.Contains("soft reboot")) {
                 throw new DeviceException($"Could not perform soft reboot: {data}");
             }
         }
 
         // Wait for final raw REPL prompt - be flexible with line endings and content
-        var finalData = await this.ReadUntilAsync(">", timeoutSeconds, "prompt", cancellationToken);
+        var finalData = await ReadUntilAsync(">", timeoutSeconds, "prompt", cancellationToken);
 
         // Accept either full prompt or just the ">" indicating raw REPL mode
         bool isFinalRawReplMode = finalData.Contains("raw REPL; CTRL-B to exit") ||
@@ -127,8 +127,8 @@ public class SimpleRawRepl : IDisposable {
 
         logger.LogDebug("Final raw REPL mode confirmed (full prompt: {FullPrompt})", finalData.Contains("raw REPL; CTRL-B to exit"));
 
-        this.inRawRepl = true;
-        this.atPrompt = true; // We're now at a prompt after entering raw REPL
+        inRawRepl = true;
+        atPrompt = true; // We're now at a prompt after entering raw REPL
         logger.LogDebug("Successfully entered raw REPL mode");
     }
 
@@ -139,7 +139,7 @@ public class SimpleRawRepl : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task ExitRawReplAsync(CancellationToken cancellationToken = default) {
-        if (!this.inRawRepl) {
+        if (!inRawRepl) {
             return;
         }
 
@@ -149,8 +149,8 @@ public class SimpleRawRepl : IDisposable {
         await stream.WriteAsync(new byte[] { (byte)'\r', CTRLB }, cancellationToken);
         await stream.FlushAsync(cancellationToken);
 
-        this.inRawRepl = false;
-        this.atPrompt = false; // No longer at a raw REPL prompt
+        inRawRepl = false;
+        atPrompt = false; // No longer at a raw REPL prompt
         logger.LogDebug("Successfully exited raw REPL mode");
     }
 
@@ -169,7 +169,7 @@ public class SimpleRawRepl : IDisposable {
             throw new ArgumentNullException(nameof(command));
         }
 
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(SimpleRawRepl));
         }
 
@@ -182,7 +182,7 @@ public class SimpleRawRepl : IDisposable {
 
         this.operationInProgress = true;
         try {
-            if (!this.inRawRepl) {
+            if (!inRawRepl) {
                 await this.EnterRawReplAsync(true, timeoutSeconds, cancellationToken);
             }
 
@@ -192,7 +192,7 @@ public class SimpleRawRepl : IDisposable {
             bool usedRawPaste = false;
 
             // Only check for prompt if we're not already at one
-            if (!this.atPrompt) {
+            if (!atPrompt) {
                 logger.LogDebug("Not at prompt, checking device state");
 
                 // Add small delay to ensure device is ready
@@ -204,7 +204,7 @@ public class SimpleRawRepl : IDisposable {
                 await Task.Delay(100, cancellationToken);
 
                 // Check we have a prompt
-                var promptData = await this.ReadUntilAsync(">", 5, "prompt", cancellationToken);
+                var promptData = await ReadUntilAsync(">", 5, "prompt", cancellationToken);
                 logger.LogDebug(
                     "Prompt check response: '{Data}' (length: {Length})",
                     promptData.Replace("\r", "\\r").Replace("\n", "\\n"), promptData.Length);
@@ -213,17 +213,17 @@ public class SimpleRawRepl : IDisposable {
                     logger.LogWarning("No prompt found, attempting to re-enter raw REPL mode");
 
                     // Try to re-enter raw REPL mode
-                    this.inRawRepl = false;
-                    this.atPrompt = false;
+                    inRawRepl = false;
+                    atPrompt = false;
                     await this.EnterRawReplAsync(false, timeoutSeconds, cancellationToken);
 
                     // After re-entering, we should be at a prompt
-                    if (!this.atPrompt) {
+                    if (!atPrompt) {
                         throw new DeviceException("Failed to establish raw REPL prompt after re-entry");
                     }
                 }
                 else {
-                    this.atPrompt = true;
+                    atPrompt = true;
                 }
             }
             else {
@@ -246,7 +246,7 @@ public class SimpleRawRepl : IDisposable {
                     await this.EnterRawReplAsync(false, timeoutSeconds, cancellationToken);
 
                     // Re-check for prompt after re-entering
-                    var promptData2 = await this.ReadUntilAsync(">", 2, "prompt", cancellationToken);
+                    var promptData2 = await ReadUntilAsync(">", 2, "prompt", cancellationToken);
                     if (!promptData2.EndsWith('>')) {
                         throw new DeviceException($"No raw REPL prompt found after fallback: {promptData2}");
                     }
@@ -264,7 +264,7 @@ public class SimpleRawRepl : IDisposable {
 
     private async Task ExecuteWithRawPasteAsync(byte[] commandBytes, CancellationToken cancellationToken) {
         // Execution will consume the prompt
-        this.atPrompt = false;
+        atPrompt = false;
 
         // Try to enter raw-paste mode
         await stream.WriteAsync(RAWPASTEINIT, cancellationToken);
@@ -331,7 +331,7 @@ public class SimpleRawRepl : IDisposable {
         await stream.WriteAsync(new byte[] { CTRLD }, cancellationToken);
 
         // Wait for device to acknowledge end of data
-        var ackData = await this.ReadUntilAsync("\x04", 2, "file_transfer", cancellationToken);
+        var ackData = await ReadUntilAsync("\x04", 2, "file_transfer", cancellationToken);
         if (!ackData.EndsWith('\u0004')) {
             throw new DeviceException($"Could not complete raw paste: {ackData}");
         }
@@ -345,7 +345,7 @@ public class SimpleRawRepl : IDisposable {
 
     private async Task ExecuteWithStandardRawReplAsync(byte[] commandBytes, CancellationToken cancellationToken) {
         // Execution will consume the prompt
-        this.atPrompt = false;
+        atPrompt = false;
 
         // Write command using standard raw REPL, 256 bytes every 10ms
         for (int i = 0; i < commandBytes.Length; i += 256) {
@@ -373,7 +373,7 @@ public class SimpleRawRepl : IDisposable {
 
         // Read normal output until first EOF (follows official mpremote follow() method)
         logger.LogDebug("Reading normal output until first EOF...");
-        var normalOutput = await this.ReadUntilAsync("\x04", timeoutSeconds, "execution", cancellationToken);
+        var normalOutput = await ReadUntilAsync("\x04", timeoutSeconds, "execution", cancellationToken);
         logger.LogDebug("Normal output: '{Output}' (ends with EOF: {EndsWithEOF})", normalOutput, normalOutput.EndsWith('\u0004'));
 
         if (!normalOutput.EndsWith('\u0004')) {
@@ -384,7 +384,7 @@ public class SimpleRawRepl : IDisposable {
 
         // Read error output until second EOF
         logger.LogDebug("Reading error output until second EOF...");
-        var errorOutput = await this.ReadUntilAsync("\x04", timeoutSeconds, "execution", cancellationToken);
+        var errorOutput = await ReadUntilAsync("\x04", timeoutSeconds, "execution", cancellationToken);
         logger.LogDebug("Error output: '{Output}' (ends with EOF: {EndsWithEOF})", errorOutput, errorOutput.EndsWith('\u0004'));
 
         if (!errorOutput.EndsWith('\u0004')) {
@@ -395,14 +395,14 @@ public class SimpleRawRepl : IDisposable {
 
         // After execution, we should get a new prompt (">")
         logger.LogDebug("Waiting for prompt after execution...");
-        var promptAfterExec = await this.ReadUntilAsync(">", timeoutSeconds, "prompt", cancellationToken);
+        var promptAfterExec = await ReadUntilAsync(">", timeoutSeconds, "prompt", cancellationToken);
         if (promptAfterExec.EndsWith('>')) {
-            this.atPrompt = true;
+            atPrompt = true;
             logger.LogDebug("Received prompt after execution");
         }
         else {
             logger.LogWarning("No prompt received after execution: '{Data}'", promptAfterExec);
-            this.atPrompt = false;
+            atPrompt = false;
         }
 
         // Use enhanced error detection and classification
@@ -546,7 +546,7 @@ public class SimpleRawRepl : IDisposable {
     /// Any pending operations will be cancelled and the raw REPL state will be reset safely.
     /// </remarks>
     public void Dispose() {
-        if (this.disposed) {
+        if (disposed) {
             return;
         }
 
@@ -559,7 +559,7 @@ public class SimpleRawRepl : IDisposable {
             logger.LogWarning(ex, "Error during SimpleRawRepl disposal - cleanup may be incomplete");
         }
         finally {
-            this.disposed = true;
+            disposed = true;
             this.operationInProgress = false; // Reset operation flag
 
             // Don't dispose stream - caller owns it
@@ -567,7 +567,7 @@ public class SimpleRawRepl : IDisposable {
     }
 
     private void DisposeWithTimeout() {
-        if (!this.inRawRepl || !stream.CanWrite) {
+        if (!inRawRepl || !stream.CanWrite) {
             return;
         }
 
@@ -605,8 +605,8 @@ public class SimpleRawRepl : IDisposable {
         // Small delay to allow device to process the exit command
         await Task.Delay(50, cancellationToken);
 
-        this.inRawRepl = false;
-        this.atPrompt = false;
+        inRawRepl = false;
+        atPrompt = false;
     }
 
     private void ForceImmediateCleanup() {
@@ -621,8 +621,8 @@ public class SimpleRawRepl : IDisposable {
             // Ignore any errors during forced cleanup
         }
         finally {
-            this.inRawRepl = false;
-            this.atPrompt = false;
+            inRawRepl = false;
+            atPrompt = false;
         }
     }
 }
