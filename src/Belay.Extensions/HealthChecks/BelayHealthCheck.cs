@@ -22,8 +22,8 @@ public class BelayHealthCheck : IHealthCheck {
     public BelayHealthCheck(
         IDeviceFactory deviceFactory,
         ILogger<BelayHealthCheck> logger) {
-        this._deviceFactory = deviceFactory;
-        this._logger = logger;
+        _deviceFactory = deviceFactory;
+        _logger = logger;
     }
 
     /// <inheritdoc/>
@@ -33,7 +33,7 @@ public class BelayHealthCheck : IHealthCheck {
             var warnings = new List<string>();
 
             // Check device factory
-            if (this.CheckDeviceFactory(data, warnings)) {
+            if (CheckDeviceFactory(data, warnings)) {
                 data["device_factory"] = "healthy";
             }
             else {
@@ -46,15 +46,15 @@ public class BelayHealthCheck : IHealthCheck {
             data["architecture"] = "simplified"; // Indicate we're using simplified architecture
 
             if (warnings.Count == 0) {
-                this._logger.LogDebug("Belay health check passed");
+                _logger.LogDebug("Belay health check passed");
                 return Task.FromResult(HealthCheckResult.Healthy("Belay.NET components are healthy", data));
             }
 
-            this._logger.LogWarning("Belay health check passed with warnings: {Warnings}", string.Join(", ", warnings));
+            _logger.LogWarning("Belay health check passed with warnings: {Warnings}", string.Join(", ", warnings));
             return Task.FromResult(HealthCheckResult.Degraded("Belay.NET components are degraded", null, data));
         }
         catch (Exception ex) {
-            this._logger.LogError(ex, "Belay health check threw an exception");
+            _logger.LogError(ex, "Belay health check threw an exception");
             return Task.FromResult(HealthCheckResult.Unhealthy("Belay.NET health check failed with exception", ex));
         }
     }
@@ -63,11 +63,11 @@ public class BelayHealthCheck : IHealthCheck {
         _ = warnings; // Parameter reserved for future use
         try {
             // Basic factory availability check
-            data["device_factory_available"] = this._deviceFactory != null;
-            return this._deviceFactory != null;
+            data["device_factory_available"] = _deviceFactory != null;
+            return _deviceFactory != null;
         }
         catch (Exception ex) {
-            this._logger.LogWarning(ex, "Device factory health check failed");
+            _logger.LogWarning(ex, "Device factory health check failed");
             data["device_factory_error"] = ex.Message;
             return false;
         }
@@ -92,8 +92,8 @@ public class DeviceConnectivityHealthCheck : IHealthCheck {
         IDeviceFactory deviceFactory,
         ILogger<DeviceConnectivityHealthCheck> logger,
         string testPortOrPath) {
-        this._deviceFactory = deviceFactory;
-        this._logger = logger;
+        _deviceFactory = deviceFactory;
+        _logger = logger;
         this._testPortOrPath = testPortOrPath;
     }
 
@@ -112,8 +112,8 @@ public class DeviceConnectivityHealthCheck : IHealthCheck {
             using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
             var device = isSerialPort
-                ? this._deviceFactory.CreateSerialDevice(this._testPortOrPath)
-                : this._deviceFactory.CreateSubprocessDevice(this._testPortOrPath);
+                ? _deviceFactory.CreateSerialDevice(this._testPortOrPath)
+                : _deviceFactory.CreateSubprocessDevice(this._testPortOrPath);
 
             try {
                 // Attempt a simple connectivity test
@@ -122,23 +122,23 @@ public class DeviceConnectivityHealthCheck : IHealthCheck {
                 data["connectivity"] = "healthy";
                 data["connection_type"] = isSerialPort ? "serial" : "subprocess";
 
-                this._logger.LogDebug("Device connectivity check passed for {Target}", this._testPortOrPath);
+                _logger.LogDebug("Device connectivity check passed for {Target}", this._testPortOrPath);
                 return HealthCheckResult.Healthy($"Device {this._testPortOrPath} is accessible", data);
             }
             catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested) {
                 data["connectivity"] = "timeout";
-                this._logger.LogWarning("Device connectivity check timed out for {Target}", this._testPortOrPath);
+                _logger.LogWarning("Device connectivity check timed out for {Target}", this._testPortOrPath);
                 return HealthCheckResult.Degraded($"Device {this._testPortOrPath} connection timed out", null, data);
             }
             catch (Exception ex) {
                 data["connectivity"] = "failed";
                 data["error"] = ex.Message;
-                this._logger.LogWarning(ex, "Device connectivity check failed for {Target}", this._testPortOrPath);
+                _logger.LogWarning(ex, "Device connectivity check failed for {Target}", this._testPortOrPath);
                 return HealthCheckResult.Degraded($"Device {this._testPortOrPath} is not accessible", ex, data);
             }
         }
         catch (Exception ex) {
-            this._logger.LogError(ex, "Device connectivity health check threw an exception");
+            _logger.LogError(ex, "Device connectivity health check threw an exception");
             return HealthCheckResult.Unhealthy("Device connectivity health check failed with exception", ex);
         }
     }

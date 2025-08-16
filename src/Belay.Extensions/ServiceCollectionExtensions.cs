@@ -318,7 +318,7 @@ public class BelayHealthCheckOptions {
     /// <param name="timeoutSeconds">The timeout in seconds (default 10).</param>
     /// <returns>The options instance for chaining.</returns>
     public BelayHealthCheckOptions AddDeviceCheck(string name, string portOrPath, int timeoutSeconds = 10) {
-        this.DeviceHealthChecks.Add(new DeviceHealthCheckConfiguration {
+        DeviceHealthChecks.Add(new DeviceHealthCheckConfiguration {
             Name = name,
             PortOrPath = portOrPath,
             TimeoutSeconds = timeoutSeconds,
