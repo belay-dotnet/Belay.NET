@@ -174,16 +174,16 @@ public class SimpleRawRepl : IDisposable {
         }
 
         // Detect concurrent usage - this class is not thread-safe
-        if (this.operationInProgress) {
+        if (operationInProgress) {
             throw new InvalidOperationException(
                 "SimpleRawRepl does not support concurrent operations. " +
                 "Each DeviceConnection should use its own SimpleRawRepl instance for sequential operations only.");
         }
 
-        this.operationInProgress = true;
+        operationInProgress = true;
         try {
             if (!inRawRepl) {
-                await this.EnterRawReplAsync(true, timeoutSeconds, cancellationToken);
+                await EnterRawReplAsync(true, timeoutSeconds, cancellationToken);
             }
 
             logger.LogDebug("Executing command: {Command}", command);
@@ -215,7 +215,7 @@ public class SimpleRawRepl : IDisposable {
                     // Try to re-enter raw REPL mode
                     inRawRepl = false;
                     atPrompt = false;
-                    await this.EnterRawReplAsync(false, timeoutSeconds, cancellationToken);
+                    await EnterRawReplAsync(false, timeoutSeconds, cancellationToken);
 
                     // After re-entering, we should be at a prompt
                     if (!atPrompt) {
@@ -231,19 +231,19 @@ public class SimpleRawRepl : IDisposable {
             }
 
             // Try raw-paste mode first if enabled
-            if (this.useRawPaste) {
+            if (useRawPaste) {
                 try {
-                    await this.ExecuteWithRawPasteAsync(commandBytes, cancellationToken);
+                    await ExecuteWithRawPasteAsync(commandBytes, cancellationToken);
                     usedRawPaste = true;
-                    return await this.ReadExecutionResultAsync(timeoutSeconds, usedRawPaste, cancellationToken);
+                    return await ReadExecutionResultAsync(timeoutSeconds, usedRawPaste, cancellationToken);
                 }
                 catch (DeviceException ex) when (ex.Message.Contains("Raw-paste mode not supported")) {
                     logger.LogDebug("Raw-paste mode not supported, falling back to standard raw REPL");
-                    this.useRawPaste = false;
+                    useRawPaste = false;
 
                     // Need to get back to a clean prompt state before trying standard raw REPL
-                    await this.ExitRawReplAsync(cancellationToken);
-                    await this.EnterRawReplAsync(false, timeoutSeconds, cancellationToken);
+                    await ExitRawReplAsync(cancellationToken);
+                    await EnterRawReplAsync(false, timeoutSeconds, cancellationToken);
 
                     // Re-check for prompt after re-entering
                     var promptData2 = await ReadUntilAsync(">", 2, "prompt", cancellationToken);
@@ -254,11 +254,11 @@ public class SimpleRawRepl : IDisposable {
             }
 
             // Standard raw REPL execution
-            await this.ExecuteWithStandardRawReplAsync(commandBytes, cancellationToken);
-            return await this.ReadExecutionResultAsync(timeoutSeconds, usedRawPaste, cancellationToken);
+            await ExecuteWithStandardRawReplAsync(commandBytes, cancellationToken);
+            return await ReadExecutionResultAsync(timeoutSeconds, usedRawPaste, cancellationToken);
         }
         finally {
-            this.operationInProgress = false;
+            operationInProgress = false;
         }
     }
 
@@ -280,7 +280,7 @@ public class SimpleRawRepl : IDisposable {
         }
         else if (response[0] == (byte)'R' && response[1] == 0x01) {
             // Device supports raw-paste mode
-            await this.RawPasteWriteAsync(commandBytes, cancellationToken);
+            await RawPasteWriteAsync(commandBytes, cancellationToken);
         }
         else {
             // Device doesn't understand raw-paste, disable it and fall back
@@ -440,7 +440,7 @@ public class SimpleRawRepl : IDisposable {
         var timeout = TimeSpan.FromSeconds(timeoutSeconds);
 
         // Adaptive timeout based on operation type and data received
-        var adaptiveTimeout = this.GetAdaptiveTimeout(operationType, timeoutSeconds);
+        var adaptiveTimeout = GetAdaptiveTimeout(operationType, timeoutSeconds);
         var actualTimeout = adaptiveTimeout ?? timeout;
 
         logger.LogTrace(
@@ -452,7 +452,7 @@ public class SimpleRawRepl : IDisposable {
 
             try {
                 // Use adaptive read timeout based on operation type
-                var readTimeoutMs = this.GetReadTimeoutForOperation(operationType);
+                var readTimeoutMs = GetReadTimeoutForOperation(operationType);
                 using var readCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 readCts.CancelAfter(TimeSpan.FromMilliseconds(readTimeoutMs));
 
@@ -480,7 +480,7 @@ public class SimpleRawRepl : IDisposable {
             }
             catch (OperationCanceledException) {
                 // Short timeout expired, continue reading with adaptive delay
-                var delayMs = this.GetRetryDelayForOperation(operationType);
+                var delayMs = GetRetryDelayForOperation(operationType);
                 await Task.Delay(delayMs, cancellationToken);
             }
         }
@@ -552,7 +552,7 @@ public class SimpleRawRepl : IDisposable {
 
         try {
             // Use timeout-protected cleanup to prevent hanging indefinitely
-            this.DisposeWithTimeout();
+            DisposeWithTimeout();
         }
         catch (Exception ex) {
             // Log disposal errors for diagnostics but don't throw
@@ -560,7 +560,7 @@ public class SimpleRawRepl : IDisposable {
         }
         finally {
             disposed = true;
-            this.operationInProgress = false; // Reset operation flag
+            operationInProgress = false; // Reset operation flag
 
             // Don't dispose stream - caller owns it
         }
@@ -576,7 +576,7 @@ public class SimpleRawRepl : IDisposable {
 
         try {
             // Attempt graceful exit from raw REPL mode
-            var exitTask = this.ExitRawReplGracefullyAsync(cleanupCts.Token);
+            var exitTask = ExitRawReplGracefullyAsync(cleanupCts.Token);
 
             // Wait for completion with timeout protection
             exitTask.Wait(cleanupCts.Token);
@@ -587,13 +587,13 @@ public class SimpleRawRepl : IDisposable {
             logger.LogWarning("Raw REPL exit timed out during disposal - forcing synchronous cleanup");
 
             // Fallback to immediate synchronous cleanup if async approach times out
-            this.ForceImmediateCleanup();
+            ForceImmediateCleanup();
         }
         catch (Exception ex) {
             logger.LogWarning(ex, "Graceful raw REPL exit failed during disposal - attempting immediate cleanup");
 
             // Fallback to immediate cleanup if graceful exit fails
-            this.ForceImmediateCleanup();
+            ForceImmediateCleanup();
         }
     }
 
