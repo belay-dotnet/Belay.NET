@@ -39,9 +39,9 @@ internal class AdaptiveChunkOptimizer {
     /// <param name="logger">The logger for diagnostics.</param>
     /// <exception cref="ArgumentNullException">Thrown when logger is null.</exception>
     public AdaptiveChunkOptimizer(int initialChunkSize, ILogger logger) {
-        logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        initialChunkSize = Math.Max(MINCHUNKSIZE, Math.Min(initialChunkSize, MAXCHUNKSIZE));
-        currentChunkSize = initialChunkSize;
+        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        this.initialChunkSize = Math.Max(MINCHUNKSIZE, Math.Min(initialChunkSize, MAXCHUNKSIZE));
+        this.currentChunkSize = this.initialChunkSize;
 
         logger.LogDebug("Initialized adaptive chunk optimizer with initial size: {InitialSize} bytes", currentChunkSize);
     }

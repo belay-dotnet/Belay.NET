@@ -21,8 +21,8 @@ public sealed class DirectExecutor : IDisposable {
     /// <param name="device">The device connection to execute on.</param>
     /// <param name="logger">Optional logger for diagnostic information.</param>
     public DirectExecutor(IDeviceConnection device, ILogger<DirectExecutor>? logger = null) {
-        device = device ?? throw new ArgumentNullException(nameof(device));
-        logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DirectExecutor>.Instance;
+        this.device = device ?? throw new ArgumentNullException(nameof(device));
+        this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DirectExecutor>.Instance;
     }
 
     /// <summary>
