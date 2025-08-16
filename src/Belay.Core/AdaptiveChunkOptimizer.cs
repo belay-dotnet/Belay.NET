@@ -41,7 +41,7 @@ internal class AdaptiveChunkOptimizer {
     public AdaptiveChunkOptimizer(int initialChunkSize, ILogger logger) {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.initialChunkSize = Math.Max(MINCHUNKSIZE, Math.Min(initialChunkSize, MAXCHUNKSIZE));
-        this.currentChunkSize = this.initialChunkSize;
+        currentChunkSize = this.initialChunkSize;
 
         logger.LogDebug("Initialized adaptive chunk optimizer with initial size: {InitialSize} bytes", currentChunkSize);
     }

@@ -269,8 +269,8 @@ public sealed class SetupAttribute : Attribute {
     public override string ToString() {
         var parts = new List<string>();
 
-        if (this.Order != 0) {
-            parts.Add($"Order={this.Order}");
+        if (Order != 0) {
+            parts.Add($"Order={Order}");
         }
 
         if (!this.Critical) {

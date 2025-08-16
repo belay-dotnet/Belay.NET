@@ -49,8 +49,8 @@ public sealed class DeviceConnection : IDisposable {
     /// <param name="connectionString">The connection string (port name or executable path).</param>
     /// <param name="logger">The logger instance.</param>
     public DeviceConnection(ConnectionType type, string connectionString, ILogger<DeviceConnection> logger) {
-        this.Type = type;
-        this.ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+        Type = type;
+        ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 

@@ -362,8 +362,8 @@ public sealed class ThreadAttribute : Attribute {
             parts.Add("AutoRestart=true");
         }
 
-        if (this.Priority != ThreadPriority.Normal) {
-            parts.Add($"Priority={this.Priority}");
+        if (Priority != ThreadPriority.Normal) {
+            parts.Add($"Priority={Priority}");
         }
 
         if (this.MaxRuntimeMs.HasValue) {

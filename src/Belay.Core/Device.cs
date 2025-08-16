@@ -95,7 +95,7 @@ public class Device : IDisposable {
 
         // Initialize single direct executor using AttributeHandler
         var deviceConnection = new SimplifiedDevice(connection, executorLoggerFactory.CreateLogger<SimplifiedDevice>());
-        this.executor = new Lazy<DirectExecutor>(() => new DirectExecutor(deviceConnection, executorLoggerFactory.CreateLogger<DirectExecutor>()));
+        executor = new Lazy<DirectExecutor>(() => new DirectExecutor(deviceConnection, executorLoggerFactory.CreateLogger<DirectExecutor>()));
     }
 
     /// <summary>
