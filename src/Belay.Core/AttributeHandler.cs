@@ -6,6 +6,7 @@ namespace Belay.Core;
 using System.Reflection;
 using System.Text;
 using Belay.Attributes;
+using Belay.Core.Security;
 
 /// <summary>
 /// Simple attribute handler that replaces the complex executor hierarchy.
@@ -114,19 +115,24 @@ public static class AttributeHandler {
     }
 
     private static string SubstituteParameters(string pythonCode, MethodInfo method, object[] args) {
-        var result = pythonCode;
+        var codeAttr = method.GetCustomAttribute<PythonCodeAttribute>();
+        if (codeAttr?.EnableParameterSubstitution != true) {
+            return pythonCode;
+        }
+
         var parameters = method.GetParameters();
+        var paramDict = new Dictionary<string, object?>();
 
         for (int i = 0; i < parameters.Length && i < args.Length; i++) {
             var paramName = parameters[i].Name!;
-            var argValue = FormatPythonValue(args[i]);
-
-            // Replace parameter placeholders
-            result = result.Replace($"{{{paramName}}}", argValue);
-            result = result.Replace($"${paramName}", argValue);
+            if (!InputValidator.IsValidParameterName(paramName)) {
+                throw new ArgumentException($"Invalid parameter name for Python code substitution: {paramName}", nameof(method));
+            }
+            paramDict[paramName] = args[i];
         }
 
-        return result;
+        // Use secure template substitution from InputValidator
+        return InputValidator.CreateSafeCodeFromTemplate(pythonCode, paramDict);
     }
 
     private static string GenerateTaskCall(MethodInfo method, object[] args, TaskAttribute? taskAttr) {
@@ -170,10 +176,14 @@ public static class AttributeHandler {
     private static string FormatPythonValue(object? value) {
         return value switch {
             null => "None",
-            string s => $"'{s.Replace("'", "\\'")}'",
             bool b => b ? "True" : "False",
-            char c => $"'{c}'",
-            _ => value.ToString()!,
+            string s => $"'{InputValidator.SanitizePythonString(s)}'",
+            char c => $"'{InputValidator.SanitizePythonString(c.ToString())}'",
+            byte or sbyte or short or ushort or int or uint or long or ulong => value.ToString()!,
+            float f => f.ToString("G", System.Globalization.CultureInfo.InvariantCulture),
+            double d => d.ToString("G", System.Globalization.CultureInfo.InvariantCulture),
+            decimal m => m.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            _ => $"'{InputValidator.SanitizePythonString(value.ToString()!)}'",
         };
     }
 

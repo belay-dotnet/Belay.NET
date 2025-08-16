@@ -7,6 +7,7 @@ using System.IO.Ports;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Belay.Core.Security;
 
 /// <summary>
 /// Unified device connection that handles both serial and subprocess communication.
@@ -122,12 +123,33 @@ public sealed class DeviceConnection : IDisposable {
 
     /// <summary>
     /// Executes Python code on the device using sophisticated adaptive Raw REPL protocol.
+    /// Includes comprehensive input validation and security checks to prevent code injection.
     /// </summary>
     /// <param name="code">The Python code to execute.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The execution result.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when code is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when code fails security validation.</exception>
+    /// <exception cref="DeviceException">Thrown when device execution fails.</exception>
     public async Task<string> ExecuteAsync(string code, CancellationToken cancellationToken = default) {
+        if (code == null) {
+            throw new ArgumentNullException(nameof(code));
+        }
+
         try {
+            // Perform security validation before execution
+            var validation = InputValidator.ValidateCode(code, allowFileOperations: true, allowNetworking: false);
+            if (!validation.IsValid) {
+                logger.LogWarning("Code execution blocked due to security validation failure: {Reason}", validation.FailureReason);
+                throw new ArgumentException($"Code failed security validation: {validation.FailureReason}", nameof(code));
+            }
+
+            // Log security concerns for medium/high risk code that's still allowed
+            if (validation.RiskLevel >= InputValidator.SecurityRiskLevel.Medium) {
+                logger.LogWarning("Executing code with {RiskLevel} security risk. Concerns: {Concerns}", 
+                    validation.RiskLevel, string.Join(", ", validation.SecurityConcerns));
+            }
+
             logger.LogDebug("Executing code: {Code}", code);
 
             // Use simplified raw REPL protocol for all device types
@@ -527,19 +549,12 @@ public sealed class DeviceConnection : IDisposable {
 
     /// <summary>
     /// Escapes a string for safe use in Python code by escaping backslashes and single quotes.
+    /// Uses enhanced security sanitization to prevent injection attacks.
     /// </summary>
     /// <param name="input">The string to escape.</param>
     /// <returns>The escaped string safe for use in Python string literals.</returns>
     private static string EscapePythonString(string input) {
-        if (string.IsNullOrEmpty(input)) {
-            return input;
-        }
-
-        return input.Replace("\\", "\\\\")
-                   .Replace("'", "\\'")
-                   .Replace("\r", "\\r")
-                   .Replace("\n", "\\n")
-                   .Replace("\t", "\\t");
+        return InputValidator.SanitizePythonString(input, useDoubleQuotes: false);
     }
 
     /// <inheritdoc />
