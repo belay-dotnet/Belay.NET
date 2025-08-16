@@ -94,26 +94,26 @@ public class DeviceConnectivityHealthCheck : IHealthCheck {
         string testPortOrPath) {
         _deviceFactory = deviceFactory;
         _logger = logger;
-        this._testPortOrPath = testPortOrPath;
+        _testPortOrPath = testPortOrPath;
     }
 
     /// <inheritdoc/>
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default) {
         try {
             var data = new Dictionary<string, object> {
-                ["test_target"] = this._testPortOrPath,
+                ["test_target"] = _testPortOrPath,
                 ["check_timestamp"] = DateTimeOffset.UtcNow,
             };
 
             // Determine if this is a serial port or executable path
-            var isSerialPort = this._testPortOrPath.StartsWith("COM") || this._testPortOrPath.StartsWith("/dev/");
+            var isSerialPort = _testPortOrPath.StartsWith("COM") || _testPortOrPath.StartsWith("/dev/");
 
             using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
             var device = isSerialPort
-                ? _deviceFactory.CreateSerialDevice(this._testPortOrPath)
-                : _deviceFactory.CreateSubprocessDevice(this._testPortOrPath);
+                ? _deviceFactory.CreateSerialDevice(_testPortOrPath)
+                : _deviceFactory.CreateSubprocessDevice(_testPortOrPath);
 
             try {
                 // Attempt a simple connectivity test
@@ -122,19 +122,19 @@ public class DeviceConnectivityHealthCheck : IHealthCheck {
                 data["connectivity"] = "healthy";
                 data["connection_type"] = isSerialPort ? "serial" : "subprocess";
 
-                _logger.LogDebug("Device connectivity check passed for {Target}", this._testPortOrPath);
-                return HealthCheckResult.Healthy($"Device {this._testPortOrPath} is accessible", data);
+                _logger.LogDebug("Device connectivity check passed for {Target}", _testPortOrPath);
+                return HealthCheckResult.Healthy($"Device {_testPortOrPath} is accessible", data);
             }
             catch (OperationCanceledException) when (timeoutCts.Token.IsCancellationRequested) {
                 data["connectivity"] = "timeout";
-                _logger.LogWarning("Device connectivity check timed out for {Target}", this._testPortOrPath);
-                return HealthCheckResult.Degraded($"Device {this._testPortOrPath} connection timed out", null, data);
+                _logger.LogWarning("Device connectivity check timed out for {Target}", _testPortOrPath);
+                return HealthCheckResult.Degraded($"Device {_testPortOrPath} connection timed out", null, data);
             }
             catch (Exception ex) {
                 data["connectivity"] = "failed";
                 data["error"] = ex.Message;
-                _logger.LogWarning(ex, "Device connectivity check failed for {Target}", this._testPortOrPath);
-                return HealthCheckResult.Degraded($"Device {this._testPortOrPath} is not accessible", ex, data);
+                _logger.LogWarning(ex, "Device connectivity check failed for {Target}", _testPortOrPath);
+                return HealthCheckResult.Degraded($"Device {_testPortOrPath} is not accessible", ex, data);
             }
         }
         catch (Exception ex) {

@@ -176,7 +176,7 @@ public sealed class LinuxSerialConnection : IDisposable {
             return;
         }
 
-        this.Close();
+        Close();
         disposed = true;
     }
 }

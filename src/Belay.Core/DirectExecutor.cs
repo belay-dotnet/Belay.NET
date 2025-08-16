@@ -21,8 +21,8 @@ public sealed class DirectExecutor : IDisposable {
     /// <param name="device">The device connection to execute on.</param>
     /// <param name="logger">Optional logger for diagnostic information.</param>
     public DirectExecutor(IDeviceConnection device, ILogger<DirectExecutor>? logger = null) {
-        this.device = device ?? throw new ArgumentNullException(nameof(device));
-        this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DirectExecutor>.Instance;
+        device = device ?? throw new ArgumentNullException(nameof(device));
+        logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DirectExecutor>.Instance;
     }
 
     /// <summary>
@@ -36,13 +36,13 @@ public sealed class DirectExecutor : IDisposable {
     public async Task<T> ExecuteAsync<T>(MethodInfo method, object[] args, CancellationToken cancellationToken = default) {
         this.ThrowIfDisposed();
 
-        this.logger.LogDebug("Executing method: {Method} with {ArgCount} arguments", method.Name, args.Length);
+        logger.LogDebug("Executing method: {Method} with {ArgCount} arguments", method.Name, args.Length);
 
         try {
-            return await AttributeHandler.ExecuteMethod<T>(this.device, method, args, cancellationToken);
+            return await AttributeHandler.ExecuteMethod<T>(device, method, args, cancellationToken);
         }
         catch (Exception ex) {
-            this.logger.LogError(ex, "Failed to execute method: {Method}", method.Name);
+            logger.LogError(ex, "Failed to execute method: {Method}", method.Name);
             throw;
         }
     }
@@ -68,9 +68,9 @@ public sealed class DirectExecutor : IDisposable {
     public async Task<T> ExecutePythonAsync<T>(string pythonCode, CancellationToken cancellationToken = default) {
         this.ThrowIfDisposed();
 
-        this.logger.LogDebug("Executing Python code directly: {Code}", pythonCode);
+        logger.LogDebug("Executing Python code directly: {Code}", pythonCode);
 
-        return await this.device.ExecutePython<T>(pythonCode, cancellationToken);
+        return await device.ExecutePython<T>(pythonCode, cancellationToken);
     }
 
     /// <summary>
@@ -88,7 +88,7 @@ public sealed class DirectExecutor : IDisposable {
     /// </summary>
     public void ClearCache() {
         SimpleCache.Clear();
-        this.logger.LogDebug("Cleared execution cache");
+        logger.LogDebug("Cleared execution cache");
     }
 
     /// <inheritdoc />
@@ -97,7 +97,7 @@ public sealed class DirectExecutor : IDisposable {
             return;
         }
 
-        this.logger.LogDebug("Disposing DirectExecutor");
+        logger.LogDebug("Disposing DirectExecutor");
         this.disposed = true;
     }
 
