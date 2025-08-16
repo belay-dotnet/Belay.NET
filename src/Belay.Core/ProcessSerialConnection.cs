@@ -180,7 +180,7 @@ public sealed class ProcessSerialConnection : IDisposable {
             return;
         }
 
-        this.Close();
+        Close();
         disposed = true;
     }
 }
