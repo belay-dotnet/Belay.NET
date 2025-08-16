@@ -74,12 +74,12 @@ public class Device : IDisposable {
     /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
     /// <param name="executionContextService">Optional execution context service for secure method detection.</param>
     public Device(DeviceConnection connection, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null, IExecutionContextService? executionContextService = null) {
-        this.connection = connection ?? throw new ArgumentNullException(nameof(connection));
-        this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Device>.Instance;
+        connection = connection ?? throw new ArgumentNullException(nameof(connection));
+        logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Device>.Instance;
 
         // Forward events from connection layer
-        this.connection.OutputReceived += (sender, args) => this.OutputReceived?.Invoke(this, args);
-        this.connection.StateChanged += (sender, args) => {
+        connection.OutputReceived += (sender, args) => this.OutputReceived?.Invoke(this, args);
+        connection.StateChanged += (sender, args) => {
             // Update device state when connection state changes
             this.State.ConnectionState = args.NewState;
             this.StateChanged?.Invoke(this, args);
@@ -91,10 +91,10 @@ public class Device : IDisposable {
         this.executionContextService = executionContextService ?? new SimpleExecutionContextService();
 
         // Initialize device state with current connection state
-        this.State.ConnectionState = this.connection.State;
+        this.State.ConnectionState = connection.State;
 
         // Initialize single direct executor using AttributeHandler
-        var deviceConnection = new SimplifiedDevice(this.connection, executorLoggerFactory.CreateLogger<SimplifiedDevice>());
+        var deviceConnection = new SimplifiedDevice(connection, executorLoggerFactory.CreateLogger<SimplifiedDevice>());
         this.executor = new Lazy<DirectExecutor>(() => new DirectExecutor(deviceConnection, executorLoggerFactory.CreateLogger<DirectExecutor>()));
     }
 
@@ -115,7 +115,7 @@ public class Device : IDisposable {
     /// This property is maintained for backward compatibility. Use the State property
     /// for accessing the full device state including capabilities and operation tracking.
     /// </remarks>
-    public DeviceConnectionState ConnectionState => this.connection.State;
+    public DeviceConnectionState ConnectionState => connection.State;
 
     /// <summary>
     /// Gets the device state including capabilities, current operations, and connection status.
@@ -143,7 +143,7 @@ public class Device : IDisposable {
     /// Gets the connection interface for this device.
     /// Internal use for executors and session management.
     /// </summary>
-    internal DeviceConnection Connection => this.connection;
+    internal DeviceConnection Connection => connection;
 
     /// <summary>
     /// Gets the direct executor that handles all attribute types via AttributeHandler.
@@ -178,36 +178,36 @@ public class Device : IDisposable {
     /// </code>
     /// </example>
     public async Task ConnectAsync(CancellationToken cancellationToken = default) {
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
-        this.logger.LogDebug("Connecting to device");
+        logger.LogDebug("Connecting to device");
         this.State.SetCurrentOperation("Connect");
 
         try {
-            await this.connection.ConnectAsync(cancellationToken);
+            await connection.ConnectAsync(cancellationToken);
 
             // Update state after successful connection
-            this.State.ConnectionState = this.connection.State;
+            this.State.ConnectionState = connection.State;
 
-            this.logger.LogInformation("Successfully connected to device, performing capability detection");
+            logger.LogInformation("Successfully connected to device, performing capability detection");
 
             // Perform fast capability detection using batched approach
             try {
                 this.State.SetCurrentOperation("CapabilityDetection");
                 this.State.Capabilities = await SimplifiedCapabilityDetection.DetectAsync(
-                    this.connection, this.logger, cancellationToken);
-                this.logger.LogDebug("Capability detection completed: {Capabilities}", this.State.Capabilities);
+                    connection, logger, cancellationToken);
+                logger.LogDebug("Capability detection completed: {Capabilities}", this.State.Capabilities);
             }
             catch (Exception ex) {
-                this.logger.LogWarning(ex, "Capability detection failed, device will work with limited functionality");
+                logger.LogWarning(ex, "Capability detection failed, device will work with limited functionality");
 
                 // Create minimal capabilities to indicate detection was attempted
                 this.State.Capabilities = new SimpleDeviceCapabilities { DetectionComplete = true };
             }
 
-            this.logger.LogInformation("Device connection and initialization completed successfully");
+            logger.LogInformation("Device connection and initialization completed successfully");
         }
         finally {
             this.State.CompleteOperation();
@@ -220,11 +220,11 @@ public class Device : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task DisconnectAsync(CancellationToken cancellationToken = default) {
-        if (this.disposed) {
+        if (disposed) {
             return;
         }
 
-        this.logger.LogDebug("Disconnecting from device");
+        logger.LogDebug("Disconnecting from device");
 
         // Execute teardown cleanup before disconnecting
         try {
@@ -232,12 +232,12 @@ public class Device : IDisposable {
             await this.ExecuteAsync("# Teardown cleanup\nimport gc; gc.collect()", cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) {
-            this.logger.LogError(ex, "Error executing teardown cleanup during disconnect");
+            logger.LogError(ex, "Error executing teardown cleanup during disconnect");
         }
 
-        await this.connection.DisconnectAsync(cancellationToken);
+        await connection.DisconnectAsync(cancellationToken);
 
-        this.logger.LogInformation("Disconnected from device");
+        logger.LogInformation("Disconnected from device");
     }
 
     /// <summary>
@@ -259,7 +259,7 @@ public class Device : IDisposable {
     /// </code>
     /// </example>
     public async Task<string> ExecuteAsync(string code, CancellationToken cancellationToken = default) {
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
@@ -267,7 +267,7 @@ public class Device : IDisposable {
             throw new ArgumentException("Code cannot be null or empty", nameof(code));
         }
 
-        this.logger.LogDebug("Executing code: {Code}", code.Trim());
+        logger.LogDebug("Executing code: {Code}", code.Trim());
 
         // Track operation in device state
         this.State.SetCurrentOperation("ExecuteCode");
@@ -306,7 +306,7 @@ public class Device : IDisposable {
     /// </code>
     /// </example>
     public async Task<T> ExecuteAsync<T>(string code, CancellationToken cancellationToken = default) {
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
@@ -334,16 +334,16 @@ public class Device : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task PutFileAsync(string localPath, string remotePath, CancellationToken cancellationToken = default) {
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
-        this.logger.LogDebug("Transferring file {LocalPath} to device at {RemotePath}", localPath, remotePath);
+        logger.LogDebug("Transferring file {LocalPath} to device at {RemotePath}", localPath, remotePath);
 
         this.State.SetCurrentOperation("FileTransfer");
         try {
-            await this.connection.PutFileAsync(localPath, remotePath, cancellationToken);
-            this.logger.LogInformation("Successfully transferred file to device");
+            await connection.PutFileAsync(localPath, remotePath, cancellationToken);
+            logger.LogInformation("Successfully transferred file to device");
         }
         finally {
             this.State.CompleteOperation();
@@ -357,16 +357,16 @@ public class Device : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The file contents as a byte array.</returns>
     public async Task<byte[]> GetFileAsync(string remotePath, CancellationToken cancellationToken = default) {
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
-        this.logger.LogDebug("Retrieving file {RemotePath} from device", remotePath);
+        logger.LogDebug("Retrieving file {RemotePath} from device", remotePath);
 
         this.State.SetCurrentOperation("FileRetrieval");
         try {
-            byte[] content = await this.connection.GetFileAsync(remotePath, cancellationToken);
-            this.logger.LogInformation("Successfully retrieved file from device ({Size} bytes)", content.Length);
+            byte[] content = await connection.GetFileAsync(remotePath, cancellationToken);
+            logger.LogInformation("Successfully retrieved file from device ({Size} bytes)", content.Length);
             return content;
         }
         finally {
@@ -456,7 +456,7 @@ public class Device : IDisposable {
             throw new ArgumentNullException(nameof(method));
         }
 
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
@@ -465,7 +465,7 @@ public class Device : IDisposable {
         using var contextScope = this.executionContextService.SetContext(context);
 
         // Use unified DirectExecutor for all method execution via AttributeHandler
-        this.logger.LogDebug("Executing method {MethodName} using DirectExecutor with secure execution context", method.Name);
+        logger.LogDebug("Executing method {MethodName} using DirectExecutor with secure execution context", method.Name);
 
         return await this.Executor.ExecuteAsync<T>(method, parameters ?? Array.Empty<object>(), cancellationToken).ConfigureAwait(false);
     }
@@ -487,10 +487,10 @@ public class Device : IDisposable {
     /// </summary>
     /// <returns>A tuple containing device identifier and firmware version.</returns>
     internal (string DeviceId, string FirmwareVersion) GetDeviceIdentification() {
-        var deviceId = this.connection.Type switch {
-            DeviceConnection.ConnectionType.Serial => $"serial:{this.connection.ConnectionString}",
+        var deviceId = connection.Type switch {
+            DeviceConnection.ConnectionType.Serial => $"serial:{connection.ConnectionString}",
             DeviceConnection.ConnectionType.Subprocess => "subprocess:micropython",
-            _ => $"unknown:{this.connection.GetType().Name}",
+            _ => $"unknown:{connection.GetType().Name}",
         };
 
         // TODO: Get actual firmware version from device using sys.implementation or uos.uname()
@@ -502,7 +502,7 @@ public class Device : IDisposable {
 
     /// <inheritdoc/>
     public void Dispose() {
-        if (this.disposed) {
+        if (disposed) {
             return;
         }
 
@@ -511,7 +511,7 @@ public class Device : IDisposable {
             this.executor.Value?.Dispose();
         }
 
-        this.connection?.Dispose();
-        this.disposed = true;
+        connection?.Dispose();
+        disposed = true;
     }
 }
