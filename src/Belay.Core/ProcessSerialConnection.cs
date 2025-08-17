@@ -26,28 +26,28 @@ public sealed class ProcessSerialConnection : IDisposable {
     /// <summary>
     /// Gets a value indicating whether the connection is open.
     /// </summary>
-    public bool IsOpen => this.isConfigured;
+    public bool IsOpen => isConfigured;
 
     /// <summary>
     /// Opens the serial connection using process-based configuration.
     /// </summary>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task OpenAsync() {
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(ProcessSerialConnection));
         }
 
-        if (this.IsOpen) {
+        if (IsOpen) {
             return;
         }
 
         // Configure serial port using stty (this approach works reliably)
-        if (!this.portPath.StartsWith("/dev/")) {
+        if (!portPath.StartsWith("/dev/")) {
             throw new ArgumentException("Invalid device path");
         }
 
-        await this.ConfigureSerialPortAsync().ConfigureAwait(false);
-        this.isConfigured = true;
+        await ConfigureSerialPortAsync().ConfigureAwait(false);
+        isConfigured = true;
 
         // Brief delay for device initialization
         await Task.Delay(100).ConfigureAwait(false);
@@ -59,7 +59,7 @@ public sealed class ProcessSerialConnection : IDisposable {
     /// <param name="data">The data to write.</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task WriteAsync(string data) {
-        if (!this.IsOpen) {
+        if (!IsOpen) {
             throw new InvalidOperationException("Port is not open");
         }
 
@@ -67,7 +67,7 @@ public sealed class ProcessSerialConnection : IDisposable {
         var process = new Process {
             StartInfo = new ProcessStartInfo {
                 FileName = "bash",
-                Arguments = $"-c \"echo -ne '{EscapeForBash(data)}' > {this.portPath}\"",
+                Arguments = $"-c \"echo -ne '{EscapeForBash(data)}' > {portPath}\"",
                 UseShellExecute = false,
                 RedirectStandardError = true,
             },
@@ -89,7 +89,7 @@ public sealed class ProcessSerialConnection : IDisposable {
     /// <param name="timeoutMs">Timeout in milliseconds.</param>
     /// <returns>Available data as string.</returns>
     public async Task<string> ReadWithTimeoutAsync(int timeoutMs = 1000) {
-        if (!this.IsOpen) {
+        if (!IsOpen) {
             return string.Empty;
         }
 
@@ -97,7 +97,7 @@ public sealed class ProcessSerialConnection : IDisposable {
             var process = new Process {
                 StartInfo = new ProcessStartInfo {
                     FileName = "timeout",
-                    Arguments = $"{timeoutMs / 1000.0:F1}s cat {this.portPath}",
+                    Arguments = $"{timeoutMs / 1000.0:F1}s cat {portPath}",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -131,7 +131,7 @@ public sealed class ProcessSerialConnection : IDisposable {
     /// Closes the serial connection.
     /// </summary>
     public void Close() {
-        this.isConfigured = false;
+        isConfigured = false;
     }
 
     private async Task ConfigureSerialPortAsync() {
@@ -140,7 +140,7 @@ public sealed class ProcessSerialConnection : IDisposable {
             var process = new Process {
                 StartInfo = new ProcessStartInfo {
                     FileName = "stty",
-                    Arguments = $"-F {this.portPath} 115200 raw -echo -echoe -echok -echoctl -echoke -crtscts -hupcl min 1 time 0",
+                    Arguments = $"-F {portPath} 115200 raw -echo -echoe -echok -echoctl -echoke -crtscts -hupcl min 1 time 0",
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
@@ -176,11 +176,11 @@ public sealed class ProcessSerialConnection : IDisposable {
 
     /// <inheritdoc />
     public void Dispose() {
-        if (this.disposed) {
+        if (disposed) {
             return;
         }
 
-        this.Close();
-        this.disposed = true;
+        Close();
+        disposed = true;
     }
 }

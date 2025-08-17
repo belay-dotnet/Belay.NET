@@ -26,24 +26,24 @@ public class SimplifiedDevice : IDeviceConnection {
     }
 
     /// <inheritdoc />
-    public bool IsConnected => this.connection.State == DeviceConnectionState.Connected;
+    public bool IsConnected => connection.State == DeviceConnectionState.Connected;
 
     /// <inheritdoc />
     public string DeviceInfo => "MicroPython Device"; // TODO: Implement actual device info detection
 
     /// <inheritdoc />
-    public string ConnectionString => this.connection.ConnectionString;
+    public string ConnectionString => connection.ConnectionString;
 
     /// <inheritdoc />
     public async Task<T> ExecutePython<T>(string code, CancellationToken cancellationToken = default) {
-        this.ThrowIfDisposed();
+        ThrowIfDisposed();
 
         try {
-            this.logger.LogDebug("Executing Python code: {Code}", code);
+            logger.LogDebug("Executing Python code: {Code}", code);
 
-            var result = await this.connection.ExecuteAsync(code, cancellationToken);
+            var result = await connection.ExecuteAsync(code, cancellationToken);
 
-            this.logger.LogDebug("Python execution completed. Output: {Output}", result);
+            logger.LogDebug("Python execution completed. Output: {Output}", result);
 
             return ResultParser.ParseResult<T>(result);
         }
@@ -54,21 +54,21 @@ public class SimplifiedDevice : IDeviceConnection {
 
     /// <inheritdoc />
     public async Task<string> ExecutePython(string code, CancellationToken cancellationToken = default) {
-        return await this.ExecutePython<string>(code, cancellationToken);
+        return await ExecutePython<string>(code, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task WriteFile(string devicePath, byte[] data, CancellationToken cancellationToken = default) {
-        this.ThrowIfDisposed();
+        ThrowIfDisposed();
 
         try {
-            this.logger.LogDebug("Writing file to device: {Path} ({Size} bytes)", devicePath, data.Length);
+            logger.LogDebug("Writing file to device: {Path} ({Size} bytes)", devicePath, data.Length);
 
             // Use temporary file approach since IDeviceCommunication uses file paths
             var tempFile = Path.GetTempFileName();
             try {
                 await File.WriteAllBytesAsync(tempFile, data, cancellationToken);
-                await this.connection.PutFileAsync(tempFile, devicePath, cancellationToken);
+                await connection.PutFileAsync(tempFile, devicePath, cancellationToken);
             }
             finally {
                 if (File.Exists(tempFile)) {
@@ -76,7 +76,7 @@ public class SimplifiedDevice : IDeviceConnection {
                 }
             }
 
-            this.logger.LogDebug("File write completed: {Path}", devicePath);
+            logger.LogDebug("File write completed: {Path}", devicePath);
         }
         catch (Exception ex) when (!(ex is DeviceException)) {
             throw new DeviceException($"Failed to write file '{devicePath}': {ex.Message}", ex);
@@ -85,14 +85,14 @@ public class SimplifiedDevice : IDeviceConnection {
 
     /// <inheritdoc />
     public async Task<byte[]> ReadFile(string devicePath, CancellationToken cancellationToken = default) {
-        this.ThrowIfDisposed();
+        ThrowIfDisposed();
 
         try {
-            this.logger.LogDebug("Reading file from device: {Path}", devicePath);
+            logger.LogDebug("Reading file from device: {Path}", devicePath);
 
-            var data = await this.connection.GetFileAsync(devicePath, cancellationToken);
+            var data = await connection.GetFileAsync(devicePath, cancellationToken);
 
-            this.logger.LogDebug("File read completed: {Path} ({Size} bytes)", devicePath, data.Length);
+            logger.LogDebug("File read completed: {Path} ({Size} bytes)", devicePath, data.Length);
 
             return data;
         }
@@ -103,14 +103,14 @@ public class SimplifiedDevice : IDeviceConnection {
 
     /// <inheritdoc />
     public async Task DeleteFile(string devicePath, CancellationToken cancellationToken = default) {
-        this.ThrowIfDisposed();
+        ThrowIfDisposed();
 
         try {
-            this.logger.LogDebug("Deleting file from device: {Path}", devicePath);
+            logger.LogDebug("Deleting file from device: {Path}", devicePath);
 
-            await this.ExecutePython($"import os; os.remove('{devicePath}')", cancellationToken);
+            await ExecutePython($"import os; os.remove('{devicePath}')", cancellationToken);
 
-            this.logger.LogDebug("File deleted: {Path}", devicePath);
+            logger.LogDebug("File deleted: {Path}", devicePath);
         }
         catch (Exception ex) when (!(ex is DeviceException)) {
             throw new DeviceException($"Failed to delete file '{devicePath}': {ex.Message}", ex);
@@ -119,17 +119,17 @@ public class SimplifiedDevice : IDeviceConnection {
 
     /// <inheritdoc />
     public async Task<string[]> ListFiles(string devicePath = "/", CancellationToken cancellationToken = default) {
-        this.ThrowIfDisposed();
+        ThrowIfDisposed();
 
         try {
-            this.logger.LogDebug("Listing files in device directory: {Path}", devicePath);
+            logger.LogDebug("Listing files in device directory: {Path}", devicePath);
 
-            var result = await this.ExecutePython<string>($"import os; list(os.listdir('{devicePath}'))", cancellationToken);
+            var result = await ExecutePython<string>($"import os; list(os.listdir('{devicePath}'))", cancellationToken);
 
             // Parse the Python list result into string array
             var files = ResultParser.ParseResult<string[]>(result);
 
-            this.logger.LogDebug("Listed {Count} files in directory: {Path}", files.Length, devicePath);
+            logger.LogDebug("Listed {Count} files in directory: {Path}", files.Length, devicePath);
 
             return files;
         }
@@ -147,10 +147,10 @@ public class SimplifiedDevice : IDeviceConnection {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The result of the method execution.</returns>
     public async Task<T> ExecuteMethod<T>(MethodInfo method, object[] args, CancellationToken cancellationToken = default) {
-        this.ThrowIfDisposed();
+        ThrowIfDisposed();
 
         try {
-            this.logger.LogDebug("Executing method: {Method}", method.Name);
+            logger.LogDebug("Executing method: {Method}", method.Name);
 
             return await AttributeHandler.ExecuteMethod<T>(this, method, args, cancellationToken);
         }
@@ -167,24 +167,24 @@ public class SimplifiedDevice : IDeviceConnection {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task ExecuteMethod(MethodInfo method, object[] args, CancellationToken cancellationToken = default) {
-        await this.ExecuteMethod<string>(method, args, cancellationToken);
+        await ExecuteMethod<string>(method, args, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task Connect(CancellationToken cancellationToken = default) {
-        this.ThrowIfDisposed();
+        ThrowIfDisposed();
 
-        this.logger.LogInformation("Connecting to device: {ConnectionString}", this.ConnectionString);
+        logger.LogInformation("Connecting to device: {ConnectionString}", ConnectionString);
 
         // Use the DeviceConnection's connect method
-        await this.connection.ConnectAsync(cancellationToken);
+        await connection.ConnectAsync(cancellationToken);
 
-        this.logger.LogInformation("Connected to device successfully");
+        logger.LogInformation("Connected to device successfully");
     }
 
     /// <inheritdoc />
     public async Task Disconnect() {
-        await this.DisconnectAsync(CancellationToken.None);
+        await DisconnectAsync(CancellationToken.None);
     }
 
     /// <summary>
@@ -193,43 +193,43 @@ public class SimplifiedDevice : IDeviceConnection {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task DisconnectAsync(CancellationToken cancellationToken = default) {
-        if (this.disposed) {
+        if (disposed) {
             return;
         }
 
-        this.logger.LogInformation("Disconnecting from device");
+        logger.LogInformation("Disconnecting from device");
 
         // Clear any cached results to prevent memory leaks
         SimpleCache.Clear();
-        this.logger.LogDebug("Cleared device cache on disconnect");
+        logger.LogDebug("Cleared device cache on disconnect");
 
         // Use the DeviceConnection's disconnect method
-        await this.connection.DisconnectAsync(cancellationToken);
+        await connection.DisconnectAsync(cancellationToken);
 
-        this.logger.LogInformation("Disconnected from device");
+        logger.LogInformation("Disconnected from device");
     }
 
     /// <inheritdoc />
     public void Dispose() {
-        if (this.disposed) {
+        if (disposed) {
             return;
         }
 
-        this.logger.LogDebug("Disposing SimplifiedDevice");
+        logger.LogDebug("Disposing SimplifiedDevice");
 
         try {
-            this.Disconnect().GetAwaiter().GetResult();
+            Disconnect().GetAwaiter().GetResult();
         }
         catch (Exception ex) {
-            this.logger.LogWarning(ex, "Error during device disconnection in Dispose");
+            logger.LogWarning(ex, "Error during device disconnection in Dispose");
         }
 
-        this.connection?.Dispose();
-        this.disposed = true;
+        connection?.Dispose();
+        disposed = true;
     }
 
     private void ThrowIfDisposed() {
-        if (this.disposed) {
+        if (disposed) {
             throw new ObjectDisposedException(nameof(SimplifiedDevice));
         }
     }

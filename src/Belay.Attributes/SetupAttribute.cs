@@ -248,7 +248,7 @@ public sealed class SetupAttribute : Attribute {
     /// </code>
     /// </example>
     public int TimeoutMs {
-        get => this.timeoutMs;
+        get => timeoutMs;
         set {
             if (value != -1 && value <= 0) {
                 throw new ArgumentOutOfRangeException(
@@ -256,7 +256,7 @@ public sealed class SetupAttribute : Attribute {
                     "Timeout must be a positive value in milliseconds, or -1 to use default timeout");
             }
 
-            this.timeoutMs = value;
+            timeoutMs = value;
         }
     }
 
@@ -269,16 +269,16 @@ public sealed class SetupAttribute : Attribute {
     public override string ToString() {
         var parts = new List<string>();
 
-        if (this.Order != 0) {
-            parts.Add($"Order={this.Order}");
+        if (Order != 0) {
+            parts.Add($"Order={Order}");
         }
 
-        if (!this.Critical) {
+        if (!Critical) {
             parts.Add("Critical=false");
         }
 
-        if (this.TimeoutMs != -1) {
-            parts.Add($"TimeoutMs={this.TimeoutMs}");
+        if (TimeoutMs != -1) {
+            parts.Add($"TimeoutMs={TimeoutMs}");
         }
 
         return parts.Count > 0 ? $"[Setup({string.Join(", ", parts)})]" : "[Setup]";

@@ -307,7 +307,7 @@ public sealed class TeardownAttribute : Attribute {
     /// </code>
     /// </example>
     public int TimeoutMs {
-        get => this.timeoutMs;
+        get => timeoutMs;
         set {
             if (value != -1 && value <= 0) {
                 throw new ArgumentOutOfRangeException(
@@ -315,7 +315,7 @@ public sealed class TeardownAttribute : Attribute {
                     "Timeout must be a positive value in milliseconds, or -1 to use default timeout");
             }
 
-            this.timeoutMs = value;
+            timeoutMs = value;
         }
     }
 
@@ -366,19 +366,19 @@ public sealed class TeardownAttribute : Attribute {
     public override string ToString() {
         var parts = new List<string>();
 
-        if (this.Order != 0) {
-            parts.Add($"Order={this.Order}");
+        if (Order != 0) {
+            parts.Add($"Order={Order}");
         }
 
-        if (this.IgnoreErrors) {
+        if (IgnoreErrors) {
             parts.Add("IgnoreErrors=true");
         }
 
-        if (this.TimeoutMs != -1) {
-            parts.Add($"TimeoutMs={this.TimeoutMs}");
+        if (TimeoutMs != -1) {
+            parts.Add($"TimeoutMs={TimeoutMs}");
         }
 
-        if (this.Critical) {
+        if (Critical) {
             parts.Add("Critical=true");
         }
 

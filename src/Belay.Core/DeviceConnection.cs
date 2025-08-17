@@ -50,8 +50,8 @@ public sealed class DeviceConnection : IDisposable {
     /// <param name="connectionString">The connection string (port name or executable path).</param>
     /// <param name="logger">The logger instance.</param>
     public DeviceConnection(ConnectionType type, string connectionString, ILogger<DeviceConnection> logger) {
-        this.Type = type;
-        this.ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
+        Type = type;
+        ConnectionString = connectionString ?? throw new ArgumentNullException(nameof(connectionString));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -61,21 +61,21 @@ public sealed class DeviceConnection : IDisposable {
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task ConnectAsync(CancellationToken cancellationToken = default) {
         try {
-            switch (this.Type) {
+            switch (Type) {
                 case ConnectionType.Serial:
-                    await this.ConnectSerialAsync(cancellationToken).ConfigureAwait(false);
+                    await ConnectSerialAsync(cancellationToken).ConfigureAwait(false);
                     break;
 
                 case ConnectionType.Subprocess:
-                    await this.ConnectSubprocessAsync(cancellationToken).ConfigureAwait(false);
+                    await ConnectSubprocessAsync(cancellationToken).ConfigureAwait(false);
                     break;
             }
 
-            this.State = DeviceConnectionState.Connected;
-            this.logger.LogInformation("Connected to device via {Type}: {Connection}", this.Type, this.ConnectionString);
+            State = DeviceConnectionState.Connected;
+            logger.LogInformation("Connected to device via {Type}: {Connection}", Type, ConnectionString);
         }
         catch (Exception ex) {
-            this.logger.LogError(ex, "Failed to connect to device");
+            logger.LogError(ex, "Failed to connect to device");
             throw;
         }
     }
@@ -86,38 +86,38 @@ public sealed class DeviceConnection : IDisposable {
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task DisconnectAsync(CancellationToken cancellationToken = default) {
         try {
-            switch (this.Type) {
+            switch (Type) {
                 case ConnectionType.Serial:
-                    this.simpleRawRepl?.Dispose();
-                    this.simpleRawRepl = null;
+                    simpleRawRepl?.Dispose();
+                    simpleRawRepl = null;
 
-                    this.serialPort?.Close();
-                    this.serialPort?.Dispose();
-                    this.serialPort = null;
+                    serialPort?.Close();
+                    serialPort?.Dispose();
+                    serialPort = null;
 
                     break;
 
                 case ConnectionType.Subprocess:
-                    this.processInput?.Close();
-                    this.processOutput?.Close();
+                    processInput?.Close();
+                    processOutput?.Close();
 
-                    if (this.process != null && !this.process.HasExited) {
-                        this.process.Kill();
-                        await this.process.WaitForExitAsync().ConfigureAwait(false);
+                    if (process != null && !process.HasExited) {
+                        process.Kill();
+                        await process.WaitForExitAsync().ConfigureAwait(false);
                     }
 
-                    this.process?.Dispose();
-                    this.process = null;
-                    this.processInput = null;
-                    this.processOutput = null;
+                    process?.Dispose();
+                    process = null;
+                    processInput = null;
+                    processOutput = null;
                     break;
             }
 
-            this.State = DeviceConnectionState.Disconnected;
-            this.logger.LogInformation("Disconnected from device");
+            State = DeviceConnectionState.Disconnected;
+            logger.LogInformation("Disconnected from device");
         }
         catch (Exception ex) {
-            this.logger.LogWarning(ex, "Error during disconnect");
+            logger.LogWarning(ex, "Error during disconnect");
         }
     }
 
@@ -140,22 +140,22 @@ public sealed class DeviceConnection : IDisposable {
             // Perform security validation before execution
             var validation = InputValidator.ValidateCode(code, allowFileOperations: true, allowNetworking: false);
             if (!validation.IsValid) {
-                this.logger.LogWarning("Code execution blocked due to security validation failure: {Reason}", validation.FailureReason);
+                logger.LogWarning("Code execution blocked due to security validation failure: {Reason}", validation.FailureReason);
                 throw new ArgumentException($"Code failed security validation: {validation.FailureReason}", nameof(code));
             }
 
             // Log security concerns for medium/high risk code that's still allowed
             if (validation.RiskLevel >= InputValidator.SecurityRiskLevel.Medium) {
-                this.logger.LogWarning(
+                logger.LogWarning(
                     "Executing code with {RiskLevel} security risk. Concerns: {Concerns}",
                     validation.RiskLevel, string.Join(", ", validation.SecurityConcerns));
             }
 
-            this.logger.LogDebug("Executing code: {Code}", code);
+            logger.LogDebug("Executing code: {Code}", code);
 
             // Use simplified raw REPL protocol for all device types
-            if (this.simpleRawRepl != null) {
-                var response = await this.simpleRawRepl.ExecuteAsync(code, 10, cancellationToken);
+            if (simpleRawRepl != null) {
+                var response = await simpleRawRepl.ExecuteAsync(code, 10, cancellationToken);
                 if (response.IsSuccess) {
                     return response.Output;
                 }
@@ -169,60 +169,60 @@ public sealed class DeviceConnection : IDisposable {
             }
         }
         catch (Exception ex) {
-            this.logger.LogError(ex, "Code execution failed");
+            logger.LogError(ex, "Code execution failed");
             throw;
         }
     }
 
     private async Task ConnectSerialAsync(CancellationToken cancellationToken) {
         // Use System.IO.Ports.SerialPort directly - it works on both Windows and Linux in .NET 8
-        this.serialPort = new SerialPort(this.ConnectionString, 115200, Parity.None, 8, StopBits.One) {
+        serialPort = new SerialPort(ConnectionString, 115200, Parity.None, 8, StopBits.One) {
             ReadTimeout = 5000,
             WriteTimeout = 5000,
             NewLine = "\r\n",
         };
 
-        this.serialPort.Open();
+        serialPort.Open();
 
         // Recover from any stuck modes before initialization
-        await this.RecoverFromStuckModesAsync(this.serialPort.BaseStream, cancellationToken).ConfigureAwait(false);
+        await RecoverFromStuckModesAsync(serialPort.BaseStream, cancellationToken).ConfigureAwait(false);
 
         // Wait for device to be ready (using working approach from previous tag)
-        await this.WaitForDeviceReadyAsync(this.serialPort.BaseStream, cancellationToken).ConfigureAwait(false);
+        await WaitForDeviceReadyAsync(serialPort.BaseStream, cancellationToken).ConfigureAwait(false);
 
         // Initialize Simple Raw REPL protocol (skip soft reset during initial connection)
-        this.simpleRawRepl = new SimpleRawRepl(this.serialPort.BaseStream, this.logger);
-        await this.simpleRawRepl.EnterRawReplAsync(false, 10, cancellationToken);
+        simpleRawRepl = new SimpleRawRepl(serialPort.BaseStream, logger);
+        await simpleRawRepl.EnterRawReplAsync(false, 10, cancellationToken);
     }
 
     private async Task WaitForDeviceReadyAsync(Stream stream, CancellationToken cancellationToken) {
-        this.logger.LogDebug("Waiting for device to be ready");
+        logger.LogDebug("Waiting for device to be ready");
 
         // Simplified device initialization - just send interrupt and brief wait
-        await this.SendControlCharacterAsync(stream, 0x03, cancellationToken); // Ctrl-C
+        await SendControlCharacterAsync(stream, 0x03, cancellationToken); // Ctrl-C
         await stream.FlushAsync(cancellationToken);
         await Task.Delay(200, cancellationToken);
 
-        this.logger.LogDebug("Device ready");
+        logger.LogDebug("Device ready");
     }
 
     private async Task RecoverFromStuckModesAsync(Stream stream, CancellationToken cancellationToken) {
-        this.logger.LogDebug("Attempting device recovery from stuck raw/paste modes");
+        logger.LogDebug("Attempting device recovery from stuck raw/paste modes");
 
         try {
             // 1. Exit raw-paste mode if stuck (Ctrl-C, Ctrl-D)
-            await this.SendControlCharacterAsync(stream, 0x03, cancellationToken); // Ctrl-C
-            await this.SendControlCharacterAsync(stream, 0x04, cancellationToken); // Ctrl-D
+            await SendControlCharacterAsync(stream, 0x03, cancellationToken); // Ctrl-C
+            await SendControlCharacterAsync(stream, 0x04, cancellationToken); // Ctrl-D
             await stream.FlushAsync(cancellationToken);
             await Task.Delay(100, cancellationToken);
 
             // 2. Exit raw mode if stuck (Ctrl-B)
-            await this.SendControlCharacterAsync(stream, 0x02, cancellationToken); // Ctrl-B
+            await SendControlCharacterAsync(stream, 0x02, cancellationToken); // Ctrl-B
             await stream.FlushAsync(cancellationToken);
             await Task.Delay(100, cancellationToken);
 
             // 3. Send additional interrupt to ensure clean state
-            await this.SendControlCharacterAsync(stream, 0x03, cancellationToken); // Ctrl-C
+            await SendControlCharacterAsync(stream, 0x03, cancellationToken); // Ctrl-C
             await stream.FlushAsync(cancellationToken);
             await Task.Delay(100, cancellationToken);
 
@@ -231,12 +231,12 @@ public sealed class DeviceConnection : IDisposable {
             await stream.FlushAsync(cancellationToken);
 
             // 5. Drain any pending output from recovery attempts with shorter timeout
-            await this.DrainAvailableOutputAsync(stream, cancellationToken);
+            await DrainAvailableOutputAsync(stream, cancellationToken);
 
-            this.logger.LogDebug("Device recovery completed successfully");
+            logger.LogDebug("Device recovery completed successfully");
         }
         catch (Exception ex) {
-            this.logger.LogWarning(ex, "Device recovery failed, continuing with normal initialization");
+            logger.LogWarning(ex, "Device recovery failed, continuing with normal initialization");
         }
     }
 
@@ -254,7 +254,7 @@ public sealed class DeviceConnection : IDisposable {
                 }
 
                 // Just discard the output - we're cleaning up
-                this.logger.LogDebug("Drained {BytesRead} bytes during recovery", bytesRead);
+                logger.LogDebug("Drained {BytesRead} bytes during recovery", bytesRead);
             }
         }
         catch (OperationCanceledException) when (drainCts.Token.IsCancellationRequested) {
@@ -278,7 +278,7 @@ public sealed class DeviceConnection : IDisposable {
 
                 totalDrained += bytesRead;
                 var output = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                this.logger.LogDebug("Drained initial output: {Output}", output.Replace("\r", "\\r").Replace("\n", "\\n"));
+                logger.LogDebug("Drained initial output: {Output}", output.Replace("\r", "\\r").Replace("\n", "\\n"));
 
                 // Stop draining if we see the friendly REPL prompt
                 if (output.Contains(">>>")) {
@@ -286,10 +286,10 @@ public sealed class DeviceConnection : IDisposable {
                 }
             }
 
-            this.logger.LogDebug("Drained {TotalBytes} bytes of initial output", totalDrained);
+            logger.LogDebug("Drained {TotalBytes} bytes of initial output", totalDrained);
 
             if (totalDrained == 0) {
-                this.logger.LogWarning("No initial output received from subprocess - this may indicate a communication issue");
+                logger.LogWarning("No initial output received from subprocess - this may indicate a communication issue");
             }
         }
         catch (OperationCanceledException) when (drainCts.Token.IsCancellationRequested) {
@@ -305,7 +305,7 @@ public sealed class DeviceConnection : IDisposable {
 
     private async Task ConnectSubprocessAsync(CancellationToken cancellationToken) {
         var startInfo = new System.Diagnostics.ProcessStartInfo {
-            FileName = this.ConnectionString,
+            FileName = ConnectionString,
             UseShellExecute = false,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
@@ -316,33 +316,33 @@ public sealed class DeviceConnection : IDisposable {
             Environment = { ["PYTHONUNBUFFERED"] = "1" },
         };
 
-        this.process = System.Diagnostics.Process.Start(startInfo);
-        if (this.process == null) {
+        process = System.Diagnostics.Process.Start(startInfo);
+        if (process == null) {
             throw new InvalidOperationException("Failed to start subprocess");
         }
 
-        this.processInput = this.process.StandardInput;
-        this.processOutput = this.process.StandardOutput;
+        processInput = process.StandardInput;
+        processOutput = process.StandardOutput;
 
         // Configure streams for raw communication
-        this.processInput.AutoFlush = true;
+        processInput.AutoFlush = true;
 
         // Wait longer for subprocess to be ready and show banner
         await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
         // Create bidirectional stream for subprocess communication
         var bidirectionalStream = new BidirectionalProcessStream(
-            this.process.StandardInput.BaseStream,
-            this.process.StandardOutput.BaseStream);
+            process.StandardInput.BaseStream,
+            process.StandardOutput.BaseStream);
 
         // Initialize Simple Raw REPL protocol with subprocess-specific handling
-        this.simpleRawRepl = new SimpleRawRepl(bidirectionalStream, this.logger);
+        simpleRawRepl = new SimpleRawRepl(bidirectionalStream, logger);
 
         // For unix port, we may need to drain the initial banner first
-        this.logger.LogDebug("Draining initial output from subprocess...");
-        await this.DrainInitialOutputAsync(bidirectionalStream, cancellationToken);
+        logger.LogDebug("Draining initial output from subprocess...");
+        await DrainInitialOutputAsync(bidirectionalStream, cancellationToken);
 
-        await this.simpleRawRepl.EnterRawReplAsync(true, 10, cancellationToken);
+        await simpleRawRepl.EnterRawReplAsync(true, 10, cancellationToken);
     }
 
     // Simple state tracking
@@ -358,7 +358,7 @@ public sealed class DeviceConnection : IDisposable {
     /// </summary>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task<T> ExecuteAsync<T>(string code, CancellationToken cancellationToken = default) {
-        var result = await this.ExecuteAsync(code, cancellationToken).ConfigureAwait(false);
+        var result = await ExecuteAsync(code, cancellationToken).ConfigureAwait(false);
         return (T)Convert.ChangeType(result.Trim(), typeof(T));
     }
 
@@ -373,7 +373,7 @@ public sealed class DeviceConnection : IDisposable {
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task PutFileAsync(string localPath, string remotePath, CancellationToken cancellationToken = default) {
         var fileData = await File.ReadAllBytesAsync(localPath, cancellationToken);
-        await this.WriteFileAsync(remotePath, fileData, cancellationToken);
+        await WriteFileAsync(remotePath, fileData, cancellationToken);
     }
 
     /// <summary>
@@ -399,16 +399,16 @@ public sealed class DeviceConnection : IDisposable {
         }
 
         var escapedPath = EscapePythonString(remotePath);
-        this.logger.LogDebug("Writing file {Path} ({Size} bytes)", remotePath, data.Length);
+        logger.LogDebug("Writing file {Path} ({Size} bytes)", remotePath, data.Length);
 
         // Adaptive chunk sizing for optimized performance (internal implementation)
         const int DefaultInitialChunkSize = 256;
-        var chunkOptimizer = new AdaptiveChunkOptimizer(DefaultInitialChunkSize, this.logger);
+        var chunkOptimizer = new AdaptiveChunkOptimizer(DefaultInitialChunkSize, logger);
 
         bool fileOpened = false;
         try {
             // Open file and get write function - following official mpremote pattern
-            await this.ExecuteAsync($"f=open('{escapedPath}','wb')\\nw=f.write", cancellationToken);
+            await ExecuteAsync($"f=open('{escapedPath}','wb')\\nw=f.write", cancellationToken);
             fileOpened = true;
 
             // Write data in chunks using adaptive sizing and base64 encoding
@@ -425,7 +425,7 @@ public sealed class DeviceConnection : IDisposable {
 
                 // Use base64 encoding which is more efficient than hex (33% vs 100% overhead)
                 var pythonBytes = $"__import__('binascii').a2b_base64('{chunkBase64}')";
-                await this.ExecuteAsync($"w({pythonBytes})", cancellationToken);
+                await ExecuteAsync($"w({pythonBytes})", cancellationToken);
 
                 stopwatch.Stop();
 
@@ -433,15 +433,15 @@ public sealed class DeviceConnection : IDisposable {
                 chunkOptimizer.RecordTransfer(chunk.Length, stopwatch.Elapsed);
                 totalTransferred += chunk.Length;
 
-                this.logger.LogTrace(
+                logger.LogTrace(
                     "Transferred chunk: {ChunkSize} bytes in {Duration}ms, total: {Total}/{Size}",
                     chunk.Length, stopwatch.ElapsedMilliseconds, totalTransferred, data.Length);
             }
 
-            this.logger.LogDebug("Successfully wrote file {Path}", remotePath);
+            logger.LogDebug("Successfully wrote file {Path}", remotePath);
         }
         catch (Exception ex) {
-            this.logger.LogError(ex, "Failed to write file {Path}", remotePath);
+            logger.LogError(ex, "Failed to write file {Path}", remotePath);
             throw new DeviceException($"Failed to write file '{remotePath}': {ex.Message}", ex);
         }
         finally {
@@ -450,10 +450,10 @@ public sealed class DeviceConnection : IDisposable {
                 try {
                     // Use timeout for cleanup to prevent hanging
                     using var cleanupCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                    await this.ExecuteAsync("try:\n    f.close()\nexcept:\n    pass", cleanupCts.Token);
+                    await ExecuteAsync("try:\n    f.close()\nexcept:\n    pass", cleanupCts.Token);
                 }
                 catch (Exception ex) {
-                    this.logger.LogWarning(ex, "Failed to close file handle during cleanup");
+                    logger.LogWarning(ex, "Failed to close file handle during cleanup");
                 }
             }
         }
@@ -476,11 +476,11 @@ public sealed class DeviceConnection : IDisposable {
         }
 
         var escapedPath = EscapePythonString(remotePath);
-        this.logger.LogDebug("Reading file {Path}", remotePath);
+        logger.LogDebug("Reading file {Path}", remotePath);
 
         // Adaptive chunk sizing for optimized performance (internal implementation)
         const int DefaultInitialChunkSize = 256;
-        var chunkOptimizer = new AdaptiveChunkOptimizer(DefaultInitialChunkSize, this.logger);
+        var chunkOptimizer = new AdaptiveChunkOptimizer(DefaultInitialChunkSize, logger);
 
         bool fileOpened = false;
         try {
@@ -488,7 +488,7 @@ public sealed class DeviceConnection : IDisposable {
             using var contents = new MemoryStream();
 
             // Open file and get read function - following official mpremote pattern
-            await this.ExecuteAsync($"f=open('{escapedPath}','rb')\\nr=f.read", cancellationToken);
+            await ExecuteAsync($"f=open('{escapedPath}','rb')\\nr=f.read", cancellationToken);
             fileOpened = true;
 
             while (true) {
@@ -500,7 +500,7 @@ public sealed class DeviceConnection : IDisposable {
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
                 // Read chunk and encode as base64 for efficient transfer
-                var chunkResult = await this.ExecuteAsync($"data=r({currentChunkSize});print(__import__('binascii').b2a_base64(data).decode().strip()) if data else print('EOF')", cancellationToken);
+                var chunkResult = await ExecuteAsync($"data=r({currentChunkSize});print(__import__('binascii').b2a_base64(data).decode().strip()) if data else print('EOF')", cancellationToken);
 
                 stopwatch.Stop();
 
@@ -517,7 +517,7 @@ public sealed class DeviceConnection : IDisposable {
                     // Update optimizer with performance metrics
                     chunkOptimizer.RecordTransfer(chunkBytes.Length, stopwatch.Elapsed);
 
-                    this.logger.LogTrace(
+                    logger.LogTrace(
                         "Read chunk: {ChunkSize} bytes in {Duration}ms, total: {Total} bytes",
                         chunkBytes.Length, stopwatch.ElapsedMilliseconds, contents.Length);
                 }
@@ -526,11 +526,11 @@ public sealed class DeviceConnection : IDisposable {
                 }
             }
 
-            this.logger.LogDebug("Successfully read file {Path} ({Size} bytes)", remotePath, contents.Length);
+            logger.LogDebug("Successfully read file {Path} ({Size} bytes)", remotePath, contents.Length);
             return contents.ToArray();
         }
         catch (Exception ex) when (ex is not DeviceException and not OperationCanceledException) {
-            this.logger.LogError(ex, "Failed to read file {Path}", remotePath);
+            logger.LogError(ex, "Failed to read file {Path}", remotePath);
             throw new DeviceException($"Failed to read file '{remotePath}': {ex.Message}", ex);
         }
         finally {
@@ -539,10 +539,10 @@ public sealed class DeviceConnection : IDisposable {
                 try {
                     // Use timeout for cleanup to prevent hanging
                     using var cleanupCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                    await this.ExecuteAsync("try:\n    f.close()\nexcept:\n    pass", cleanupCts.Token);
+                    await ExecuteAsync("try:\n    f.close()\nexcept:\n    pass", cleanupCts.Token);
                 }
                 catch (Exception ex) {
-                    this.logger.LogWarning(ex, "Failed to close file handle during cleanup");
+                    logger.LogWarning(ex, "Failed to close file handle during cleanup");
                 }
             }
         }
@@ -560,6 +560,6 @@ public sealed class DeviceConnection : IDisposable {
 
     /// <inheritdoc />
     public void Dispose() {
-        _ = this.DisconnectAsync();
+        _ = DisconnectAsync();
     }
 }

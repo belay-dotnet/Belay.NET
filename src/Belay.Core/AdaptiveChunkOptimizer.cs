@@ -41,9 +41,9 @@ internal class AdaptiveChunkOptimizer {
     public AdaptiveChunkOptimizer(int initialChunkSize, ILogger logger) {
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         this.initialChunkSize = Math.Max(MINCHUNKSIZE, Math.Min(initialChunkSize, MAXCHUNKSIZE));
-        this.currentChunkSize = this.initialChunkSize;
+        currentChunkSize = this.initialChunkSize;
 
-        logger.LogDebug("Initialized adaptive chunk optimizer with initial size: {InitialSize} bytes", this.currentChunkSize);
+        logger.LogDebug("Initialized adaptive chunk optimizer with initial size: {InitialSize} bytes", currentChunkSize);
     }
 
     /// <summary>
@@ -55,7 +55,7 @@ internal class AdaptiveChunkOptimizer {
     /// AdaptiveChunkOptimizer instance for sequential file transfer operations.
     /// </remarks>
     public int GetOptimalChunkSize() {
-        return this.currentChunkSize;
+        return currentChunkSize;
     }
 
     /// <summary>
@@ -69,69 +69,69 @@ internal class AdaptiveChunkOptimizer {
     /// </remarks>
     public void RecordTransfer(int bytesTransferred, TimeSpan duration) {
         if (bytesTransferred <= 0 || duration <= TimeSpan.Zero) {
-            this.logger.LogTrace("Invalid transfer metrics, skipping optimization");
+            logger.LogTrace("Invalid transfer metrics, skipping optimization");
             return;
         }
 
-        this.lastTransferSize = bytesTransferred;
-        this.lastTransferDuration = duration;
+        lastTransferSize = bytesTransferred;
+        lastTransferDuration = duration;
 
         // Calculate current throughput (bytes per second)
         var currentThroughput = bytesTransferred / duration.TotalSeconds;
 
         // Update rolling average using exponential moving average
-        if (this.measurementCount == 0) {
-            this.averageThroughput = currentThroughput;
+        if (measurementCount == 0) {
+            averageThroughput = currentThroughput;
         }
         else {
             // Use alpha = 0.3 for exponential moving average (30% current, 70% historical)
             const double alpha = 0.3;
-            this.averageThroughput = (alpha * currentThroughput) + ((1 - alpha) * this.averageThroughput);
+            averageThroughput = (alpha * currentThroughput) + ((1 - alpha) * averageThroughput);
         }
 
-        this.measurementCount++;
+        measurementCount++;
 
-        this.logger.LogTrace(
+        logger.LogTrace(
             "Transfer recorded: {Bytes} bytes in {Duration}ms, throughput: {Throughput:F1} bytes/s, avg: {AvgThroughput:F1} bytes/s",
-            bytesTransferred, duration.TotalMilliseconds, currentThroughput, this.averageThroughput);
+            bytesTransferred, duration.TotalMilliseconds, currentThroughput, averageThroughput);
 
         // Only optimize after collecting enough samples for stability
-        if (this.measurementCount >= SAMPLESIZE) {
-            this.OptimizeChunkSize(currentThroughput);
+        if (measurementCount >= SAMPLESIZE) {
+            OptimizeChunkSize(currentThroughput);
         }
     }
 
     private void OptimizeChunkSize(double currentThroughput) {
-        var oldChunkSize = this.currentChunkSize;
+        var oldChunkSize = currentChunkSize;
 
         // If current throughput is significantly better than average, try increasing chunk size
-        if (currentThroughput > this.averageThroughput * THROUGHPUTTHRESHOLD &&
-            this.currentChunkSize < MAXCHUNKSIZE) {
+        if (currentThroughput > averageThroughput * THROUGHPUTTHRESHOLD &&
+            currentChunkSize < MAXCHUNKSIZE) {
             // Increase chunk size by 25% or minimum 64 bytes
-            var increase = Math.Max(64, this.currentChunkSize / 4);
-            this.currentChunkSize = Math.Min(MAXCHUNKSIZE, this.currentChunkSize + increase);
+            var increase = Math.Max(64, currentChunkSize / 4);
+            currentChunkSize = Math.Min(MAXCHUNKSIZE, currentChunkSize + increase);
         }
 
         // If performance is degrading and chunk size is larger than initial, try reducing
-        else if (currentThroughput < this.averageThroughput * 0.8 &&
-                 this.currentChunkSize > this.initialChunkSize) {
+        else if (currentThroughput < averageThroughput * 0.8 &&
+                 currentChunkSize > initialChunkSize) {
             // Decrease chunk size by 25% but not below initial size
-            var decrease = Math.Max(32, this.currentChunkSize / 4);
-            this.currentChunkSize = Math.Max(this.initialChunkSize, this.currentChunkSize - decrease);
+            var decrease = Math.Max(32, currentChunkSize / 4);
+            currentChunkSize = Math.Max(initialChunkSize, currentChunkSize - decrease);
         }
 
         // If performance is very poor, reset to initial size
-        else if (currentThroughput < this.averageThroughput * 0.5) {
-            this.currentChunkSize = this.initialChunkSize;
+        else if (currentThroughput < averageThroughput * 0.5) {
+            currentChunkSize = initialChunkSize;
         }
 
         // Ensure chunk size stays within bounds
-        this.currentChunkSize = Math.Max(MINCHUNKSIZE, Math.Min(MAXCHUNKSIZE, this.currentChunkSize));
+        currentChunkSize = Math.Max(MINCHUNKSIZE, Math.Min(MAXCHUNKSIZE, currentChunkSize));
 
-        if (oldChunkSize != this.currentChunkSize) {
-            this.logger.LogDebug(
+        if (oldChunkSize != currentChunkSize) {
+            logger.LogDebug(
                 "Optimized chunk size: {OldSize} -> {NewSize} bytes (throughput: {Throughput:F1} bytes/s)",
-                oldChunkSize, this.currentChunkSize, currentThroughput);
+                oldChunkSize, currentChunkSize, currentThroughput);
         }
     }
 
@@ -145,12 +145,12 @@ internal class AdaptiveChunkOptimizer {
     /// </remarks>
     public ChunkOptimizerStats GetStats() {
         return new ChunkOptimizerStats {
-            CurrentChunkSize = this.currentChunkSize,
-            InitialChunkSize = this.initialChunkSize,
-            AverageThroughput = this.averageThroughput,
-            MeasurementCount = this.measurementCount,
-            LastTransferSize = this.lastTransferSize,
-            LastTransferDuration = this.lastTransferDuration,
+            CurrentChunkSize = currentChunkSize,
+            InitialChunkSize = initialChunkSize,
+            AverageThroughput = averageThroughput,
+            MeasurementCount = measurementCount,
+            LastTransferSize = lastTransferSize,
+            LastTransferDuration = lastTransferDuration,
         };
     }
 }

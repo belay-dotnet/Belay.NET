@@ -230,15 +230,15 @@ public class SecurityConfiguration {
     /// <returns>A new SecurityConfiguration instance with the same settings.</returns>
     public SecurityConfiguration Clone() {
         return new SecurityConfiguration {
-            ValidationLevel = this.ValidationLevel,
-            AllowFileOperations = this.AllowFileOperations,
-            AllowNetworking = this.AllowNetworking,
-            LogSecurityEvents = this.LogSecurityEvents,
-            MaxCodeLength = this.MaxCodeLength,
-            MaxNestingLevel = this.MaxNestingLevel,
-            CustomBlockedPatterns = new List<string>(this.CustomBlockedPatterns),
-            CustomAllowedPatterns = new List<string>(this.CustomAllowedPatterns),
-            ValidateParameterSubstitution = this.ValidateParameterSubstitution,
+            ValidationLevel = ValidationLevel,
+            AllowFileOperations = AllowFileOperations,
+            AllowNetworking = AllowNetworking,
+            LogSecurityEvents = LogSecurityEvents,
+            MaxCodeLength = MaxCodeLength,
+            MaxNestingLevel = MaxNestingLevel,
+            CustomBlockedPatterns = new List<string>(CustomBlockedPatterns),
+            CustomAllowedPatterns = new List<string>(CustomAllowedPatterns),
+            ValidateParameterSubstitution = ValidateParameterSubstitution,
         };
     }
 }

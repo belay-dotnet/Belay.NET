@@ -23,13 +23,13 @@ internal class BidirectionalProcessStream : Stream {
     }
 
     /// <inheritdoc/>
-    public override bool CanRead => this.outputStream.CanRead;
+    public override bool CanRead => outputStream.CanRead;
 
     /// <inheritdoc/>
     public override bool CanSeek => false;
 
     /// <inheritdoc/>
-    public override bool CanWrite => this.inputStream.CanWrite;
+    public override bool CanWrite => inputStream.CanWrite;
 
     /// <inheritdoc/>
     public override long Length => throw new NotSupportedException();
@@ -42,42 +42,42 @@ internal class BidirectionalProcessStream : Stream {
 
     /// <inheritdoc/>
     public override void Flush() {
-        this.inputStream.Flush();
+        inputStream.Flush();
     }
 
     /// <inheritdoc/>
     public override async Task FlushAsync(CancellationToken cancellationToken) {
-        await this.inputStream.FlushAsync(cancellationToken);
+        await inputStream.FlushAsync(cancellationToken);
     }
 
     /// <inheritdoc/>
     public override int Read(byte[] buffer, int offset, int count) {
-        return this.outputStream.Read(buffer, offset, count);
+        return outputStream.Read(buffer, offset, count);
     }
 
     /// <inheritdoc/>
     public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) {
-        return await this.outputStream.ReadAsync(buffer, offset, count, cancellationToken);
+        return await outputStream.ReadAsync(buffer, offset, count, cancellationToken);
     }
 
     /// <inheritdoc/>
     public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) {
-        return await this.outputStream.ReadAsync(buffer, cancellationToken);
+        return await outputStream.ReadAsync(buffer, cancellationToken);
     }
 
     /// <inheritdoc/>
     public override void Write(byte[] buffer, int offset, int count) {
-        this.inputStream.Write(buffer, offset, count);
+        inputStream.Write(buffer, offset, count);
     }
 
     /// <inheritdoc/>
     public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) {
-        await this.inputStream.WriteAsync(buffer, offset, count, cancellationToken);
+        await inputStream.WriteAsync(buffer, offset, count, cancellationToken);
     }
 
     /// <inheritdoc/>
     public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) {
-        await this.inputStream.WriteAsync(buffer, cancellationToken);
+        await inputStream.WriteAsync(buffer, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -92,10 +92,10 @@ internal class BidirectionalProcessStream : Stream {
 
     /// <inheritdoc/>
     protected override void Dispose(bool disposing) {
-        if (!this.disposed && disposing) {
-            this.inputStream?.Dispose();
-            this.outputStream?.Dispose();
-            this.disposed = true;
+        if (!disposed && disposing) {
+            inputStream?.Dispose();
+            outputStream?.Dispose();
+            disposed = true;
         }
 
         base.Dispose(disposing);
