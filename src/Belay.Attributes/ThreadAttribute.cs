@@ -333,7 +333,7 @@ public sealed class ThreadAttribute : Attribute {
     /// </code>
     /// </example>
     public int? MaxRuntimeMs {
-        get => maxRuntimeMs;
+        get => this.maxRuntimeMs;
         set {
             if (value.HasValue && value.Value <= 0) {
                 throw new ArgumentOutOfRangeException(
@@ -341,7 +341,7 @@ public sealed class ThreadAttribute : Attribute {
                     "Maximum runtime must be a positive value in milliseconds");
             }
 
-            maxRuntimeMs = value;
+            this.maxRuntimeMs = value;
         }
     }
 
@@ -354,20 +354,20 @@ public sealed class ThreadAttribute : Attribute {
     public override string ToString() {
         var parts = new List<string>();
 
-        if (!string.IsNullOrEmpty(Name)) {
-            parts.Add($"Name=\"{Name}\"");
+        if (!string.IsNullOrEmpty(this.Name)) {
+            parts.Add($"Name=\"{this.Name}\"");
         }
 
-        if (AutoRestart) {
+        if (this.AutoRestart) {
             parts.Add("AutoRestart=true");
         }
 
-        if (Priority != ThreadPriority.Normal) {
-            parts.Add($"Priority={Priority}");
+        if (this.Priority != ThreadPriority.Normal) {
+            parts.Add($"Priority={this.Priority}");
         }
 
-        if (MaxRuntimeMs.HasValue) {
-            parts.Add($"MaxRuntimeMs={MaxRuntimeMs}");
+        if (this.MaxRuntimeMs.HasValue) {
+            parts.Add($"MaxRuntimeMs={this.MaxRuntimeMs}");
         }
 
         return parts.Count > 0 ? $"[Thread({string.Join(", ", parts)})]" : "[Thread]";

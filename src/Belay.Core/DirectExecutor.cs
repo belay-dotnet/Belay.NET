@@ -34,15 +34,15 @@ public sealed class DirectExecutor : IDisposable {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The result of the method execution.</returns>
     public async Task<T> ExecuteAsync<T>(MethodInfo method, object[] args, CancellationToken cancellationToken = default) {
-        ThrowIfDisposed();
+        this.ThrowIfDisposed();
 
-        logger.LogDebug("Executing method: {Method} with {ArgCount} arguments", method.Name, args.Length);
+        this.logger.LogDebug("Executing method: {Method} with {ArgCount} arguments", method.Name, args.Length);
 
         try {
-            return await AttributeHandler.ExecuteMethod<T>(device, method, args, cancellationToken);
+            return await AttributeHandler.ExecuteMethod<T>(this.device, method, args, cancellationToken);
         }
         catch (Exception ex) {
-            logger.LogError(ex, "Failed to execute method: {Method}", method.Name);
+            this.logger.LogError(ex, "Failed to execute method: {Method}", method.Name);
             throw;
         }
     }
@@ -55,7 +55,7 @@ public sealed class DirectExecutor : IDisposable {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task ExecuteAsync(MethodInfo method, object[] args, CancellationToken cancellationToken = default) {
-        await ExecuteAsync<string>(method, args, cancellationToken);
+        await this.ExecuteAsync<string>(method, args, cancellationToken);
     }
 
     /// <summary>
@@ -66,11 +66,11 @@ public sealed class DirectExecutor : IDisposable {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The result of the Python code execution.</returns>
     public async Task<T> ExecutePythonAsync<T>(string pythonCode, CancellationToken cancellationToken = default) {
-        ThrowIfDisposed();
+        this.ThrowIfDisposed();
 
-        logger.LogDebug("Executing Python code directly: {Code}", pythonCode);
+        this.logger.LogDebug("Executing Python code directly: {Code}", pythonCode);
 
-        return await device.ExecutePython<T>(pythonCode, cancellationToken);
+        return await this.device.ExecutePython<T>(pythonCode, cancellationToken);
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public sealed class DirectExecutor : IDisposable {
     /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task ExecutePythonAsync(string pythonCode, CancellationToken cancellationToken = default) {
-        await ExecutePythonAsync<string>(pythonCode, cancellationToken);
+        await this.ExecutePythonAsync<string>(pythonCode, cancellationToken);
     }
 
     /// <summary>
@@ -88,21 +88,21 @@ public sealed class DirectExecutor : IDisposable {
     /// </summary>
     public void ClearCache() {
         SimpleCache.Clear();
-        logger.LogDebug("Cleared execution cache");
+        this.logger.LogDebug("Cleared execution cache");
     }
 
     /// <inheritdoc />
     public void Dispose() {
-        if (disposed) {
+        if (this.disposed) {
             return;
         }
 
-        logger.LogDebug("Disposing DirectExecutor");
-        disposed = true;
+        this.logger.LogDebug("Disposing DirectExecutor");
+        this.disposed = true;
     }
 
     private void ThrowIfDisposed() {
-        if (disposed) {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(DirectExecutor));
         }
     }

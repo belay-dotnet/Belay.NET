@@ -59,10 +59,10 @@ public static class InputValidator {
         /// <param name="riskLevel">The assessed security risk level.</param>
         /// <param name="securityConcerns">List of security concerns found.</param>
         public ValidationResult(bool isValid, string? failureReason = null, SecurityRiskLevel riskLevel = SecurityRiskLevel.Low, IReadOnlyList<string>? securityConcerns = null) {
-            IsValid = isValid;
-            FailureReason = failureReason;
-            RiskLevel = riskLevel;
-            SecurityConcerns = securityConcerns ?? Array.Empty<string>();
+            this.IsValid = isValid;
+            this.FailureReason = failureReason;
+            this.RiskLevel = riskLevel;
+            this.SecurityConcerns = securityConcerns ?? Array.Empty<string>();
         }
     }
 

@@ -77,7 +77,7 @@ public sealed class PythonCodeAttribute : Attribute {
             throw new ArgumentException("Python code cannot be empty or whitespace.", nameof(code));
         }
 
-        Code = code.Trim();
+        this.Code = code.Trim();
     }
 
     /// <summary>
@@ -129,8 +129,8 @@ public sealed class PythonCodeAttribute : Attribute {
     /// </summary>
     /// <returns>A string representation of the Python code attribute.</returns>
     public override string ToString() {
-        var preview = Code.Length > 50 ? Code.Substring(0, 47) + "..." : Code;
+        var preview = this.Code.Length > 50 ? this.Code.Substring(0, 47) + "..." : this.Code;
         return $"[PythonCode(\"{preview.Replace("\"", "\\\"")}\""
-               + (EnableParameterSubstitution ? string.Empty : ", EnableParameterSubstitution=false") + ")]";
+               + (this.EnableParameterSubstitution ? string.Empty : ", EnableParameterSubstitution=false") + ")]";
     }
 }

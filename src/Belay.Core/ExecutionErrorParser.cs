@@ -255,9 +255,9 @@ internal static class ExecutionErrorParser {
         public string Description { get; }
 
         public ErrorPattern(string pattern, string description) {
-            Pattern = pattern;
-            Description = description;
-            Regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            this.Pattern = pattern;
+            this.Description = description;
+            this.Regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }
     }
 }

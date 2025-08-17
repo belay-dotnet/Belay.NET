@@ -591,6 +591,6 @@ public class EnvironmentReading {
     /// </summary>
     /// <returns></returns>
     public override string ToString() {
-        return $"T: {Temperature:F1}°C, H: {Humidity:F1}%, L: {LightLevel:F1}% [ID: {ReadingId}]";
+        return $"T: {this.Temperature:F1}°C, H: {this.Humidity:F1}%, L: {this.LightLevel:F1}% [ID: {this.ReadingId}]";
     }
 }

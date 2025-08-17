@@ -92,7 +92,7 @@ namespace Belay.Core {
         /// </code>
         /// </example>
         public void SetCurrentOperation(string? operationName) {
-            CurrentOperation = operationName;
+            this.CurrentOperation = operationName;
         }
 
         /// <summary>
@@ -103,8 +103,8 @@ namespace Belay.Core {
         /// for monitoring and diagnostic purposes.
         /// </remarks>
         public void CompleteOperation() {
-            CurrentOperation = null;
-            LastOperationTime = DateTime.UtcNow;
+            this.CurrentOperation = null;
+            this.LastOperationTime = DateTime.UtcNow;
         }
 
         /// <summary>
@@ -115,8 +115,8 @@ namespace Belay.Core {
         /// typically used when clearing cache or resetting device state.
         /// </remarks>
         public void ClearExecutionHistory() {
-            CurrentOperation = null;
-            LastOperationTime = null;
+            this.CurrentOperation = null;
+            this.LastOperationTime = null;
         }
 
         /// <summary>
@@ -124,9 +124,9 @@ namespace Belay.Core {
         /// </summary>
         /// <returns>A formatted string containing key state information.</returns>
         public override string ToString() {
-            var operation = CurrentOperation != null ? $"Operation: {CurrentOperation}" : "Idle";
-            var platform = Capabilities?.Platform ?? "Unknown";
-            return $"DeviceState [{ConnectionState}] Platform: {platform}, {operation}";
+            var operation = this.CurrentOperation != null ? $"Operation: {this.CurrentOperation}" : "Idle";
+            var platform = this.Capabilities?.Platform ?? "Unknown";
+            return $"DeviceState [{this.ConnectionState}] Platform: {platform}, {operation}";
         }
     }
 
@@ -208,7 +208,7 @@ namespace Belay.Core {
         /// </code>
         /// </example>
         public bool SupportsFeature(SimpleDeviceFeatureSet feature) {
-            return SupportedFeatures.HasFlag(feature);
+            return this.SupportedFeatures.HasFlag(feature);
         }
 
         /// <summary>
@@ -216,11 +216,11 @@ namespace Belay.Core {
         /// </summary>
         /// <returns>A formatted string showing platform, version, and feature count.</returns>
         public override string ToString() {
-            var featureCount = CountFlags(SupportedFeatures);
-            var status = DetectionComplete ? "Complete" : "Pending";
-            return $"DeviceCapabilities [{status}] Platform: {Platform ?? "Unknown"}, " +
-                   $"Version: {Version ?? "Unknown"}, Features: {featureCount}, " +
-                   $"Memory: {AvailableMemory} bytes";
+            var featureCount = CountFlags(this.SupportedFeatures);
+            var status = this.DetectionComplete ? "Complete" : "Pending";
+            return $"DeviceCapabilities [{status}] Platform: {this.Platform ?? "Unknown"}, " +
+                   $"Version: {this.Version ?? "Unknown"}, Features: {featureCount}, " +
+                   $"Memory: {this.AvailableMemory} bytes";
         }
 
         private static int CountFlags(SimpleDeviceFeatureSet flags) {
