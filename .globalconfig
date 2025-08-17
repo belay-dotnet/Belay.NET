@@ -26,3 +26,7 @@ dotnet_diagnostic.S3881.severity = suggestion   # "IDisposable" should be implem
 
 # Keep important rules as errors
 dotnet_diagnostic.CS1591.severity = none        # Missing XML comment (already excluded)
+
+# Suppress WHITESPACE formatter for collection expressions to resolve SA1010 conflict
+# SA1010 (Opening square brackets should not be preceded by a space) conflicts with WHITESPACE formatter
+dotnet_diagnostic.WHITESPACE.severity = none    # Disable WHITESPACE formatting checker to resolve SA1010 conflicts

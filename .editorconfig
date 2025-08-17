@@ -39,9 +39,11 @@ csharp_style_qualification_for_method = true:error
 csharp_style_qualification_for_event = true:error
 
 # StyleCop SA1010: Opening square brackets should not be preceded by a space
-# Force collection expression formatting to be consistent
+# Force collection expression formatting to be consistent with SA1010
 csharp_space_around_binary_operators = before_and_after
 csharp_space_between_square_brackets = false
+# Collection expressions: SA1010 overrides WHITESPACE for =[ patterns
+csharp_space_before_open_square_brackets = false
 
 # Language keywords vs BCL types preferences
 dotnet_style_predefined_type_for_locals_parameters_members = true:warning
