@@ -80,7 +80,7 @@ public class EnhancedExecutionResult {
     /// <summary>
     /// Gets a value indicating whether the execution was successful.
     /// </summary>
-    public bool IsSuccess => ErrorType == ExecutionErrorType.None;
+    public bool IsSuccess => this.ErrorType == ExecutionErrorType.None;
 
     /// <summary>
     /// Gets or sets the normal output from the execution.

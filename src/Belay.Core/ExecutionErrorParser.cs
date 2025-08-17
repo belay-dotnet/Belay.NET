@@ -34,7 +34,7 @@ internal static class ExecutionErrorParser {
 
         [ExecutionErrorType.MemoryError] = new[]
         {
-            new ErrorPattern(@"MemoryError:", "Device out of memory"),
+            new ErrorPattern(@"MemoryError", "Device out of memory"),
             new ErrorPattern(@"OSError:.*memory", "Operating system memory error"),
             new ErrorPattern(@"OSError: \[Errno 12\]", "Cannot allocate memory"),
             new ErrorPattern(@"out of memory", "Insufficient memory available"),
@@ -78,7 +78,7 @@ internal static class ExecutionErrorParser {
     private static readonly Dictionary<ExecutionErrorType, string> SuggestedActions = new() {
         [ExecutionErrorType.SyntaxError] = "Check Python syntax, indentation, and parentheses/brackets matching",
         [ExecutionErrorType.RuntimeError] = "Verify variable names, function calls, and data types are correct",
-        [ExecutionErrorType.MemoryError] = "Reduce memory usage or split operation into smaller chunks",
+        [ExecutionErrorType.MemoryError] = "Reduce memory usage by freeing unused objects or split operation into smaller chunks",
         [ExecutionErrorType.FileSystemError] = "Check file paths, permissions, and available storage space",
         [ExecutionErrorType.ImportError] = "Ensure required modules are available on the MicroPython device",
         [ExecutionErrorType.TimeoutError] = "Check device connection and increase timeout if necessary",
@@ -255,9 +255,9 @@ internal static class ExecutionErrorParser {
         public string Description { get; }
 
         public ErrorPattern(string pattern, string description) {
-            Pattern = pattern;
-            Description = description;
-            Regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+            this.Pattern = pattern;
+            this.Description = description;
+            this.Regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }
     }
 }

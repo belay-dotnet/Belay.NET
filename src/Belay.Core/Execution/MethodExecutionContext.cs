@@ -17,9 +17,9 @@ public class MethodExecutionContext {
     /// <param name="instance">The instance object (if any).</param>
     /// <param name="parameters">The method parameters.</param>
     public MethodExecutionContext(MethodInfo method, object? instance, object?[]? parameters) {
-        Method = method;
-        Instance = instance;
-        Parameters = parameters;
+        this.Method = method;
+        this.Instance = instance;
+        this.Parameters = parameters;
     }
 
     /// <summary>

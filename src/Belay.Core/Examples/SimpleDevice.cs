@@ -29,7 +29,7 @@ public class SimpleDevice : Device {
     [Task]
     public virtual async Task<string> GetGreetingAsync() {
         // This code should be intercepted and executed on the device
-        return await ExecuteAsync<string>("'Hello from MicroPython!'");
+        return await this.ExecuteAsync<string>("'Hello from MicroPython!'");
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ public class SimpleDevice : Device {
     [Task(Name = "read_temp", TimeoutMs = 5000)]
     public virtual async Task<float> ReadTemperatureAsync() {
         // This should be intercepted and the Python code executed on device
-        return await ExecuteAsync<float>(@"
+        return await this.ExecuteAsync<float>(@"
 import machine
 import time
 
@@ -58,7 +58,7 @@ temp
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     [Setup(Order = 1)]
     public virtual async Task InitializeAsync() {
-        await ExecuteAsync(@"
+        await this.ExecuteAsync(@"
 # Initialize device
 print('Device initialized')
 import machine
@@ -73,7 +73,7 @@ import time
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     [Teardown(Order = 1)]
     public virtual async Task CleanupAsync() {
-        await ExecuteAsync(@"
+        await this.ExecuteAsync(@"
 # Cleanup device resources
 print('Device cleanup complete')
 ");

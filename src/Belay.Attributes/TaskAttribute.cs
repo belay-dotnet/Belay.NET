@@ -203,7 +203,7 @@ public sealed class TaskAttribute : Attribute {
     /// </code>
     /// </example>
     public int TimeoutMs {
-        get => timeoutMs;
+        get => this.timeoutMs;
         set {
             if (value != -1 && value <= 0) {
                 throw new ArgumentOutOfRangeException(
@@ -211,7 +211,7 @@ public sealed class TaskAttribute : Attribute {
                     "Timeout must be a positive value in milliseconds, or -1 to use default timeout");
             }
 
-            timeoutMs = value;
+            this.timeoutMs = value;
         }
     }
 
@@ -267,19 +267,19 @@ public sealed class TaskAttribute : Attribute {
     public override string ToString() {
         var parts = new List<string>();
 
-        if (!string.IsNullOrEmpty(Name)) {
-            parts.Add($"Name={Name}");
+        if (!string.IsNullOrEmpty(this.Name)) {
+            parts.Add($"Name={this.Name}");
         }
 
-        if (!Cache) {
+        if (!this.Cache) {
             parts.Add("Cache=false");
         }
 
-        if (TimeoutMs != -1) {
-            parts.Add($"TimeoutMs={TimeoutMs}");
+        if (this.TimeoutMs != -1) {
+            parts.Add($"TimeoutMs={this.TimeoutMs}");
         }
 
-        if (Exclusive) {
+        if (this.Exclusive) {
             parts.Add("Exclusive=true");
         }
 

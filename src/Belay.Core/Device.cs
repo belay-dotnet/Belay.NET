@@ -78,11 +78,11 @@ public class Device : IDisposable {
         this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Device>.Instance;
 
         // Forward events from connection layer
-        connection.OutputReceived += (sender, args) => OutputReceived?.Invoke(this, args);
+        connection.OutputReceived += (sender, args) => this.OutputReceived?.Invoke(this, args);
         connection.StateChanged += (sender, args) => {
             // Update device state when connection state changes
-            State.ConnectionState = args.NewState;
-            StateChanged?.Invoke(this, args);
+            this.State.ConnectionState = args.NewState;
+            this.StateChanged?.Invoke(this, args);
         };
 
         var executorLoggerFactory = loggerFactory ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
@@ -91,11 +91,11 @@ public class Device : IDisposable {
         this.executionContextService = executionContextService ?? new SimpleExecutionContextService();
 
         // Initialize device state with current connection state
-        State.ConnectionState = connection.State;
+        this.State.ConnectionState = connection.State;
 
         // Initialize single direct executor using AttributeHandler
         var deviceConnection = new SimplifiedDevice(connection, executorLoggerFactory.CreateLogger<SimplifiedDevice>());
-        executor = new Lazy<DirectExecutor>(() => new DirectExecutor(deviceConnection, executorLoggerFactory.CreateLogger<DirectExecutor>()));
+        this.executor = new Lazy<DirectExecutor>(() => new DirectExecutor(deviceConnection, executorLoggerFactory.CreateLogger<DirectExecutor>()));
     }
 
     /// <summary>
@@ -115,7 +115,7 @@ public class Device : IDisposable {
     /// This property is maintained for backward compatibility. Use the State property
     /// for accessing the full device state including capabilities and operation tracking.
     /// </remarks>
-    public DeviceConnectionState ConnectionState => connection.State;
+    public DeviceConnectionState ConnectionState => this.connection.State;
 
     /// <summary>
     /// Gets the device state including capabilities, current operations, and connection status.
@@ -143,7 +143,7 @@ public class Device : IDisposable {
     /// Gets the connection interface for this device.
     /// Internal use for executors and session management.
     /// </summary>
-    internal DeviceConnection Connection => connection;
+    internal DeviceConnection Connection => this.connection;
 
     /// <summary>
     /// Gets the direct executor that handles all attribute types via AttributeHandler.
@@ -153,7 +153,7 @@ public class Device : IDisposable {
     /// that handles [Task], [Setup], [Thread], and [Teardown] attributes using the
     /// AttributeHandler for policy enforcement and SimpleCache for caching.
     /// </remarks>
-    public DirectExecutor Executor => executor.Value;
+    public DirectExecutor Executor => this.executor.Value;
 
     /// <summary>
     /// Connect to the MicroPython device and perform capability detection.
@@ -178,39 +178,39 @@ public class Device : IDisposable {
     /// </code>
     /// </example>
     public async Task ConnectAsync(CancellationToken cancellationToken = default) {
-        if (disposed) {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
-        logger.LogDebug("Connecting to device");
-        State.SetCurrentOperation("Connect");
+        this.logger.LogDebug("Connecting to device");
+        this.State.SetCurrentOperation("Connect");
 
         try {
-            await connection.ConnectAsync(cancellationToken);
+            await this.connection.ConnectAsync(cancellationToken);
 
             // Update state after successful connection
-            State.ConnectionState = connection.State;
+            this.State.ConnectionState = this.connection.State;
 
-            logger.LogInformation("Successfully connected to device, performing capability detection");
+            this.logger.LogInformation("Successfully connected to device, performing capability detection");
 
             // Perform fast capability detection using batched approach
             try {
-                State.SetCurrentOperation("CapabilityDetection");
-                State.Capabilities = await SimplifiedCapabilityDetection.DetectAsync(
-                    connection, logger, cancellationToken);
-                logger.LogDebug("Capability detection completed: {Capabilities}", State.Capabilities);
+                this.State.SetCurrentOperation("CapabilityDetection");
+                this.State.Capabilities = await SimplifiedCapabilityDetection.DetectAsync(
+                    this.connection, this.logger, cancellationToken);
+                this.logger.LogDebug("Capability detection completed: {Capabilities}", this.State.Capabilities);
             }
             catch (Exception ex) {
-                logger.LogWarning(ex, "Capability detection failed, device will work with limited functionality");
+                this.logger.LogWarning(ex, "Capability detection failed, device will work with limited functionality");
 
                 // Create minimal capabilities to indicate detection was attempted
-                State.Capabilities = new SimpleDeviceCapabilities { DetectionComplete = true };
+                this.State.Capabilities = new SimpleDeviceCapabilities { DetectionComplete = true };
             }
 
-            logger.LogInformation("Device connection and initialization completed successfully");
+            this.logger.LogInformation("Device connection and initialization completed successfully");
         }
         finally {
-            State.CompleteOperation();
+            this.State.CompleteOperation();
         }
     }
 
@@ -220,24 +220,24 @@ public class Device : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task DisconnectAsync(CancellationToken cancellationToken = default) {
-        if (disposed) {
+        if (this.disposed) {
             return;
         }
 
-        logger.LogDebug("Disconnecting from device");
+        this.logger.LogDebug("Disconnecting from device");
 
         // Execute teardown cleanup before disconnecting
         try {
             // Execute emergency cleanup for simplified teardown
-            await ExecuteAsync("# Teardown cleanup\nimport gc; gc.collect()", cancellationToken).ConfigureAwait(false);
+            await this.ExecuteAsync("# Teardown cleanup\nimport gc; gc.collect()", cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) {
-            logger.LogError(ex, "Error executing teardown cleanup during disconnect");
+            this.logger.LogError(ex, "Error executing teardown cleanup during disconnect");
         }
 
-        await connection.DisconnectAsync(cancellationToken);
+        await this.connection.DisconnectAsync(cancellationToken);
 
-        logger.LogInformation("Disconnected from device");
+        this.logger.LogInformation("Disconnected from device");
     }
 
     /// <summary>
@@ -259,7 +259,7 @@ public class Device : IDisposable {
     /// </code>
     /// </example>
     public async Task<string> ExecuteAsync(string code, CancellationToken cancellationToken = default) {
-        if (disposed) {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
@@ -267,17 +267,17 @@ public class Device : IDisposable {
             throw new ArgumentException("Code cannot be null or empty", nameof(code));
         }
 
-        logger.LogDebug("Executing code: {Code}", code.Trim());
+        this.logger.LogDebug("Executing code: {Code}", code.Trim());
 
         // Track operation in device state
-        State.SetCurrentOperation("ExecuteCode");
+        this.State.SetCurrentOperation("ExecuteCode");
 
         try {
             // Use unified DirectExecutor for all code execution
-            return await Executor.ExecutePythonAsync<string>(code, cancellationToken).ConfigureAwait(false);
+            return await this.Executor.ExecutePythonAsync<string>(code, cancellationToken).ConfigureAwait(false);
         }
         finally {
-            State.CompleteOperation();
+            this.State.CompleteOperation();
         }
     }
 
@@ -306,7 +306,7 @@ public class Device : IDisposable {
     /// </code>
     /// </example>
     public async Task<T> ExecuteAsync<T>(string code, CancellationToken cancellationToken = default) {
-        if (disposed) {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
@@ -315,14 +315,14 @@ public class Device : IDisposable {
         }
 
         // Track operation in device state
-        State.SetCurrentOperation("ExecuteCode");
+        this.State.SetCurrentOperation("ExecuteCode");
 
         try {
             // Use unified DirectExecutor for all code execution
-            return await Executor.ExecutePythonAsync<T>(code, cancellationToken).ConfigureAwait(false);
+            return await this.Executor.ExecutePythonAsync<T>(code, cancellationToken).ConfigureAwait(false);
         }
         finally {
-            State.CompleteOperation();
+            this.State.CompleteOperation();
         }
     }
 
@@ -334,19 +334,19 @@ public class Device : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task PutFileAsync(string localPath, string remotePath, CancellationToken cancellationToken = default) {
-        if (disposed) {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
-        logger.LogDebug("Transferring file {LocalPath} to device at {RemotePath}", localPath, remotePath);
+        this.logger.LogDebug("Transferring file {LocalPath} to device at {RemotePath}", localPath, remotePath);
 
-        State.SetCurrentOperation("FileTransfer");
+        this.State.SetCurrentOperation("FileTransfer");
         try {
-            await connection.PutFileAsync(localPath, remotePath, cancellationToken);
-            logger.LogInformation("Successfully transferred file to device");
+            await this.connection.PutFileAsync(localPath, remotePath, cancellationToken);
+            this.logger.LogInformation("Successfully transferred file to device");
         }
         finally {
-            State.CompleteOperation();
+            this.State.CompleteOperation();
         }
     }
 
@@ -357,20 +357,20 @@ public class Device : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The file contents as a byte array.</returns>
     public async Task<byte[]> GetFileAsync(string remotePath, CancellationToken cancellationToken = default) {
-        if (disposed) {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
-        logger.LogDebug("Retrieving file {RemotePath} from device", remotePath);
+        this.logger.LogDebug("Retrieving file {RemotePath} from device", remotePath);
 
-        State.SetCurrentOperation("FileRetrieval");
+        this.State.SetCurrentOperation("FileRetrieval");
         try {
-            byte[] content = await connection.GetFileAsync(remotePath, cancellationToken);
-            logger.LogInformation("Successfully retrieved file from device ({Size} bytes)", content.Length);
+            byte[] content = await this.connection.GetFileAsync(remotePath, cancellationToken);
+            this.logger.LogInformation("Successfully retrieved file from device ({Size} bytes)", content.Length);
             return content;
         }
         finally {
-            State.CompleteOperation();
+            this.State.CompleteOperation();
         }
     }
 
@@ -456,18 +456,18 @@ public class Device : IDisposable {
             throw new ArgumentNullException(nameof(method));
         }
 
-        if (disposed) {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(Device));
         }
 
         // Create execution context for secure attribute detection (replacement for stack frame inspection)
         var context = new MethodExecutionContext(method, instance, parameters);
-        using var contextScope = executionContextService.SetContext(context);
+        using var contextScope = this.executionContextService.SetContext(context);
 
         // Use unified DirectExecutor for all method execution via AttributeHandler
-        logger.LogDebug("Executing method {MethodName} using DirectExecutor with secure execution context", method.Name);
+        this.logger.LogDebug("Executing method {MethodName} using DirectExecutor with secure execution context", method.Name);
 
-        return await Executor.ExecuteAsync<T>(method, parameters ?? Array.Empty<object>(), cancellationToken).ConfigureAwait(false);
+        return await this.Executor.ExecuteAsync<T>(method, parameters ?? Array.Empty<object>(), cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -479,7 +479,7 @@ public class Device : IDisposable {
     /// <param name="cancellationToken">Cancellation token to cancel the execution.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     public async Task ExecuteMethodAsync(System.Reflection.MethodInfo method, object? instance = null, object?[]? parameters = null, CancellationToken cancellationToken = default) {
-        await ExecuteMethodAsync<object>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
+        await this.ExecuteMethodAsync<object>(method, instance, parameters, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -487,10 +487,10 @@ public class Device : IDisposable {
     /// </summary>
     /// <returns>A tuple containing device identifier and firmware version.</returns>
     internal (string DeviceId, string FirmwareVersion) GetDeviceIdentification() {
-        var deviceId = connection.Type switch {
-            DeviceConnection.ConnectionType.Serial => $"serial:{connection.ConnectionString}",
+        var deviceId = this.connection.Type switch {
+            DeviceConnection.ConnectionType.Serial => $"serial:{this.connection.ConnectionString}",
             DeviceConnection.ConnectionType.Subprocess => "subprocess:micropython",
-            _ => $"unknown:{connection.GetType().Name}",
+            _ => $"unknown:{this.connection.GetType().Name}",
         };
 
         // TODO: Get actual firmware version from device using sys.implementation or uos.uname()
@@ -502,16 +502,16 @@ public class Device : IDisposable {
 
     /// <inheritdoc/>
     public void Dispose() {
-        if (disposed) {
+        if (this.disposed) {
             return;
         }
 
         // Dispose unified executor if it has been initialized
-        if (executor.IsValueCreated) {
-            executor.Value?.Dispose();
+        if (this.executor.IsValueCreated) {
+            this.executor.Value?.Dispose();
         }
 
-        connection?.Dispose();
-        disposed = true;
+        this.connection?.Dispose();
+        this.disposed = true;
     }
 }

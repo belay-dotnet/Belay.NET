@@ -77,8 +77,9 @@ public static class AttributeHandler {
                 return await device.ExecutePython<T>(pythonCode, effectiveToken);
             }
         }
-        catch (OperationCanceledException) when (timeoutSource?.Token.IsCancellationRequested == true) {
-            throw new DeviceException($"Device operation timed out after {policies.Timeout?.TotalMilliseconds ?? 30000}ms");
+        catch (OperationCanceledException ex) when (timeoutSource?.IsCancellationRequested == true) {
+            var timeoutMs = policies.Timeout?.TotalMilliseconds ?? 30000;
+            throw new DeviceException($"Device operation timed out after {timeoutMs}ms", ex);
         }
     }
 
@@ -128,6 +129,7 @@ public static class AttributeHandler {
             if (!InputValidator.IsValidParameterName(paramName)) {
                 throw new ArgumentException($"Invalid parameter name for Python code substitution: {paramName}", nameof(method));
             }
+
             paramDict[paramName] = args[i];
         }
 

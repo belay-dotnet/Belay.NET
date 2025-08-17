@@ -21,7 +21,16 @@ public static class SimpleCache {
     /// <param name="key">The cache key.</param>
     /// <param name="factory">The factory function to create the value if not cached.</param>
     /// <returns>The cached or newly created value.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when key or factory is null.</exception>
     public static T GetOrCreate<T>(string key, Func<T> factory) {
+        if (key == null) {
+            throw new ArgumentNullException(nameof(key));
+        }
+
+        if (factory == null) {
+            throw new ArgumentNullException(nameof(factory));
+        }
+
         var typedKey = $"{typeof(T).FullName}::{key}";
         EnforceSizeLimit();
         return (T)Cache.GetOrAdd(typedKey, _ => factory()!);
@@ -34,8 +43,18 @@ public static class SimpleCache {
     /// <typeparam name="T">The type of the cached value.</typeparam>
     /// <param name="key">The cache key.</param>
     /// <param name="factory">The async factory function to create the value if not cached.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
     /// <returns>The cached or newly created value.</returns>
-    public static async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory) {
+    /// <exception cref="ArgumentNullException">Thrown when key or factory is null.</exception>
+    public static async Task<T> GetOrCreateAsync<T>(string key, Func<Task<T>> factory, CancellationToken cancellationToken = default) {
+        if (key == null) {
+            throw new ArgumentNullException(nameof(key));
+        }
+
+        if (factory == null) {
+            throw new ArgumentNullException(nameof(factory));
+        }
+
         var typedKey = $"{typeof(T).FullName}::{key}";
         EnforceSizeLimit();
 
@@ -44,7 +63,7 @@ public static class SimpleCache {
             typedKey,
             _ => new Lazy<Task<T>>(() => factory(), LazyThreadSafetyMode.ExecutionAndPublication));
 
-        return await lazy.Value;
+        return await lazy.Value.ConfigureAwait(false);
     }
 
     /// <summary>

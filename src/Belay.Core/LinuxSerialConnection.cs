@@ -27,18 +27,18 @@ public sealed class LinuxSerialConnection : IDisposable {
     /// <summary>
     /// Gets a value indicating whether the connection is open.
     /// </summary>
-    public bool IsOpen => portStream?.CanRead == true;
+    public bool IsOpen => this.portStream?.CanRead == true;
 
     /// <summary>
     /// Gets the underlying stream for advanced protocol operations.
     /// </summary>
     /// <returns>The file stream used for serial communication.</returns>
     public Stream GetStream() {
-        if (!IsOpen || portStream == null) {
+        if (!this.IsOpen || this.portStream == null) {
             throw new InvalidOperationException("Port is not open");
         }
 
-        return portStream;
+        return this.portStream;
     }
 
     /// <summary>
@@ -46,24 +46,24 @@ public sealed class LinuxSerialConnection : IDisposable {
     /// </summary>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task OpenAsync() {
-        if (disposed) {
+        if (this.disposed) {
             throw new ObjectDisposedException(nameof(LinuxSerialConnection));
         }
 
-        if (IsOpen) {
+        if (this.IsOpen) {
             return;
         }
 
         // Configure serial port using stty (no command injection - validate path)
-        if (!portPath.StartsWith("/dev/")) {
+        if (!this.portPath.StartsWith("/dev/")) {
             throw new ArgumentException("Invalid device path");
         }
 
         // Configure serial port BEFORE opening to prevent blocking
-        await ConfigureSerialPortAsync().ConfigureAwait(false);
+        await this.ConfigureSerialPortAsync().ConfigureAwait(false);
 
         // Open the device file with timeout to prevent indefinite blocking
-        portStream = await OpenSerialFileWithTimeoutAsync().ConfigureAwait(false);
+        this.portStream = await this.OpenSerialFileWithTimeoutAsync().ConfigureAwait(false);
 
         // Brief delay for device initialization
         await Task.Delay(100).ConfigureAwait(false);
@@ -75,13 +75,13 @@ public sealed class LinuxSerialConnection : IDisposable {
     /// <param name="data">The data to write.</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task WriteAsync(string data) {
-        if (!IsOpen) {
+        if (!this.IsOpen) {
             throw new InvalidOperationException("Port is not open");
         }
 
         var bytes = Encoding.UTF8.GetBytes(data);
-        await portStream!.WriteAsync(bytes).ConfigureAwait(false);
-        await portStream.FlushAsync().ConfigureAwait(false);
+        await this.portStream!.WriteAsync(bytes).ConfigureAwait(false);
+        await this.portStream.FlushAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public sealed class LinuxSerialConnection : IDisposable {
     /// </summary>
     /// <returns>Available data as string.</returns>
     public async Task<string> ReadExistingAsync() {
-        if (!IsOpen || portStream == null) {
+        if (!this.IsOpen || this.portStream == null) {
             return string.Empty;
         }
 
@@ -97,7 +97,7 @@ public sealed class LinuxSerialConnection : IDisposable {
         try {
             // Longer timeout for Raw REPL responses - devices need time to process
             using var cts = new CancellationTokenSource(1000); // 1 second timeout
-            var bytesRead = await portStream.ReadAsync(buffer, 0, buffer.Length, cts.Token).ConfigureAwait(false);
+            var bytesRead = await this.portStream.ReadAsync(buffer, 0, buffer.Length, cts.Token).ConfigureAwait(false);
             return bytesRead > 0 ? Encoding.UTF8.GetString(buffer, 0, bytesRead) : string.Empty;
         }
         catch (OperationCanceledException) {
@@ -109,18 +109,18 @@ public sealed class LinuxSerialConnection : IDisposable {
     /// Closes the serial connection.
     /// </summary>
     public void Close() {
-        portStream?.Close();
-        portStream = null;
+        this.portStream?.Close();
+        this.portStream = null;
     }
 
     private async Task<FileStream> OpenSerialFileWithTimeoutAsync() {
         // Run the blocking FileStream open in a separate task with timeout
         var openTask = Task.Run(() => {
             try {
-                return new FileStream(portPath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.None);
+                return new FileStream(this.portPath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, FileOptions.None);
             }
             catch (Exception ex) {
-                throw new InvalidOperationException($"Failed to open serial device {portPath}: {ex.Message}", ex);
+                throw new InvalidOperationException($"Failed to open serial device {this.portPath}: {ex.Message}", ex);
             }
         });
 
@@ -130,7 +130,7 @@ public sealed class LinuxSerialConnection : IDisposable {
         var completedTask = await Task.WhenAny(openTask, timeoutTask).ConfigureAwait(false);
 
         if (completedTask == timeoutTask) {
-            throw new InvalidOperationException($"Opening serial device {portPath} timed out after 5 seconds. Device may be busy or not responding.");
+            throw new InvalidOperationException($"Opening serial device {this.portPath} timed out after 5 seconds. Device may be busy or not responding.");
         }
 
         return await openTask.ConfigureAwait(false);
@@ -143,7 +143,7 @@ public sealed class LinuxSerialConnection : IDisposable {
             var process = new Process {
                 StartInfo = new ProcessStartInfo {
                     FileName = "stty",
-                    Arguments = $"-F {portPath} 115200 raw -echo -echoe -echok -echoctl -echoke -crtscts -hupcl min 1 time 0",
+                    Arguments = $"-F {this.portPath} 115200 raw -echo -echoe -echok -echoctl -echoke -crtscts -hupcl min 1 time 0",
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
@@ -172,11 +172,11 @@ public sealed class LinuxSerialConnection : IDisposable {
 
     /// <inheritdoc />
     public void Dispose() {
-        if (disposed) {
+        if (this.disposed) {
             return;
         }
 
-        Close();
-        disposed = true;
+        this.Close();
+        this.disposed = true;
     }
 }
