@@ -78,7 +78,7 @@ public static class AttributeHandler {
             }
         }
         catch (OperationCanceledException) when (timeoutSource?.Token.IsCancellationRequested == true) {
-            throw new DeviceException($"Device operation timed out after {policies.Timeout ?? TimeSpan.FromSeconds(30)}");
+            throw new DeviceException($"Device operation timed out after {policies.Timeout?.TotalMilliseconds ?? 30000}ms");
         }
     }
 
@@ -204,12 +204,28 @@ public static class AttributeHandler {
     private static ExecutionPolicies GetExecutionPolicies(MethodInfo method) {
         var policies = new ExecutionPolicies();
 
-        // Check for timeout specifications in attributes
+        // Check for timeout specifications in attributes (TaskAttribute takes precedence)
         var taskAttr = method.GetCustomAttribute<TaskAttribute>();
         if (taskAttr != null) {
             policies.Cache = taskAttr.Cache;
             if (taskAttr.TimeoutMs > 0) {
                 policies.Timeout = TimeSpan.FromMilliseconds(taskAttr.TimeoutMs);
+            }
+        }
+
+        // Check SetupAttribute for timeout if not already set
+        if (policies.Timeout == null) {
+            var setupAttr = method.GetCustomAttribute<SetupAttribute>();
+            if (setupAttr?.TimeoutMs > 0) {
+                policies.Timeout = TimeSpan.FromMilliseconds(setupAttr.TimeoutMs);
+            }
+        }
+
+        // Check TeardownAttribute for timeout if not already set
+        if (policies.Timeout == null) {
+            var teardownAttr = method.GetCustomAttribute<TeardownAttribute>();
+            if (teardownAttr?.TimeoutMs > 0) {
+                policies.Timeout = TimeSpan.FromMilliseconds(teardownAttr.TimeoutMs);
             }
         }
 
@@ -219,7 +235,6 @@ public static class AttributeHandler {
             policies.RequiresLock = true;
         }
 
-        // Add other policy derivations as needed
         return policies;
     }
 
