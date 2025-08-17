@@ -94,8 +94,8 @@ public static class InputValidator {
 
     // Dangerous patterns that indicate potential injection or malicious activity
     private static readonly Regex[] HighRiskPatterns = {
-        // Command injection patterns
-        new(@"['""][^'""]*['""][^'""]*[;|&`$(){}]", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        // Command injection patterns - look for shell metacharacters after quoted strings
+        new(@"['""][^'""]*['""]\s*[;|&`$]\s*[^'""]*", RegexOptions.Compiled | RegexOptions.IgnoreCase),
         
         // Shell command execution
         new(@"(os\.(system|popen|spawn)|subprocess\.|exec\s*\(|eval\s*\()", RegexOptions.Compiled | RegexOptions.IgnoreCase),
@@ -112,8 +112,8 @@ public static class InputValidator {
         // Memory or resource exhaustion patterns
         new(@"(\[\s*\]\s*\*\s*\d{6,}|range\s*\(\s*\d{6,})", RegexOptions.Compiled),
         
-        // Protocol manipulation
-        new(@"(\x[0-9a-fA-F]{2}|\\x[0-9a-fA-F]{2}|chr\s*\()", RegexOptions.Compiled)
+        // Protocol manipulation  
+        new(@"(\\x[0-9a-fA-F]{2}|chr\s*\()", RegexOptions.Compiled)
     };
 
     // Medium risk patterns that are concerning but may have legitimate uses
@@ -242,11 +242,16 @@ public static class InputValidator {
             }
         }
 
-        // Check for high risk patterns
+        // Check for high risk patterns (immediately fail for most)
         foreach (var pattern in HighRiskPatterns) {
             if (pattern.IsMatch(code)) {
                 riskLevel = SecurityRiskLevel.High;
                 concerns.Add($"High risk pattern detected: {pattern}");
+                
+                // Immediately fail for command injection and system calls
+                if (config.ValidationLevel >= ValidationStrictness.Standard && !hasCustomAllowPattern) {
+                    return new ValidationResult(false, $"High risk security pattern detected: {pattern}", SecurityRiskLevel.High, concerns);
+                }
             }
         }
 
@@ -260,11 +265,27 @@ public static class InputValidator {
             }
         }
 
-        // Check for dangerous functions
+        // Check for dangerous functions with context awareness
         foreach (var func in DangerousFunctions) {
             if (code.Contains(func + "(", StringComparison.OrdinalIgnoreCase)) {
-                riskLevel = SecurityRiskLevel.High;
-                concerns.Add($"Dangerous function usage: {func}");
+                bool shouldBlock = true;
+                
+                // Check if this function is part of an allowed module context
+                if (func.Equals("os", StringComparison.OrdinalIgnoreCase) && config.AllowFileOperations) {
+                    shouldBlock = false;
+                    if (riskLevel < SecurityRiskLevel.Medium) {
+                        riskLevel = SecurityRiskLevel.Medium;
+                    }
+                    concerns.Add($"File operations detected (allowed): {func}");
+                } else {
+                    riskLevel = SecurityRiskLevel.High;
+                    concerns.Add($"Dangerous function usage: {func}");
+                }
+                
+                // Immediately fail for dangerous functions in standard+ mode (unless specifically allowed)
+                if (shouldBlock && config.ValidationLevel >= ValidationStrictness.Standard && !hasCustomAllowPattern) {
+                    return new ValidationResult(false, $"Dangerous function detected: {func}", SecurityRiskLevel.High, concerns);
+                }
             }
         }
 
