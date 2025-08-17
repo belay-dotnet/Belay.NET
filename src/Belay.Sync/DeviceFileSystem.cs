@@ -36,14 +36,14 @@ namespace Belay.Sync {
             bool recursive = false,
             CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            logger.LogDebug("Listing directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
+            this.logger.LogDebug("Listing directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
 
             var code = recursive
                 ? GenerateRecursiveListCode(normalizedPath)
                 : GenerateListCode(normalizedPath);
 
             try {
-                var result = await device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+                var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 return ParseListResult(result);
             }
             catch (DeviceException ex) when (ex.Message.Contains("OSError") || ex.Message.Contains("ENOENT")) {
@@ -56,7 +56,7 @@ namespace Belay.Sync {
             string path,
             CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            logger.LogDebug("Getting file info for: {Path}", normalizedPath);
+            this.logger.LogDebug("Getting file info for: {Path}", normalizedPath);
 
             var escapedPath = normalizedPath.Replace("'", "\\'");
             var code = $@"
@@ -76,7 +76,7 @@ except OSError:
 ";
 
             try {
-                var result = await device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+                var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
 
                 if (result.Trim() == "null") {
                     return null;
@@ -85,7 +85,7 @@ except OSError:
                 return ParseFileInfo(result);
             }
             catch (Exception ex) {
-                logger.LogWarning(ex, "Error getting file info for {Path}", normalizedPath);
+                this.logger.LogWarning(ex, "Error getting file info for {Path}", normalizedPath);
                 return null;
             }
         }
@@ -95,11 +95,11 @@ except OSError:
             string path,
             CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            logger.LogDebug("Reading file: {Path}", normalizedPath);
+            this.logger.LogDebug("Reading file: {Path}", normalizedPath);
 
             // For large files, we'll need chunked reading to avoid memory issues
             // First, get the file size
-            var fileInfo = await GetFileInfoAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
+            var fileInfo = await this.GetFileInfoAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
             if (fileInfo == null) {
                 throw new FileNotFoundException($"File not found: {normalizedPath}");
             }
@@ -112,10 +112,10 @@ except OSError:
 
             // For small files, read directly
             if (fileSize <= 8192) {
-                return await ReadFileDirectAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
+                return await this.ReadFileDirectAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
             }
             else {
-                return await ReadFileChunkedAsync(normalizedPath, fileSize, cancellationToken).ConfigureAwait(false);
+                return await this.ReadFileChunkedAsync(normalizedPath, fileSize, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -123,7 +123,7 @@ except OSError:
         public async Task<string> ReadTextFileAsync(
             string path,
             CancellationToken cancellationToken = default) {
-            var bytes = await ReadFileAsync(path, cancellationToken).ConfigureAwait(false);
+            var bytes = await this.ReadFileAsync(path, cancellationToken).ConfigureAwait(false);
             return Encoding.UTF8.GetString(bytes);
         }
 
@@ -133,13 +133,13 @@ except OSError:
             byte[] content,
             CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            logger.LogDebug("Writing file: {Path} ({Size} bytes)", normalizedPath, content.Length);
+            this.logger.LogDebug("Writing file: {Path} ({Size} bytes)", normalizedPath, content.Length);
 
             if (content.Length <= 4096) {
-                await WriteFileDirectAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
+                await this.WriteFileDirectAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
             }
             else {
-                await WriteFileChunkedAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
+                await this.WriteFileChunkedAsync(normalizedPath, content, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -149,7 +149,7 @@ except OSError:
             string content,
             CancellationToken cancellationToken = default) {
             var bytes = Encoding.UTF8.GetBytes(content);
-            await WriteFileAsync(path, bytes, cancellationToken).ConfigureAwait(false);
+            await this.WriteFileAsync(path, bytes, cancellationToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -157,7 +157,7 @@ except OSError:
             string path,
             CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            logger.LogDebug("Deleting file: {Path}", normalizedPath);
+            this.logger.LogDebug("Deleting file: {Path}", normalizedPath);
 
             var escapedPath = normalizedPath.Replace("'", "\\'");
             var code = $@"
@@ -173,7 +173,7 @@ except OSError as e:
 ";
 
             try {
-                var result = await device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+                var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 var trimmed = result.Trim();
 
                 if (trimmed == "not_found") {
@@ -194,7 +194,7 @@ except OSError as e:
             bool recursive = false,
             CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            logger.LogDebug("Creating directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
+            this.logger.LogDebug("Creating directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
 
             var code = recursive
                 ? $@"
@@ -224,7 +224,7 @@ except OSError as e:
 ";
 
             try {
-                var result = await device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+                var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 var trimmed = result.Trim();
 
                 if (trimmed.StartsWith("error:")) {
@@ -242,7 +242,7 @@ except OSError as e:
             bool recursive = false,
             CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            logger.LogDebug("Deleting directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
+            this.logger.LogDebug("Deleting directory: {Path} (recursive: {Recursive})", normalizedPath, recursive);
 
             var code = recursive
                 ? $@"
@@ -280,7 +280,7 @@ except OSError as e:
 ";
 
             try {
-                var result = await device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+                var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 var trimmed = result.Trim();
 
                 if (trimmed == "not_found") {
@@ -302,7 +302,7 @@ except OSError as e:
         public async Task<bool> ExistsAsync(
             string path,
             CancellationToken cancellationToken = default) {
-            var fileInfo = await GetFileInfoAsync(path, cancellationToken).ConfigureAwait(false);
+            var fileInfo = await this.GetFileInfoAsync(path, cancellationToken).ConfigureAwait(false);
             return fileInfo != null;
         }
 
@@ -312,11 +312,11 @@ except OSError as e:
             string algorithm = "md5",
             CancellationToken cancellationToken = default) {
             var normalizedPath = DevicePathUtil.NormalizePath(path);
-            logger.LogDebug("Calculating {Algorithm} checksum for: {Path}", algorithm, normalizedPath);
+            this.logger.LogDebug("Calculating {Algorithm} checksum for: {Path}", algorithm, normalizedPath);
 
             // Read the file content and calculate checksum on the host side
             // This is more reliable than trying to implement hash algorithms on the device
-            var content = await ReadFileAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
+            var content = await this.ReadFileAsync(normalizedPath, cancellationToken).ConfigureAwait(false);
 
             using HashAlgorithm hashAlgorithm = algorithm.ToLowerInvariant() switch {
                 "md5" => MD5.Create(),
@@ -396,7 +396,7 @@ except OSError as e:
         print(f'error: {{{{e}}}}')
 ";
 
-            var result = await device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+            var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
             var trimmed = result.Trim();
 
             if (trimmed == "not_found") {
@@ -428,7 +428,7 @@ except OSError as e:
     print(f'error: {{{{e}}}}')
 ";
 
-                var chunkResult = await device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+                var chunkResult = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
                 var trimmed = chunkResult.Trim();
 
                 if (trimmed.StartsWith("error:")) {
@@ -457,7 +457,7 @@ except OSError as e:
     print(f'error: {{{{e}}}}')
 ";
 
-            var result = await device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
+            var result = await this.device.ExecuteAsync<string>(code, cancellationToken).ConfigureAwait(false);
             var trimmed = result.Trim();
 
             if (trimmed.StartsWith("error:")) {
@@ -479,7 +479,7 @@ except OSError as e:
     print(f'error: {{{{e}}}}')
 ";
 
-            var initResult = await device.ExecuteAsync<string>(initCode, cancellationToken).ConfigureAwait(false);
+            var initResult = await this.device.ExecuteAsync<string>(initCode, cancellationToken).ConfigureAwait(false);
             if (initResult.Trim().StartsWith("error:")) {
                 throw new IOException($"Failed to initialize file {path}: {initResult.Trim()[6..]}");
             }
@@ -502,7 +502,7 @@ except OSError as e:
     print(f'error: {{{{e}}}}')
 ";
 
-                var chunkResult = await device.ExecuteAsync<string>(chunkCode, cancellationToken).ConfigureAwait(false);
+                var chunkResult = await this.device.ExecuteAsync<string>(chunkCode, cancellationToken).ConfigureAwait(false);
                 var trimmed = chunkResult.Trim();
 
                 if (trimmed.StartsWith("error:")) {

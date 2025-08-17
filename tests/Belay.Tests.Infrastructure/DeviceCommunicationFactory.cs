@@ -36,25 +36,25 @@ internal class MockDeviceConnection : IDeviceConnection {
     private bool _isConnected = false;
 
     public MockDeviceConnection(ILogger logger) {
-        _logger = logger;
+        this._logger = logger;
     }
 
-    public bool IsConnected => _isConnected;
+    public bool IsConnected => this._isConnected;
     public string DeviceInfo => "Mock MicroPython Device";
     public string ConnectionString => "mock://test";
 
     public Task Connect(CancellationToken cancellationToken = default) {
-        _isConnected = true;
+        this._isConnected = true;
         return Task.CompletedTask;
     }
 
     public Task Disconnect() {
-        _isConnected = false;
+        this._isConnected = false;
         return Task.CompletedTask;
     }
 
     public Task<T> ExecutePython<T>(string code, CancellationToken cancellationToken = default) {
-        if (!_isConnected)
+        if (!this._isConnected)
             throw new DeviceException("Device not connected");
 
         // Simple mock responses for common test cases
@@ -71,7 +71,7 @@ internal class MockDeviceConnection : IDeviceConnection {
     }
 
     public Task<string> ExecutePython(string code, CancellationToken cancellationToken = default) {
-        return ExecutePython<string>(code, cancellationToken);
+        return this.ExecutePython<string>(code, cancellationToken);
     }
 
     public Task WriteFile(string devicePath, byte[] data, CancellationToken cancellationToken = default) {
@@ -91,6 +91,6 @@ internal class MockDeviceConnection : IDeviceConnection {
     }
 
     public void Dispose() {
-        _isConnected = false;
+        this._isConnected = false;
     }
 }

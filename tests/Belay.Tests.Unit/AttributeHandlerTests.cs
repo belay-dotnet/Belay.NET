@@ -226,9 +226,9 @@ public class AttributeHandlerTests {
         public List<string> ExecutedCode { get; } = new();
 
         public async Task<string> ExecutePython(string code, CancellationToken cancellationToken = default) {
-            ExecutedCode.Add(code);
+            this.ExecutedCode.Add(code);
 
-            if (SimulateTimeout) {
+            if (this.SimulateTimeout) {
                 // Simulate a long-running operation that gets cancelled by the timeout
                 try {
                     await Task.Delay(15000, cancellationToken); // Longer delay to ensure timeout
@@ -243,9 +243,9 @@ public class AttributeHandlerTests {
         }
 
         public async Task<T> ExecutePython<T>(string code, CancellationToken cancellationToken = default) {
-            ExecutedCode.Add(code);
+            this.ExecutedCode.Add(code);
 
-            if (SimulateTimeout) {
+            if (this.SimulateTimeout) {
                 // Simulate a long-running operation that gets cancelled by the timeout
                 try {
                     await Task.Delay(15000, cancellationToken); // Longer delay to ensure timeout

@@ -93,35 +93,35 @@ public static class DiUsageExample {
             IDeviceFactory deviceFactory,
             IExecutorFactory executorFactory,
             ILogger<MyDeviceService> logger) {
-            _deviceFactory = deviceFactory;
-            _executorFactory = executorFactory;
-            _logger = logger;
+            this._deviceFactory = deviceFactory;
+            this._executorFactory = executorFactory;
+            this._logger = logger;
         }
 
         /// <inheritdoc/>
         public async Task RunDeviceOperationsAsync() {
-            _logger.LogInformation("Starting device operations");
+            this._logger.LogInformation("Starting device operations");
 
             // Create a device using the factory
-            using var device = _deviceFactory.CreateSubprocessDevice("micropython");
+            using var device = this._deviceFactory.CreateSubprocessDevice("micropython");
             try {
                 await device.Connect();
 
                 // Execute some Python code
                 var result = await device.ExecutePython<int>("2 + 3");
-                _logger.LogInformation("Calculation result: {Result}", result);
+                this._logger.LogInformation("Calculation result: {Result}", result);
 
                 // Get executors using the factory (though in the simplified architecture,
                 // you can also directly use device.Task, device.Setup, etc.)
-                var taskExecutor = _executorFactory.GetTaskExecutor(device);
-                _logger.LogDebug("Task executor type: {ExecutorType}", taskExecutor.GetType().Name);
+                var taskExecutor = this._executorFactory.GetTaskExecutor(device);
+                this._logger.LogDebug("Task executor type: {ExecutorType}", taskExecutor.GetType().Name);
 
                 // Note: In the simplified architecture, you typically use Device methods directly:
                 var complexResult = await device.ExecutePython<string>("import sys; sys.version");
-                _logger.LogInformation("Python version: {Version}", complexResult);
+                this._logger.LogInformation("Python version: {Version}", complexResult);
             }
             catch (Exception ex) {
-                _logger.LogError(ex, "Error during device operations");
+                this._logger.LogError(ex, "Error during device operations");
             }
             finally {
                 await device.DisconnectAsync();

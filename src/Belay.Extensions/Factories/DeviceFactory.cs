@@ -19,19 +19,19 @@ internal class DeviceFactory : IDeviceFactory {
     /// </summary>
     /// <param name="logger">The logger for device instances.</param>
     public DeviceFactory(ILogger<SimplifiedDevice> logger) {
-        _logger = logger;
+        this._logger = logger;
     }
 
     /// <inheritdoc/>
     public SimplifiedDevice CreateDevice(DeviceConnection connection) {
-        return new SimplifiedDevice(connection, _logger);
+        return new SimplifiedDevice(connection, this._logger);
     }
 
     /// <inheritdoc/>
     public SimplifiedDevice CreateSerialDevice(string portName, int? baudRate = null) {
         var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance;
         var connection = new DeviceConnection(DeviceConnection.ConnectionType.Serial, portName, logger);
-        return CreateDevice(connection);
+        return this.CreateDevice(connection);
     }
 
     /// <inheritdoc/>
@@ -41,7 +41,7 @@ internal class DeviceFactory : IDeviceFactory {
             : executablePath;
         var logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance;
         var connection = new DeviceConnection(DeviceConnection.ConnectionType.Subprocess, connectionString, logger);
-        return CreateDevice(connection);
+        return this.CreateDevice(connection);
     }
 }
 

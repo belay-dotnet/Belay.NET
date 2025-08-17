@@ -13,10 +13,10 @@ public class MicroPythonFixture : IDisposable {
 
     public MicroPythonFixture() {
         // Build MicroPython unix port if needed
-        MicroPythonPath = MicroPythonUnixPort.FindMicroPythonExecutable()
+        this.MicroPythonPath = MicroPythonUnixPort.FindMicroPythonExecutable()
             ?? MicroPythonUnixPort.BuildUnixPort();
 
-        if (string.IsNullOrEmpty(MicroPythonPath)) {
+        if (string.IsNullOrEmpty(this.MicroPythonPath)) {
             throw new InvalidOperationException(
                 "Failed to build or find MicroPython unix port. " +
                 "Please ensure the micropython submodule is initialized and build dependencies are installed.");

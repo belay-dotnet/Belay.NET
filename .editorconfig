@@ -26,11 +26,17 @@ trim_trailing_whitespace = false
 dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 
-# this. preferences
-dotnet_style_qualification_for_field = false:warning
-dotnet_style_qualification_for_property = false:warning
-dotnet_style_qualification_for_method = false:warning
-dotnet_style_qualification_for_event = false:warning
+# this. preferences (StyleCop SA1101 requires this. prefix, resolves IDE0003/IDE0009)
+dotnet_style_qualification_for_field = true:error
+dotnet_style_qualification_for_property = true:error
+dotnet_style_qualification_for_method = true:error
+dotnet_style_qualification_for_event = true:error
+
+# Additional qualification preferences for IDE0009 (Add 'this' or 'Me' qualification)
+csharp_style_qualification_for_field = true:error
+csharp_style_qualification_for_property = true:error
+csharp_style_qualification_for_method = true:error
+csharp_style_qualification_for_event = true:error
 
 # Language keywords vs BCL types preferences
 dotnet_style_predefined_type_for_locals_parameters_members = true:warning
