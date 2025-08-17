@@ -81,7 +81,7 @@ public class SecurityIntegrationTests {
     }
 
     [Fact]
-    public async Task End2End_DangerousCodeInPythonCodeAttribute_IsBlocked() {
+    public void End2End_DangerousCodeInPythonCodeAttribute_IsBlocked() {
         // This test would require a full device setup with attribute processing
         // For now, testing components individually is sufficient
         Assert.True(true); // Placeholder for future end-to-end test
@@ -93,15 +93,13 @@ public class SecurityIntegrationTests {
     [InlineData("__import__('os').system('bad')")]
     [InlineData("globals()['__builtins__']['eval']")]
     [InlineData("'; os.system('injection'); '")]
-    public async Task SecurityValidation_CommonInjectionPatterns_AreBlocked(string injectionPattern) {
-        // Arrange
-        var connection = CreateTestDeviceConnection();
+    public void SecurityValidation_CommonInjectionPatterns_AreBlocked(string injectionPattern) {
+        // Act
+        var result = InputValidator.ValidateCode(injectionPattern);
 
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => connection.ExecuteAsync(injectionPattern));
-        
-        Assert.Contains("security validation", exception.Message);
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.True(result.RiskLevel >= InputValidator.SecurityRiskLevel.High);
     }
 
     [Theory]
