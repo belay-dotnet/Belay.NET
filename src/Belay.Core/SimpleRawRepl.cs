@@ -25,6 +25,7 @@ using Microsoft.Extensions.Logging;
 public class SimpleRawRepl : IDisposable {
     private readonly Stream stream;
     private readonly ILogger logger;
+    private readonly object stateLock = new object();
     private bool inRawRepl = false;
     private bool useRawPaste = true;
     private bool disposed;
@@ -65,8 +66,10 @@ public class SimpleRawRepl : IDisposable {
             throw new ObjectDisposedException(nameof(SimpleRawRepl));
         }
 
-        if (inRawRepl) {
-            return;
+        lock (stateLock) {
+            if (inRawRepl) {
+                return;
+            }
         }
 
         // Note: We don't check operationInProgress here since this method is called from ExecuteAsync
@@ -127,8 +130,10 @@ public class SimpleRawRepl : IDisposable {
 
         logger.LogDebug("Final raw REPL mode confirmed (full prompt: {FullPrompt})", finalData.Contains("raw REPL; CTRL-B to exit"));
 
-        inRawRepl = true;
-        atPrompt = true; // We're now at a prompt after entering raw REPL
+        lock (stateLock) {
+            inRawRepl = true;
+            atPrompt = true; // We're now at a prompt after entering raw REPL
+        }
         logger.LogDebug("Successfully entered raw REPL mode");
     }
 
@@ -139,8 +144,10 @@ public class SimpleRawRepl : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
     public async Task ExitRawReplAsync(CancellationToken cancellationToken = default) {
-        if (!inRawRepl) {
-            return;
+        lock (stateLock) {
+            if (!inRawRepl) {
+                return;
+            }
         }
 
         logger.LogDebug("Exiting raw REPL mode");
@@ -149,8 +156,10 @@ public class SimpleRawRepl : IDisposable {
         await stream.WriteAsync(new byte[] { (byte)'\r', CTRLB }, cancellationToken);
         await stream.FlushAsync(cancellationToken);
 
-        inRawRepl = false;
-        atPrompt = false; // No longer at a raw REPL prompt
+        lock (stateLock) {
+            inRawRepl = false;
+            atPrompt = false; // No longer at a raw REPL prompt
+        }
         logger.LogDebug("Successfully exited raw REPL mode");
     }
 
@@ -174,15 +183,23 @@ public class SimpleRawRepl : IDisposable {
         }
 
         // Detect concurrent usage - this class is not thread-safe
-        if (operationInProgress) {
-            throw new InvalidOperationException(
-                "SimpleRawRepl does not support concurrent operations. " +
-                "Each DeviceConnection should use its own SimpleRawRepl instance for sequential operations only.");
+        lock (stateLock) {
+            if (operationInProgress) {
+                throw new InvalidOperationException(
+                    "SimpleRawRepl does not support concurrent operations. " +
+                    "Each DeviceConnection should use its own SimpleRawRepl instance for sequential operations only.");
+            }
+
+            operationInProgress = true;
         }
 
-        operationInProgress = true;
         try {
-            if (!inRawRepl) {
+            bool needsEnterRawRepl;
+            lock (stateLock) {
+                needsEnterRawRepl = !inRawRepl;
+            }
+
+            if (needsEnterRawRepl) {
                 await EnterRawReplAsync(true, timeoutSeconds, cancellationToken);
             }
 
@@ -192,7 +209,12 @@ public class SimpleRawRepl : IDisposable {
             bool usedRawPaste = false;
 
             // Only check for prompt if we're not already at one
-            if (!atPrompt) {
+            bool needsPromptCheck;
+            lock (stateLock) {
+                needsPromptCheck = !atPrompt;
+            }
+
+            if (needsPromptCheck) {
                 logger.LogDebug("Not at prompt, checking device state");
 
                 // Add small delay to ensure device is ready
@@ -213,17 +235,23 @@ public class SimpleRawRepl : IDisposable {
                     logger.LogWarning("No prompt found, attempting to re-enter raw REPL mode");
 
                     // Try to re-enter raw REPL mode
-                    inRawRepl = false;
-                    atPrompt = false;
+                    lock (stateLock) {
+                        inRawRepl = false;
+                        atPrompt = false;
+                    }
                     await EnterRawReplAsync(false, timeoutSeconds, cancellationToken);
 
                     // After re-entering, we should be at a prompt
-                    if (!atPrompt) {
-                        throw new DeviceException("Failed to establish raw REPL prompt after re-entry");
+                    lock (stateLock) {
+                        if (!atPrompt) {
+                            throw new DeviceException("Failed to establish raw REPL prompt after re-entry");
+                        }
                     }
                 }
                 else {
-                    atPrompt = true;
+                    lock (stateLock) {
+                        atPrompt = true;
+                    }
                 }
             }
             else {
@@ -258,13 +286,17 @@ public class SimpleRawRepl : IDisposable {
             return await ReadExecutionResultAsync(timeoutSeconds, usedRawPaste, cancellationToken);
         }
         finally {
-            operationInProgress = false;
+            lock (stateLock) {
+                operationInProgress = false;
+            }
         }
     }
 
     private async Task ExecuteWithRawPasteAsync(byte[] commandBytes, CancellationToken cancellationToken) {
         // Execution will consume the prompt
-        atPrompt = false;
+        lock (stateLock) {
+            atPrompt = false;
+        }
 
         // Try to enter raw-paste mode
         await stream.WriteAsync(RAWPASTEINIT, cancellationToken);
@@ -345,7 +377,9 @@ public class SimpleRawRepl : IDisposable {
 
     private async Task ExecuteWithStandardRawReplAsync(byte[] commandBytes, CancellationToken cancellationToken) {
         // Execution will consume the prompt
-        atPrompt = false;
+        lock (stateLock) {
+            atPrompt = false;
+        }
 
         // Write command using standard raw REPL, 256 bytes every 10ms
         for (int i = 0; i < commandBytes.Length; i += 256) {
@@ -396,13 +430,15 @@ public class SimpleRawRepl : IDisposable {
         // After execution, we should get a new prompt (">")
         logger.LogDebug("Waiting for prompt after execution...");
         var promptAfterExec = await ReadUntilAsync(">", timeoutSeconds, "prompt", cancellationToken);
-        if (promptAfterExec.EndsWith('>')) {
-            atPrompt = true;
-            logger.LogDebug("Received prompt after execution");
-        }
-        else {
-            logger.LogWarning("No prompt received after execution: '{Data}'", promptAfterExec);
-            atPrompt = false;
+        lock (stateLock) {
+            if (promptAfterExec.EndsWith('>')) {
+                atPrompt = true;
+                logger.LogDebug("Received prompt after execution");
+            }
+            else {
+                logger.LogWarning("No prompt received after execution: '{Data}'", promptAfterExec);
+                atPrompt = false;
+            }
         }
 
         // Use enhanced error detection and classification
@@ -560,14 +596,21 @@ public class SimpleRawRepl : IDisposable {
         }
         finally {
             disposed = true;
-            operationInProgress = false; // Reset operation flag
+            lock (stateLock) {
+                operationInProgress = false; // Reset operation flag
+            }
 
             // Don't dispose stream - caller owns it
         }
     }
 
     private void DisposeWithTimeout() {
-        if (!inRawRepl || !stream.CanWrite) {
+        bool shouldCleanup;
+        lock (stateLock) {
+            shouldCleanup = inRawRepl && stream.CanWrite;
+        }
+
+        if (!shouldCleanup) {
             return;
         }
 
@@ -605,8 +648,10 @@ public class SimpleRawRepl : IDisposable {
         // Small delay to allow device to process the exit command
         await Task.Delay(50, cancellationToken);
 
-        inRawRepl = false;
-        atPrompt = false;
+        lock (stateLock) {
+            inRawRepl = false;
+            atPrompt = false;
+        }
     }
 
     private void ForceImmediateCleanup() {
@@ -621,8 +666,10 @@ public class SimpleRawRepl : IDisposable {
             // Ignore any errors during forced cleanup
         }
         finally {
-            inRawRepl = false;
-            atPrompt = false;
+            lock (stateLock) {
+                inRawRepl = false;
+                atPrompt = false;
+            }
         }
     }
 }
