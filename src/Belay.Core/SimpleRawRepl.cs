@@ -41,7 +41,7 @@ public class SimpleRawRepl : IDisposable {
 
     // Raw-paste mode initialization sequence
 #pragma warning disable IDE0055 // Fix formatting - Collection expression spacing conflicts with SA1010
-    private static readonly byte[] RAWPASTEINIT =[CTRLE, (byte)'A', CTRLA];
+    private static readonly byte[] RAWPASTEINIT = [CTRLE, (byte)'A', CTRLA];
 #pragma warning restore IDE0055
 
     /// <summary>
