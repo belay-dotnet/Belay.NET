@@ -47,7 +47,7 @@ public static class AttributeHandler {
             ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
             : null;
 
-        if (timeoutSource != null) {
+        if (timeoutSource != null && policies.Timeout.HasValue) {
             timeoutSource.CancelAfter(policies.Timeout.Value);
         }
 

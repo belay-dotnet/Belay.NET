@@ -11,13 +11,13 @@ public class DeviceOutputEventArgs(string output, bool isError = false) : EventA
     /// Gets the output text received from the device.
     /// </summary>
     /// <value>The raw string output from the device execution or communication.</value>
-    public string Output { get; }
+    public string Output { get; } = output ?? throw new ArgumentNullException(nameof(output));
 
     /// <summary>
     /// Gets a value indicating whether this output represents an error.
     /// </summary>
     /// <value>True if the output is from stderr or represents an error condition; otherwise, false.</value>
-    public bool IsError { get; }
+    public bool IsError { get; } = isError;
 
     /// <summary>
     /// Gets the timestamp when this output was received.
@@ -35,25 +35,25 @@ public class DeviceStateChangeEventArgs(DeviceConnectionState oldState, DeviceCo
     /// Gets the previous connection state before the change.
     /// </summary>
     /// <value>The device connection state before the transition occurred.</value>
-    public DeviceConnectionState OldState { get; }
+    public DeviceConnectionState OldState { get; } = oldState;
 
     /// <summary>
     /// Gets the new connection state after the change.
     /// </summary>
     /// <value>The device connection state after the transition occurred.</value>
-    public DeviceConnectionState NewState { get; }
+    public DeviceConnectionState NewState { get; } = newState;
 
     /// <summary>
     /// Gets the reason for the state change, if available.
     /// </summary>
     /// <value>A human-readable description of why the state changed, or null if no specific reason is available.</value>
-    public string? Reason { get; }
+    public string? Reason { get; } = reason;
 
     /// <summary>
     /// Gets the exception that caused the state change, if applicable.
     /// </summary>
     /// <value>The exception that triggered the state change, or null if the change was not due to an error.</value>
-    public Exception? Exception { get; }
+    public Exception? Exception { get; } = exception;
 
     /// <summary>
     /// Gets the timestamp when the state change occurred.

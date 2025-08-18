@@ -348,10 +348,8 @@ public sealed class DeviceConnection : IDisposable {
     // Simple state tracking
     public DeviceConnectionState State { get; private set; } = DeviceConnectionState.Disconnected;
 
-    // Placeholder events (simplified - no complex state management)
-    public event EventHandler<DeviceOutputEventArgs>? OutputReceived;
-
-    public event EventHandler<DeviceStateChangeEventArgs>? StateChanged;
+    // Note: Events removed as they were placeholders not being used
+    // TODO: Re-add OutputReceived and StateChanged events when implementation requires them
 
     /// <summary>
     /// Executes code and returns typed result (simplified generic version).
