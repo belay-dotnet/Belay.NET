@@ -287,39 +287,37 @@ public static class InputValidator {
         }
 
         // Check for medium risk patterns
-        foreach (var pattern in MediumRiskPatterns) {
-            if (pattern.IsMatch(code)) {
+        var matchingMediumPatterns = MediumRiskPatterns.Where(pattern => pattern.IsMatch(code)).ToArray();
+        if (matchingMediumPatterns.Length > 0) {
+            if (riskLevel < SecurityRiskLevel.Medium) {
+                riskLevel = SecurityRiskLevel.Medium;
+            }
+
+            concerns.AddRange(matchingMediumPatterns.Select(pattern => $"Medium risk pattern detected: {pattern}"));
+        }
+
+        // Check for dangerous functions with context awareness
+        var matchingDangerousFunctions = DangerousFunctions.Where(func => code.Contains(func + "(", StringComparison.OrdinalIgnoreCase)).ToArray();
+        foreach (var func in matchingDangerousFunctions) {
+            bool shouldBlock = true;
+
+            // Check if this function is part of an allowed module context
+            if (func.Equals("os", StringComparison.OrdinalIgnoreCase) && config.AllowFileOperations) {
+                shouldBlock = false;
                 if (riskLevel < SecurityRiskLevel.Medium) {
                     riskLevel = SecurityRiskLevel.Medium;
                 }
 
-                concerns.Add($"Medium risk pattern detected: {pattern}");
+                concerns.Add($"File operations detected (allowed): {func}");
             }
-        }
+            else {
+                riskLevel = SecurityRiskLevel.High;
+                concerns.Add($"Dangerous function usage: {func}");
+            }
 
-        // Check for dangerous functions with context awareness
-        foreach (var func in DangerousFunctions) {
-            if (code.Contains(func + "(", StringComparison.OrdinalIgnoreCase)) {
-                bool shouldBlock = true;
-
-                // Check if this function is part of an allowed module context
-                if (func.Equals("os", StringComparison.OrdinalIgnoreCase) && config.AllowFileOperations) {
-                    shouldBlock = false;
-                    if (riskLevel < SecurityRiskLevel.Medium) {
-                        riskLevel = SecurityRiskLevel.Medium;
-                    }
-
-                    concerns.Add($"File operations detected (allowed): {func}");
-                }
-                else {
-                    riskLevel = SecurityRiskLevel.High;
-                    concerns.Add($"Dangerous function usage: {func}");
-                }
-
-                // Immediately fail for dangerous functions in standard+ mode (unless specifically allowed)
-                if (shouldBlock && config.ValidationLevel >= ValidationStrictness.Standard && !hasCustomAllowPattern) {
-                    return new ValidationResult(false, $"Dangerous function detected: {func}", SecurityRiskLevel.High, concerns);
-                }
+            // Immediately fail for dangerous functions in standard+ mode (unless specifically allowed)
+            if (shouldBlock && config.ValidationLevel >= ValidationStrictness.Standard && !hasCustomAllowPattern) {
+                return new ValidationResult(false, $"Dangerous function detected: {func}", SecurityRiskLevel.High, concerns);
             }
         }
 
@@ -378,15 +376,12 @@ public static class InputValidator {
         };
 
         // Apply additional restrictions for higher strictness levels
-        if (config.ValidationLevel >= ValidationStrictness.Strict && !hasCustomAllowPattern) {
-            // In strict mode, only block specific dangerous medium-risk patterns
-            // Don't block normal imports or basic for loops
-            if (code.Contains("compile(", StringComparison.OrdinalIgnoreCase) ||
-                code.Contains("exec(", StringComparison.OrdinalIgnoreCase) ||
-                code.Contains("__import__", StringComparison.OrdinalIgnoreCase)) {
-                return new ValidationResult(false, $"Strict mode blocks potentially dangerous function", SecurityRiskLevel.High,
-                    new[] { $"Strict mode: dangerous function detected" });
-            }
+        if (config.ValidationLevel >= ValidationStrictness.Strict && !hasCustomAllowPattern &&
+            (code.Contains("compile(", StringComparison.OrdinalIgnoreCase) ||
+             code.Contains("exec(", StringComparison.OrdinalIgnoreCase) ||
+             code.Contains("__import__", StringComparison.OrdinalIgnoreCase))) {
+            return new ValidationResult(false, $"Strict mode blocks potentially dangerous function", SecurityRiskLevel.High,
+                new[] { $"Strict mode: dangerous function detected" });
         }
 
         // Special handling for allowed file operations - if explicitly allowed and contains file ops, mark as valid
