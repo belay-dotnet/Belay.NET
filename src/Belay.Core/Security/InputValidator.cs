@@ -244,15 +244,14 @@ public static class InputValidator {
 
         // Check for blocked patterns first (unless custom allow pattern matches)
         if (!hasCustomAllowPattern) {
-            foreach (var pattern in BlockedPatterns) {
-                if (pattern.IsMatch(code)) {
-                    // Command injection patterns with semicolon should be Critical
-                    var blockedRiskLevel = code.Contains(";") && (code.Contains("'") || code.Contains("\""))
-                        ? SecurityRiskLevel.Critical
-                        : SecurityRiskLevel.Critical;
-                    return new ValidationResult(false, $"Code contains blocked pattern: {pattern}", blockedRiskLevel,
-                        new[] { "Contains control characters or protocol injection sequences" });
-                }
+            var matchedBlockedPattern = BlockedPatterns.FirstOrDefault(pattern => pattern.IsMatch(code));
+            if (matchedBlockedPattern != null) {
+                // Command injection patterns with semicolon should be Critical
+                var blockedRiskLevel = code.Contains(";") && (code.Contains("'") || code.Contains("\""))
+                    ? SecurityRiskLevel.Critical
+                    : SecurityRiskLevel.Critical;
+                return new ValidationResult(false, $"Code contains blocked pattern: {matchedBlockedPattern}", blockedRiskLevel,
+                    new[] { "Contains control characters or protocol injection sequences" });
             }
         }
 
@@ -391,7 +390,7 @@ public static class InputValidator {
         }
 
         // Special handling for allowed file operations - if explicitly allowed and contains file ops, mark as valid
-        if (config.AllowFileOperations && concerns.Any(c => c.Contains("File operations detected (allowed)"))) {
+        if (config.AllowFileOperations && concerns.Exists(c => c.Contains("File operations detected (allowed)"))) {
             // File operations were detected and are allowed
             return new ValidationResult(true, null, SecurityRiskLevel.Medium, concerns);
         }

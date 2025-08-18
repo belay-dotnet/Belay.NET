@@ -7,6 +7,20 @@ set -e
 
 echo "🔍 Running pre-commit checks..."
 
+# Option to use Docker for formatting (matches CI environment exactly)
+USE_DOCKER=${USE_DOCKER:-false}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ "$USE_DOCKER" = "true" ] && command -v docker &> /dev/null; then
+    echo "🐳 Using Docker-based formatting (CI-equivalent)..."
+    if [ -f "$SCRIPT_DIR/lint-docker.sh" ]; then
+        "$SCRIPT_DIR/lint-docker.sh"
+        exit 0
+    else
+        echo "⚠️  Docker lint script not found, falling back to local formatting..."
+    fi
+fi
+
 # Check if dotnet is available
 if ! command -v dotnet &> /dev/null; then
     echo "❌ dotnet CLI not found. Please install .NET SDK."

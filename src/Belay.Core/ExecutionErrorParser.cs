@@ -142,13 +142,12 @@ internal static class ExecutionErrorParser {
 
     private static ExecutionErrorType ClassifyError(string output, ILogger? logger) {
         foreach (var (errorType, patterns) in ErrorPatterns) {
-            foreach (var pattern in patterns) {
-                if (pattern.Regex.IsMatch(output)) {
-                    logger?.LogTrace(
-                        "Matched error pattern '{Pattern}' for type {ErrorType}",
-                        pattern.Pattern, errorType);
-                    return errorType;
-                }
+            var matchedPattern = patterns.FirstOrDefault(pattern => pattern.Regex.IsMatch(output));
+            if (matchedPattern != null) {
+                logger?.LogTrace(
+                    "Matched error pattern '{Pattern}' for type {ErrorType}",
+                    matchedPattern.Pattern, errorType);
+                return errorType;
             }
         }
 
@@ -185,7 +184,7 @@ internal static class ExecutionErrorParser {
             @"KeyboardInterrupt",
         };
 
-        return preciseErrorPatterns.Any(pattern =>
+        return Array.Exists(preciseErrorPatterns, pattern =>
             Regex.IsMatch(output, pattern, RegexOptions.IgnoreCase | RegexOptions.Multiline));
     }
 
@@ -195,7 +194,7 @@ internal static class ExecutionErrorParser {
 
         // For syntax errors, find the specific syntax issue
         if (errorType == ExecutionErrorType.SyntaxError) {
-            var syntaxLine = lines.FirstOrDefault(line =>
+            var syntaxLine = Array.Find(lines, line =>
                 line.Contains("SyntaxError") || line.Contains("IndentationError"));
             if (syntaxLine != null) {
                 return syntaxLine.Trim();
@@ -213,14 +212,14 @@ internal static class ExecutionErrorParser {
 
         // For file system errors, extract the OS error details
         if (errorType == ExecutionErrorType.FileSystemError) {
-            var osErrorLine = lines.FirstOrDefault(line => line.Contains("OSError"));
+            var osErrorLine = Array.Find(lines, line => line.Contains("OSError"));
             if (osErrorLine != null) {
                 return osErrorLine.Trim();
             }
         }
 
         // Default: return first non-empty error line
-        var firstErrorLine = lines.FirstOrDefault(line =>
+        var firstErrorLine = Array.Find(lines, line =>
             !string.IsNullOrWhiteSpace(line) &&
             !line.Trim().Equals(">>>") &&
             !line.StartsWith("Type "));
@@ -247,7 +246,7 @@ internal static class ExecutionErrorParser {
     /// <summary>
     /// Represents an error pattern for classification.
     /// </summary>
-    private class ErrorPattern {
+    private sealed class ErrorPattern {
         public string Pattern { get; }
 
         public Regex Regex { get; }

@@ -14,7 +14,7 @@ public class SimpleExecutionContextService : IExecutionContextService {
         return new NoOpDisposable();
     }
 
-    private class NoOpDisposable : IDisposable {
+    private sealed class NoOpDisposable : IDisposable {
         public void Dispose() {
             // No-op implementation
         }

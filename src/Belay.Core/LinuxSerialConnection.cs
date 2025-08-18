@@ -21,7 +21,7 @@ public sealed class LinuxSerialConnection : IDisposable {
     /// </summary>
     /// <param name="portPath">Path to the serial device (e.g., /dev/ttyUSB0).</param>
     public LinuxSerialConnection(string portPath) {
-        portPath = portPath ?? throw new ArgumentNullException(nameof(portPath));
+        this.portPath = portPath ?? throw new ArgumentNullException(nameof(portPath));
     }
 
     /// <summary>

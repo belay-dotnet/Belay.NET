@@ -299,7 +299,7 @@ public sealed class DeviceConnection : IDisposable {
 
     private async Task SendControlCharacterAsync(Stream stream, byte controlChar, CancellationToken cancellationToken) {
 #pragma warning disable IDE0055 // Fix formatting - Collection expression spacing conflicts with SA1010
-        byte[] buffer = [controlChar];
+        byte[] buffer =[controlChar];
 #pragma warning restore IDE0055
         await stream.WriteAsync(buffer, cancellationToken);
         await stream.FlushAsync(cancellationToken);

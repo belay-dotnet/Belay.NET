@@ -20,7 +20,7 @@ public sealed class ProcessSerialConnection : IDisposable {
     /// </summary>
     /// <param name="portPath">Path to the serial device (e.g., /dev/ttyUSB0).</param>
     public ProcessSerialConnection(string portPath) {
-        portPath = portPath ?? throw new ArgumentNullException(nameof(portPath));
+        this.portPath = portPath ?? throw new ArgumentNullException(nameof(portPath));
     }
 
     /// <summary>

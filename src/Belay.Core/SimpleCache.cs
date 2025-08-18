@@ -97,7 +97,7 @@ public static class SimpleCache {
         while (Cache.Count >= MaxCacheEntries) {
             // Remove entries until we're under the limit
             // Simple FIFO eviction - remove first found entry
-            var firstKey = Cache.Keys.FirstOrDefault();
+            var firstKey = Cache.Keys.FirstOrDefault(); // Cannot use Array.Find on Keys collection
             if (firstKey != null) {
                 Cache.TryRemove(firstKey, out _);
             }

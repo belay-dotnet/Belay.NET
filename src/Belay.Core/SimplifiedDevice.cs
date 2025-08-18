@@ -65,7 +65,7 @@ public class SimplifiedDevice : IDeviceConnection {
             this.logger.LogDebug("Writing file to device: {Path} ({Size} bytes)", devicePath, data.Length);
 
             // Use temporary file approach since IDeviceCommunication uses file paths
-            var tempFile = Path.GetTempFileName();
+            var tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             try {
                 await File.WriteAllBytesAsync(tempFile, data, cancellationToken);
                 await this.connection.PutFileAsync(tempFile, devicePath, cancellationToken);

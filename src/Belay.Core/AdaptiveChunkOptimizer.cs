@@ -17,8 +17,8 @@ using Microsoft.Extensions.Logging;
 /// </remarks>
 internal class AdaptiveChunkOptimizer {
     private readonly ILogger logger;
-    private int currentChunkSize;
     private readonly int initialChunkSize;
+    private int currentChunkSize;
 
     // Performance tracking - simple state without locking
     private double averageThroughput = 0.0; // bytes per second
