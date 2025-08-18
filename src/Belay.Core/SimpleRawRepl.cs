@@ -40,7 +40,9 @@ public class SimpleRawRepl : IDisposable {
     private const byte CTRLE = 0x05; // Raw-paste mode prefix
 
     // Raw-paste mode initialization sequence
+#pragma warning disable IDE0055 // Fix formatting - Collection expression spacing conflicts with SA1010
     private static readonly byte[] RAWPASTEINIT =[CTRLE, (byte)'A', CTRLA];
+#pragma warning restore IDE0055
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SimpleRawRepl"/> class.
