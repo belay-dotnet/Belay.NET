@@ -361,7 +361,7 @@ public sealed class DeviceConnection : IDisposable {
     public DeviceConnectionState State { get; private set; } = DeviceConnectionState.Disconnected;
 
     // Note: Events removed as they were placeholders not being used
-    // TODO: Re-add OutputReceived and StateChanged events when implementation requires them
+    // NOTE: OutputReceived and StateChanged events will be re-added when implementation requires them
 
 
     /// <summary>

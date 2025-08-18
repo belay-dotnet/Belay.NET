@@ -246,43 +246,40 @@ public static class InputValidator {
         if (!hasCustomAllowPattern) {
             var matchedBlockedPattern = Array.Find(BlockedPatterns, pattern => pattern.IsMatch(code));
             if (matchedBlockedPattern != null) {
-                // Command injection patterns with semicolon should be Critical
-                var blockedRiskLevel = code.Contains(";") && (code.Contains("'") || code.Contains("\""))
-                    ? SecurityRiskLevel.Critical
-                    : SecurityRiskLevel.Critical;
+                // All blocked patterns are Critical level
+                var blockedRiskLevel = SecurityRiskLevel.Critical;
                 return new ValidationResult(false, $"Code contains blocked pattern: {matchedBlockedPattern}", blockedRiskLevel,
                     new[] { "Contains control characters or protocol injection sequences" });
             }
         }
 
         // Check for high risk patterns (immediately fail for most)
-        foreach (var pattern in HighRiskPatterns) {
-            if (pattern.IsMatch(code)) {
-                // Special case: if file operations are allowed and this is ONLY file-related (not command execution)
-                // Skip patterns that would match legitimate file operations
-                if (config.AllowFileOperations) {
-                    // Check if this is a dangerous command execution pattern
-                    var isDangerousExecution = code.Contains("os.system", StringComparison.OrdinalIgnoreCase) ||
-                                              code.Contains("os.popen", StringComparison.OrdinalIgnoreCase) ||
-                                              code.Contains("os.spawn", StringComparison.OrdinalIgnoreCase) ||
-                                              code.Contains("subprocess", StringComparison.OrdinalIgnoreCase) ||
-                                              code.Contains("eval(", StringComparison.OrdinalIgnoreCase) ||
-                                              code.Contains("exec(", StringComparison.OrdinalIgnoreCase);
+        var matchingHighRiskPatterns = HighRiskPatterns.Where(pattern => pattern.IsMatch(code)).ToArray();
+        foreach (var pattern in matchingHighRiskPatterns) {
+            // Special case: if file operations are allowed and this is ONLY file-related (not command execution)
+            // Skip patterns that would match legitimate file operations
+            if (config.AllowFileOperations) {
+                // Check if this is a dangerous command execution pattern
+                var isDangerousExecution = code.Contains("os.system", StringComparison.OrdinalIgnoreCase) ||
+                                          code.Contains("os.popen", StringComparison.OrdinalIgnoreCase) ||
+                                          code.Contains("os.spawn", StringComparison.OrdinalIgnoreCase) ||
+                                          code.Contains("subprocess", StringComparison.OrdinalIgnoreCase) ||
+                                          code.Contains("eval(", StringComparison.OrdinalIgnoreCase) ||
+                                          code.Contains("exec(", StringComparison.OrdinalIgnoreCase);
 
-                    // If it's just file operations (import os, os.listdir, etc.) and not dangerous execution, skip
-                    if (!isDangerousExecution && (code.Contains("import os") || code.Contains("os."))) {
-                        // Will be handled as allowed file operation in module checks
-                        continue;
-                    }
+                // If it's just file operations (import os, os.listdir, etc.) and not dangerous execution, skip
+                if (!isDangerousExecution && (code.Contains("import os") || code.Contains("os."))) {
+                    // Will be handled as allowed file operation in module checks
+                    continue;
                 }
+            }
 
-                riskLevel = SecurityRiskLevel.High;
-                concerns.Add($"High risk pattern detected: {pattern}");
+            riskLevel = SecurityRiskLevel.High;
+            concerns.Add($"High risk pattern detected: {pattern}");
 
-                // Immediately fail for command injection and system calls
-                if (config.ValidationLevel >= ValidationStrictness.Standard && !hasCustomAllowPattern) {
-                    return new ValidationResult(false, $"High risk security pattern detected: {pattern}", SecurityRiskLevel.High, concerns);
-                }
+            // Immediately fail for command injection and system calls
+            if (config.ValidationLevel >= ValidationStrictness.Standard && !hasCustomAllowPattern) {
+                return new ValidationResult(false, $"High risk security pattern detected: {pattern}", SecurityRiskLevel.High, concerns);
             }
         }
 

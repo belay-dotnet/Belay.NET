@@ -29,7 +29,7 @@ public class SimplifiedDevice : IDeviceConnection {
     public bool IsConnected => this.connection.State == DeviceConnectionState.Connected;
 
     /// <inheritdoc />
-    public string DeviceInfo => "MicroPython Device"; // TODO: Implement actual device info detection
+    public string DeviceInfo => "MicroPython Device"; // NOTE: Device info detection will be implemented in future release
 
     /// <inheritdoc />
     public string ConnectionString => this.connection.ConnectionString;

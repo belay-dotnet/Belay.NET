@@ -17,7 +17,7 @@ public class DeviceOutputEventArgs(string output, bool isError = false) : EventA
     /// Gets a value indicating whether this output represents an error.
     /// </summary>
     /// <value>True if the output is from stderr or represents an error condition; otherwise, false.</value>
-    public bool IsError { get; } = isError
+    public bool IsError { get; } = isError;
 
     /// <summary>
     /// Gets the timestamp when this output was received.
@@ -53,7 +53,7 @@ public class DeviceStateChangeEventArgs(DeviceConnectionState oldState, DeviceCo
     /// Gets the exception that caused the state change, if applicable.
     /// </summary>
     /// <value>The exception that triggered the state change, or null if the change was not due to an error.</value>
-    public Exception? Exception { get; } = exception
+    public Exception? Exception { get; } = exception;
 
     /// <summary>
     /// Gets the timestamp when the state change occurred.

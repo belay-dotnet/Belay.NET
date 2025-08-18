@@ -31,8 +31,7 @@ namespace Belay.Core {
         /// <summary>
         /// Detects device capabilities using a single batched Python script execution.
         /// </summary>
-        /// <param name="connection"></param>
-        /// <param name="communication">The device communication interface.</param>
+        /// <param name="connection">The device connection interface.</param>
         /// <param name="logger">Optional logger for diagnostic output.</param>
         /// <param name="cancellationToken">Cancellation token for the operation.</param>
         /// <returns>A <see cref="Task{SimpleDeviceCapabilities}"/> containing the detected capabilities.</returns>
@@ -170,7 +169,6 @@ result
         /// Parses the capability detection results into a SimpleDeviceCapabilities object.
         /// </summary>
         /// <param name="detectionResult">The raw detection results from the Python script.</param>
-        /// <param name="logger">Optional logger for diagnostic output.</param>
         /// <returns>A parsed SimpleDeviceCapabilities object.</returns>
         private static SimpleDeviceCapabilities ParseDetectionResults(
             Dictionary<string, object> detectionResult) {
@@ -219,7 +217,6 @@ result
         /// Maps a feature name from the detection script to the corresponding flag enum value.
         /// </summary>
         /// <param name="featureName">The feature name from the detection script.</param>
-        /// <param name="logger">Optional logger for diagnostic output.</param>
         /// <returns>The corresponding SimpleDeviceFeatureSet flag.</returns>
         private static SimpleDeviceFeatureSet MapFeatureNameToFlag(string featureName) {
             return featureName?.ToLowerInvariant() switch {

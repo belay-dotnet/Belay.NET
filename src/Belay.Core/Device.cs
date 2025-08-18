@@ -57,15 +57,6 @@ public class Device : IDisposable {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Device"/> class with logger.
-    /// </summary>
-    /// <param name="connection">The device connection implementation.</param>
-    /// <param name="logger">Logger for device operations.</param>
-    public Device(DeviceConnection connection, ILogger<Device> logger)
-        : this(connection, logger, null, null) {
-    }
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="Device"/> class with dependency injection support.
     /// </summary>
     /// <param name="connection">The device connection implementation.</param>
@@ -92,15 +83,8 @@ public class Device : IDisposable {
         this.executor = new Lazy<DirectExecutor>(() => new DirectExecutor(deviceConnection, executorLoggerFactory.CreateLogger<DirectExecutor>()));
     }
 
-    /// <summary>
-    /// Event raised when output is received from the device.
-    /// </summary>
-    public event EventHandler<DeviceOutputEventArgs>? OutputReceived;
-
-    /// <summary>
-    /// Event raised when device connection state changes.
-    /// </summary>
-    public event EventHandler<DeviceStateChangeEventArgs>? StateChanged;
+    // Note: Events removed as they were not being used and had no subscribers
+    // NOTE: Events will be re-added when actual implementation requires them with proper event forwarding
 
     /// <summary>
     /// Gets the current connection state of the device.
@@ -487,8 +471,8 @@ public class Device : IDisposable {
             _ => $"unknown:{this.connection.GetType().Name}",
         };
 
-        // TODO: Get actual firmware version from device using sys.implementation or uos.uname()
-        // For now, use a placeholder that will be enhanced when device info is available
+        // NOTE: Firmware version detection will be implemented in a future release
+        // using sys.implementation or uos.uname() device queries
         var firmwareVersion = "unknown";
 
         return (deviceId, firmwareVersion);
