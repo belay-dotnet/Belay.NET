@@ -391,7 +391,8 @@ public class Device : IDisposable {
             _ => throw new ArgumentException($"Unsupported connection type: {type}"),
         };
 
-        var deviceConnection = new DeviceConnection(connectionType, parameter, loggerFactory?.CreateLogger<DeviceConnection>());
+        var deviceConnection = new DeviceConnection(connectionType, parameter, 
+            loggerFactory?.CreateLogger<DeviceConnection>() ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance);
         return new Device(deviceConnection, loggerFactory?.CreateLogger<Device>(), loggerFactory);
     }
 
@@ -445,7 +446,7 @@ public class Device : IDisposable {
         // Use unified DirectExecutor for all method execution via AttributeHandler
         this.logger.LogDebug("Executing method {MethodName} using DirectExecutor with secure execution context", method.Name);
 
-        return await this.Executor.ExecuteAsync<T>(method, parameters ?? Array.Empty<object>(), cancellationToken).ConfigureAwait(false);
+        return await this.Executor.ExecuteAsync<T>(method, (parameters ?? Array.Empty<object?>()).Cast<object>().ToArray(), cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
