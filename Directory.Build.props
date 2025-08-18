@@ -38,13 +38,14 @@
 
   <!-- Static Analysis Packages for all projects - Re-enabled -->
   <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(IsTestProject)' != 'true'">
-    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.435" PrivateAssets="all" />
+    <!-- StyleCop.Analyzers disabled due to SA1010 formatting conflicts with dotnet format -->
+    <!-- <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.435" PrivateAssets="all" /> -->
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0" PrivateAssets="all" />
     <PackageReference Include="SonarAnalyzer.CSharp" Version="9.12.0.78982" PrivateAssets="all" />
   </ItemGroup>
 
-  <!-- StyleCop configuration for all projects -->
-  <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(IsTestProject)' != 'true'">
+  <!-- StyleCop configuration for all projects - Disabled with StyleCop package -->
+  <!-- <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(IsTestProject)' != 'true'">
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
-  </ItemGroup>
+  </ItemGroup> -->
 </Project>
