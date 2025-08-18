@@ -25,8 +25,8 @@ public class DeviceOutputEventArgs : EventArgs {
     /// <param name="output">The output text received from the device.</param>
     /// <param name="isError">Whether this output represents an error.</param>
     public DeviceOutputEventArgs(string output, bool isError = false) {
-        Output = output ?? throw new ArgumentNullException(nameof(output));
-        IsError = isError;
+        this.Output = output ?? throw new ArgumentNullException(nameof(output));
+        this.IsError = isError;
     }
 
     /// <summary>
@@ -73,10 +73,10 @@ public class DeviceStateChangeEventArgs : EventArgs {
     /// <param name="exception">The exception that caused the state change.</param>
     public DeviceStateChangeEventArgs(DeviceConnectionState oldState, DeviceConnectionState newState,
         string? reason = null, Exception? exception = null) {
-        OldState = oldState;
-        NewState = newState;
-        Reason = reason;
-        Exception = exception;
+        this.OldState = oldState;
+        this.NewState = newState;
+        this.Reason = reason;
+        this.Exception = exception;
     }
 
     /// <summary>

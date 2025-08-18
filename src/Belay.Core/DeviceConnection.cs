@@ -160,7 +160,7 @@ public sealed class DeviceConnection : IDisposable {
                     return response.Output;
                 }
                 else {
-                    throw response.Exception != null 
+                    throw response.Exception != null
                         ? new DeviceException($"Device execution failed: {response.ErrorOutput}", response.Exception)
                         : new DeviceException($"Device execution failed: {response.ErrorOutput}");
                 }

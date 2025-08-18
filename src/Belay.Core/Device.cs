@@ -391,7 +391,7 @@ public class Device : IDisposable {
             _ => throw new ArgumentException($"Unsupported connection type: {type}"),
         };
 
-        var deviceConnection = new DeviceConnection(connectionType, parameter, 
+        var deviceConnection = new DeviceConnection(connectionType, parameter,
             loggerFactory?.CreateLogger<DeviceConnection>() ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<DeviceConnection>.Instance);
         return new Device(deviceConnection, loggerFactory?.CreateLogger<Device>(), loggerFactory);
     }
