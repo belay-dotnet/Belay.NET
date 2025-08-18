@@ -13,10 +13,17 @@ if ! command -v dotnet &> /dev/null; then
     exit 1
 fi
 
-# Format code
+# Format code (match CI exactly)
 echo "📝 Formatting code..."
-if ! dotnet format --severity info --verbosity minimal --include src/ tests/; then
+if ! dotnet format Belay.NET.sln --verbosity diagnostic; then
     echo "❌ Code formatting failed. Please fix formatting issues."
+    exit 1
+fi
+
+# Verify no additional changes needed (match CI verification)
+echo "🔍 Verifying code formatting..."
+if ! dotnet format Belay.NET.sln --verify-no-changes --verbosity diagnostic; then
+    echo "❌ Code formatting verification failed. Additional formatting needed."
     exit 1
 fi
 
