@@ -244,7 +244,7 @@ public static class InputValidator {
 
         // Check for blocked patterns first (unless custom allow pattern matches)
         if (!hasCustomAllowPattern) {
-            var matchedBlockedPattern = BlockedPatterns.FirstOrDefault(pattern => pattern.IsMatch(code));
+            var matchedBlockedPattern = Array.Find(BlockedPatterns, pattern => pattern.IsMatch(code));
             if (matchedBlockedPattern != null) {
                 // Command injection patterns with semicolon should be Critical
                 var blockedRiskLevel = code.Contains(";") && (code.Contains("'") || code.Contains("\""))

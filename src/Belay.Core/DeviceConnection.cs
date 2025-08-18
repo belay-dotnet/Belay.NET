@@ -174,6 +174,18 @@ public sealed class DeviceConnection : IDisposable {
         }
     }
 
+    /// <summary>
+    /// Executes code and returns typed result (simplified generic version).
+    /// </summary>
+    /// <typeparam name="T">The type to convert the result to.</typeparam>
+    /// <param name="code">The Python code to execute.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.</param>
+    /// <returns>The execution result converted to the specified type.</returns>
+    public async Task<T> ExecuteAsync<T>(string code, CancellationToken cancellationToken = default) {
+        var result = await this.ExecuteAsync(code, cancellationToken).ConfigureAwait(false);
+        return (T)Convert.ChangeType(result.Trim(), typeof(T));
+    }
+
     private async Task ConnectSerialAsync(CancellationToken cancellationToken) {
         // Use System.IO.Ports.SerialPort directly - it works on both Windows and Linux in .NET 8
         this.serialPort = new SerialPort(this.ConnectionString, 115200, Parity.None, 8, StopBits.One) {
@@ -351,14 +363,6 @@ public sealed class DeviceConnection : IDisposable {
     // Note: Events removed as they were placeholders not being used
     // TODO: Re-add OutputReceived and StateChanged events when implementation requires them
 
-    /// <summary>
-    /// Executes code and returns typed result (simplified generic version).
-    /// </summary>
-    /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
-    public async Task<T> ExecuteAsync<T>(string code, CancellationToken cancellationToken = default) {
-        var result = await this.ExecuteAsync(code, cancellationToken).ConfigureAwait(false);
-        return (T)Convert.ChangeType(result.Trim(), typeof(T));
-    }
 
     /// <summary>
     /// Writes a file to the device using efficient adaptive chunked transfer.

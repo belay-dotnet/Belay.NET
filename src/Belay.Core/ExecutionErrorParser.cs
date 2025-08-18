@@ -142,7 +142,7 @@ internal static class ExecutionErrorParser {
 
     private static ExecutionErrorType ClassifyError(string output, ILogger? logger) {
         foreach (var (errorType, patterns) in ErrorPatterns) {
-            var matchedPattern = patterns.FirstOrDefault(pattern => pattern.Regex.IsMatch(output));
+            var matchedPattern = Array.Find(patterns, pattern => pattern.Regex.IsMatch(output));
             if (matchedPattern != null) {
                 logger?.LogTrace(
                     "Matched error pattern '{Pattern}' for type {ErrorType}",
@@ -203,8 +203,13 @@ internal static class ExecutionErrorParser {
 
         // For runtime errors, extract the exception message
         if (errorType == ExecutionErrorType.RuntimeError) {
-            var errorLine = lines.LastOrDefault(line =>
-                line.Contains("Error:") && !line.StartsWith("Traceback"));
+            string? errorLine = null;
+            for (int i = lines.Length - 1; i >= 0; i--) {
+                if (lines[i].Contains("Error:") && !lines[i].StartsWith("Traceback")) {
+                    errorLine = lines[i];
+                    break;
+                }
+            }
             if (errorLine != null) {
                 return errorLine.Trim();
             }

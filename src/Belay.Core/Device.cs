@@ -49,21 +49,20 @@ public class Device : IDisposable {
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Device"/> class.
+    /// Simple constructor for basic usage.
     /// </summary>
     /// <param name="connection">The device connection implementation.</param>
-    /// <param name="logger">Optional logger for device operations.</param>
-    public Device(DeviceConnection connection, ILogger<Device>? logger = null)
-        : this(connection, logger, null) {
+    public Device(DeviceConnection connection)
+        : this(connection, null, null, null) {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Device"/> class.
+    /// Initializes a new instance of the <see cref="Device"/> class with logger.
     /// </summary>
     /// <param name="connection">The device connection implementation.</param>
-    /// <param name="logger">Optional logger for device operations.</param>
-    /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
-    public Device(DeviceConnection connection, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null)
-        : this(connection, logger, loggerFactory, null) {
+    /// <param name="logger">Logger for device operations.</param>
+    public Device(DeviceConnection connection, ILogger<Device> logger)
+        : this(connection, logger, null, null) {
     }
 
     /// <summary>
@@ -73,17 +72,12 @@ public class Device : IDisposable {
     /// <param name="logger">Logger for device operations.</param>
     /// <param name="loggerFactory">Optional logger factory for executor logging.</param>
     /// <param name="executionContextService">Optional execution context service for secure method detection.</param>
-    public Device(DeviceConnection connection, ILogger<Device>? logger = null, ILoggerFactory? loggerFactory = null, IExecutionContextService? executionContextService = null) {
+    public Device(DeviceConnection connection, ILogger<Device>? logger, ILoggerFactory? loggerFactory = null, IExecutionContextService? executionContextService = null) {
         this.connection = connection ?? throw new ArgumentNullException(nameof(connection));
         this.logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<Device>.Instance;
 
-        // Forward events from connection layer
-        connection.OutputReceived += (sender, args) => this.OutputReceived?.Invoke(this, args);
-        connection.StateChanged += (sender, args) => {
-            // Update device state when connection state changes
-            this.State.ConnectionState = args.NewState;
-            this.StateChanged?.Invoke(this, args);
-        };
+        // Note: Event forwarding removed as the connection layer events were cleaned up
+        // Device state is updated directly through connection property access
 
         var executorLoggerFactory = loggerFactory ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
 
@@ -413,8 +407,8 @@ public class Device : IDisposable {
             _ => throw new ArgumentException($"Unsupported connection type: {type}"),
         };
 
-        var connection = new DeviceConnection(connectionType, parameter, loggerFactory?.CreateLogger<DeviceConnection>());
-        return new Device(connection, loggerFactory?.CreateLogger<Device>(), loggerFactory);
+        var deviceConnection = new DeviceConnection(connectionType, parameter, loggerFactory?.CreateLogger<DeviceConnection>());
+        return new Device(deviceConnection, loggerFactory?.CreateLogger<Device>(), loggerFactory);
     }
 
     /// <summary>
@@ -433,12 +427,12 @@ public class Device : IDisposable {
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A Device instance for the first discovered device, or null if none found.</returns>
     public static async Task<Device?> DiscoverFirstAsync(ILoggerFactory? loggerFactory = null, CancellationToken cancellationToken = default) {
-        var connection = await DeviceDiscovery.DiscoverFirstAsync(cancellationToken);
-        if (connection == null) {
+        var discoveredConnection = await DeviceDiscovery.DiscoverFirstAsync(cancellationToken);
+        if (discoveredConnection == null) {
             return null;
         }
 
-        return new Device(connection, loggerFactory?.CreateLogger<Device>(), loggerFactory);
+        return new Device(discoveredConnection, loggerFactory?.CreateLogger<Device>(), loggerFactory);
     }
 
     /// <summary>
