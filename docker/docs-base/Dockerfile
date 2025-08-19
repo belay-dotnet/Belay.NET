@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     unzip \
+    git \
     python3 \
     python3-pip \
     pandoc \
@@ -55,6 +56,7 @@ USER docsbuilder
 RUN docfx --version && \
     node --version && \
     npm --version && \
-    pandoc --version
+    pandoc --version && \
+    git --version
 
 WORKDIR /workspace
