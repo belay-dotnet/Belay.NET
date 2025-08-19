@@ -5,7 +5,7 @@ FROM node:18-slim AS docs-base
 LABEL org.opencontainers.image.source="https://github.com/belay-dotnet/Belay.NET"
 LABEL org.opencontainers.image.description="Belay.NET Documentation Base Image"
 
-# Install system dependencies
+# Install system dependencies including .NET SDK
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
@@ -15,7 +15,13 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     pandoc \
     ca-certificates \
+    gpg \
     --no-install-recommends \
+    # Install Microsoft signing key and repository
+    && curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
+    && echo "deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/repos/microsoft-ubuntu-jammy-prod jammy main" > /etc/apt/sources.list.d/microsoft-prod.list \
+    && apt-get update \
+    && apt-get install -y dotnet-sdk-8.0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up non-root user for security
@@ -26,7 +32,7 @@ WORKDIR /home/docsbuilder
 # Install DocFX globally
 RUN mkdir -p /home/docsbuilder/.dotnet/tools
 ENV PATH="/home/docsbuilder/.dotnet/tools:${PATH}"
-ENV DOTNET_ROOT="/usr/share/dotnet"
+ENV DOTNET_ROOT="/usr/lib/dotnet"
 
 # Download and install DocFX
 USER root
@@ -57,6 +63,7 @@ RUN docfx --version && \
     node --version && \
     npm --version && \
     pandoc --version && \
-    git --version
+    git --version && \
+    dotnet --version
 
 WORKDIR /workspace
