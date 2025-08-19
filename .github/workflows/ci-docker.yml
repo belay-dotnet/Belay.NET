@@ -201,10 +201,10 @@ jobs:
           docfx --version
         fi
 
-    - name: Build documentation
+    - name: Generate API documentation
       run: |
         if [ -f "docs/docfx.json" ]; then
-          cd docs && docfx build docfx.json
+          cd docs && docfx metadata docfx.json
         else
           echo "DocFX configuration not found"
         fi
