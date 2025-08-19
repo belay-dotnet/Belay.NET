@@ -189,6 +189,7 @@ jobs:
     - name: Initialize submodules manually
       run: |
         echo "Initializing submodules manually for container compatibility..."
+        git config --global --add safe.directory /__w/Belay.NET/Belay.NET
         git submodule update --init --recursive
 
     - name: Test DocFX build
